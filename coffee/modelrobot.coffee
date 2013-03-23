@@ -1,28 +1,34 @@
-# Assignment:
-number   = 42
-opposite = true
+urdf2model = (urdf) ->
+#main function that converts urdf syntax to robot model
+	urdf
+	
+class Link	
+	name:"fufu"
+	@visual
+	
+	
+	
+class Visualprop
+	geometry:@makegeometry(shape,args)
+	
+	makegeometry: (shape,args) ->
+#function creates shape and puts in right place
+		geometry
+	
+	makebox: (size) ->
 
-# Conditions:
-number = -42 if opposite
+#create box, using its size parameters
+		box
 
-# Functions:
-square = (x) -> x * x
+	makesphere: (radius) ->
 
-# Arrays:
-list = [1, 2, 3, 4, 5]
-
-# Objects:
-math =
-  root:   Math.sqrt
-  square: square
-  cube:   (x) -> x * square x
-
-# Splats:
-race = (winner, runners...) ->
-  print winner, runners
-
-# Existence:
-alert "I knew it!" if elvis?
-
-# Array comprehensions:
-cubes = (math.cube num for num in list)
+		sphere
+	
+	makecylinder: (radius,lenght) ->
+		cylinder
+		
+class Joint
+	type:"fufu"
+	name:"costam"
+	origin:[1,2,3]
+	

@@ -51,6 +51,13 @@ function fillScene() {
 	var robotForearmMaterial = new THREE.MeshPhongMaterial( { color: 0xF4C154, specular: 0xF4C154, shininess: 100 } );
 	var robotUpperArmMaterial = new THREE.MeshPhongMaterial( { color: 0x95E4FB, specular: 0x95E4FB, shininess: 100 } );
 
+	
+	
+	
+	
+	
+	
+	
 	var torus = new THREE.Mesh( 
 		new THREE.TorusGeometry( 22, 15, 32, 32 ), robotBaseMaterial );
 	torus.rotation.x = 90 * Math.PI/180;
@@ -71,6 +78,10 @@ function fillScene() {
 	arm.add( forearm );
 	
 	scene.add( arm );
+	
+	$.get("../testowe/06-flexible.urdf",parseRobot);
+	//
+	
 }
 
 function createRobotExtender( part, length, material )
@@ -124,6 +135,7 @@ function init() {
 	renderer.setClearColorHex( 0xAAAAAA, 1.0 );
 
 	var container = document.getElementById('container');
+	console.log(renderer);
 	container.appendChild( renderer.domElement );
 
 	// CAMERA
@@ -211,7 +223,7 @@ function takeScreenshot() {
 	imgTarget.document.write('<img src="'+img1+'"/><img src="'+img2+'"/>');
 }
 
-init();
+$(document).ready(init);
 setupGui();
 animate();
 $("body").keydown(function(event) {
