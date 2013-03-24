@@ -44,7 +44,7 @@ function fillScene() {
 		Coordinates.drawGrid({size:10000,scale:0.01, orientation:"z"});	
 	}
 	if (axes) {
-		Coordinates.drawAllAxes({axisLength:200,axisRadius:1,axisTess:50});
+		Coordinates.drawAllAxes({axisLength:2,axisRadius:0.01,axisTess:50});
 	}
 	
 	var robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 20 } );
@@ -61,7 +61,7 @@ function fillScene() {
 	var torus = new THREE.Mesh( 
 		new THREE.TorusGeometry( 22, 15, 32, 32 ), robotBaseMaterial );
 	torus.rotation.x = 90 * Math.PI/180;
-	scene.add( torus );
+//	scene.add( torus );
 
 	forearm = new THREE.Object3D();
 	var faLength = 80;
@@ -77,7 +77,7 @@ function fillScene() {
 	forearm.position.y = uaLength;	
 	arm.add( forearm );
 	
-	scene.add( arm );
+	//scene.add( arm );
 	
 	$.get("../testowe/06-flexible.urdf",parseRobot);
 	//
@@ -135,16 +135,16 @@ function init() {
 	renderer.setClearColorHex( 0xAAAAAA, 1.0 );
 
 	var container = document.getElementById('container');
-	console.log(renderer);
+	//console.log(renderer);
 	container.appendChild( renderer.domElement );
 
 	// CAMERA
 	camera = new THREE.PerspectiveCamera( 30, canvasRatio, 1, 10000 );
-	camera.position.set( -510, 240, 100 );
+	camera.position.set( -5, 2, 5 );
 	// CONTROLS
 	cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
-	cameraControls.target.set(0,100,0);
-	
+	cameraControls.target.set(0.1,0,0);
+	//cameraControls.object.lookAt
 	fillScene();
 
 }
