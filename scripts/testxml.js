@@ -79,67 +79,24 @@ robot.name="robot";
   var robotlink=new App.RobotLink($.xml2json(this))
   window.robotlinkcollection.add(robotlink);
   
- //  console.log("sukces");
- /*
-  var link= new THREE.Object3D();
-  var scale=1;
- link.name=$(this).attr("name");
-  $visual=$(this).find("visual");
  
-  if ($visual.find("geometry > box").length==1)
-  {
-	  var boxsize=$visual.find("geometry > box").attr("size")||"0 0 0";
-	  boxsize=boxsize.split(' ')||[0,0,0];
-	//  console.log(boxsize);
-	  var length=50;
-	 var meshvis = new THREE.Mesh( 
-				new THREE.CubeGeometry( boxsize[0]*scale,boxsize[1]*scale, boxsize[2]*scale ), robotBaseMaterial );
-	}
-	else if($visual.find("geometry > cylinder").length==1)
-	{
-	
-	  var length=$visual.find("geometry > cylinder").attr("length")||"0";
-	  var radius=$visual.find("geometry > cylinder").attr("radius")||"0";
-	 // boxsize=boxsize.split(' ')||[0,0,0];
-	 // console.log(boxsize);
-	 // var length=50;
-	 var meshvis = new THREE.Mesh( 
-				new THREE.CylinderGeometry( radius,radius, length,500,1 ), robotBaseMaterial );
+	//console.log(robotlink.get("link"));
+	robot.add(robotlink.get("link"));
 
-	
-	
-	}
-	else
-	{
-	//console.log($visual);
-	var meshvis = new THREE.Mesh();
-	}
-			
-  var position=$visual.find("origin").attr("xyz")||"0 0 0";
-  position=position.split(' ')||[0,0,0];
-  
-  var orientation=$visual.find("origin").attr("rpy")||"0 0 0";
-  orientation=orientation.split(' ')||[0,0,0];
-  
- // <origin rpy="0 1.57075 0" xyz="0 0 -0.3"/>
- ".1 0.4 .1"
- 
-			
-		meshvis.position.set(position[0], position[1],position[2]);// = index*1.05;
-	//	console.log(meshvis.position);
-		meshvis.rotation.set(orientation[0],orientation[1],orientation[2]);
-		link.add(meshvis);
-		
-		*/
-		console.log(robotlink.get("link"));
-		robot.add(robotlink.get("link"));
-  
- // console.log($(this).attr("name"));
- 
- //console.log(this)
-  //  $("#output").append($(this).attr("name") + "<br />");
-	
   });
+   $(xmelon).find("joint").each(function( index)
+  {
+  var robotjoint=new App.RobotJoint($.xml2json(this));
+  robotjoint.set("linkcollection",window.robotlinkcollection);
+  window.robotjointcollection.add(robotjoint);
+  
+ 
+	//console.log(robotlink.get("link"));
+	//robot.add(robotlink.get("link"));
+
+  });
+  
+
 //console.log(robot);
   // Output:
   // The Reddest

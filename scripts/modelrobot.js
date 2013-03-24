@@ -13,6 +13,9 @@
     if (def == null) {
       def = "0 0 0";
     }
+    if (check == null) {
+      check = true;
+    }
     el2array = (check && el) || def;
     arrayw = el2array.split(" ");
     arrayw = _.map(arrayw, function(num) {
@@ -49,15 +52,15 @@
       this.basicrotation = new THREE.Vector3(rotation[0], rotation[1], rotation[2]);
       position = App.el2array(_.has(this.attributes, "origin") && this.attributes.origin.xyz, "0 0 0");
       this.basicposition = new THREE.Vector3(position[0], position[1], position[2]);
-      this.lower = this["arguments"].lower || -Infinity;
-      this.upper = this["arguments"].upper || Infinity;
+      this.lower = this.attributes.lower || -Infinity;
+      this.upper = this.attributes.upper || Infinity;
       basicMatrix = new THREE.Matrix4();
       this.movementMatrix = new THREE.Matrix4();
       basicMatrix.setRotationFromEuler(this.basicrotation);
       basicMatrix.setPosition(this.basicposition);
       this.basicMatrix = basicMatrix;
       this.currentMatrix = new THREE.Matrix4();
-      this.type = this["arguments"].type;
+      this.type = this.attributes.type;
       this.on("change:linkcollection", this.jointogether);
       return this;
     };
@@ -66,13 +69,13 @@
       var child, parent;
 
       if (_.has(this.attributes, "parent") && _.has(this.attributes, "child") && _.has(this.attributes, "linkcollection")) {
-        child = this.get(linkcollection).get(this.attributes.child.link);
-        parent = this.get(linkcollection).get(this.attributes.child.parent);
+        child = this.get("linkcollection").get(this.attributes.child.link);
+        parent = this.get("linkcollection").get(this.attributes.parent.link);
         this.parentobject3d = parent.get("link");
         this.childobject3d = child.get("link");
         this.parentobject3d.add(this.childobject3d);
         this.childobject3d.matrixAutoUpdate = false;
-        return this.childobject3d.matrix = basicMatrix;
+        return this.childobject3d.matrix = this.basicMatrix;
       }
     };
 
@@ -109,8 +112,6 @@
   })(Backbone.Model);
 
   App.RobotLink = (function(_super) {
-    var robotBaseMaterial;
-
     __extends(RobotLink, _super);
 
     function RobotLink() {
@@ -118,7 +119,7 @@
       return _ref1;
     }
 
-    robotBaseMaterial = new THREE.MeshPhongMaterial({
+    RobotLink.prototype.robotBaseMaterial = new THREE.MeshPhongMaterial({
       color: 0x6E23BB,
       specular: 0x6E23BB,
       shininess: 20
@@ -147,13 +148,18 @@
           length = this.attributes.visual.geometry.cylinder.length || 0;
           radius = this.attributes.visual.geometry.cylinder.radius || 0;
           this.makecylinder(length, radius);
+        } else if (_.has(this.attributes.visual.geometry, "sphere")) {
+          radius = this.attributes.visual.geometry.sphere.radius || 0;
+          this.makesphere(radius);
         } else {
           this.makeempty();
         }
         position = App.el2array(_.has(this.attributes.visual, "origin") && this.attributes.visual.origin.xyz, "0 0 0");
         orientation = App.el2array(_.has(this.attributes.visual, "origin") && this.attributes.visual.origin.rpy, "0 0 0");
         this.meshvis.position.set(position[0], position[1], position[2]);
+        console.log(this.meshvis.position);
         this.meshvis.rotation.set(orientation[0], orientation[1], orientation[2]);
+        console.log(this.meshvis.rotation);
         return this;
       } else {
         console.log("there are no visual attributes");
@@ -163,11 +169,20 @@
     };
 
     RobotLink.prototype.makecylinder = function(length, radius) {
-      return this.meshvis = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 500, 1), this.robotBaseMaterial);
+      var meshvis;
+
+      meshvis = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 500, 1), this.robotBaseMaterial);
+      meshvis.rotation = new THREE.Vector3(Math.PI / 2, 0, 0);
+      this.meshvis = new THREE.Mesh();
+      return this.meshvis.add(meshvis);
     };
 
     RobotLink.prototype.makebox = function(boxsize) {
       return this.meshvis = new THREE.Mesh(new THREE.CubeGeometry(boxsize[0] * 1, boxsize[1] * 1, boxsize[2] * 1), this.robotBaseMaterial);
+    };
+
+    RobotLink.prototype.makesphere = function(radius) {
+      return this.meshvis = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 20), this.robotBaseMaterial);
     };
 
     RobotLink.prototype.makeempty = function() {

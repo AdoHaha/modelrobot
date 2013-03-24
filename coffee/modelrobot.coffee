@@ -2,7 +2,7 @@
   
 window.App = window.App||{};
 
-App.el2array= (el,def="0 0 0",check)-> #returns array of numbers or default array from string
+App.el2array= (el,def="0 0 0",check=true)-> #returns array of numbers or default array from string
 	el2array=(check&&el)||def
 	arrayw=el2array.split(" ")
 	arrayw=_.map(arrayw,(num)-> num*1)
@@ -28,8 +28,8 @@ class App.RobotJoint extends Backbone.Model
 		position=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.xyz,"0 0 0")
 		@basicposition=new THREE.Vector3(position[0],position[1],position[2])
 		
-		@lower=@arguments.lower||-Infinity
-		@upper=@arguments.upper||Infinity
+		@lower=@attributes.lower||-Infinity
+		@upper=@attributes.upper||Infinity
 		
 		basicMatrix=new THREE.Matrix4()
 		@movementMatrix=new THREE.Matrix4()
@@ -39,13 +39,13 @@ class App.RobotJoint extends Backbone.Model
 		@currentMatrix=new THREE.Matrix4();
 		#else
 		#	@axis= new THREE.Vector3(1,0,0)
-		@type=@arguments.type;
+		@type=@attributes.type;
 		@on("change:linkcollection",@jointogether)
 		@
 	jointogether: => #if possible, we make connection between two 3d link objects
 		if (_.has(@attributes,"parent")&&_.has(@attributes,"child")&&_.has(@attributes,"linkcollection"))
-			child=@get(linkcollection).get(@attributes.child.link);
-			parent=@get(linkcollection).get(@attributes.child.parent);
+			child=@get("linkcollection").get(@attributes.child.link);
+			parent=@get("linkcollection").get(@attributes.parent.link);
 			
 			
 			#parent.get("link"). add(child.get("link"));
@@ -53,7 +53,7 @@ class App.RobotJoint extends Backbone.Model
 			@childobject3d=child.get("link")
 			@parentobject3d.add(@childobject3d);
 			@childobject3d.matrixAutoUpdate=false
-			@childobject3d.matrix=basicMatrix
+			@childobject3d.matrix=@basicMatrix
 			
 	movejoint: (t1,t2)-> #TODO planar type
 		t1=t1||@theta
@@ -74,7 +74,7 @@ class App.RobotJoint extends Backbone.Model
 		
 
 class App.RobotLink extends Backbone.Model
-	robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 20 } );
+	robotBaseMaterial : new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 20 } );
 	initialize: ->
 		@id=@get("name");
 		@makeobject3d(); #adds link attribute, consisting of created mesh
@@ -96,19 +96,24 @@ class App.RobotLink extends Backbone.Model
 				length=@attributes.visual.geometry.cylinder.length||0;
 				radius=@attributes.visual.geometry.cylinder.radius||0;
 				@makecylinder(length,radius);
+			else if(_.has(@attributes.visual.geometry,"sphere"))
+				radius=@attributes.visual.geometry.sphere.radius||0;
+				@makesphere(radius);
 			else
 				@makeempty();
 			
 			position=App.el2array(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.xyz,"0 0 0")
+			
 		#	(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.xyz)||"0 0 0";
 		#	position=position.split(' ')||[0,0,0];
 			orientation=App.el2array(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.rpy,"0 0 0")
-			
+			#console.log(orientation)
 		#	(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.rpy)||"0 0 0";
 			#orientation=orientation.split(' ')||[0,0,0];
 			@meshvis.position.set(position[0], position[1],position[2]);
-		
+			console.log(@meshvis.position)
 			@meshvis.rotation.set(orientation[0],orientation[1],orientation[2]);
+			console.log(@meshvis.rotation)
 			@
 			
 		else
@@ -116,12 +121,19 @@ class App.RobotLink extends Backbone.Model
 			@makeempty();
 			@
 	makecylinder: (length,radius) ->
-		@meshvis = new THREE.Mesh( 
+		meshvis = new THREE.Mesh( 
 				new THREE.CylinderGeometry( radius,radius, length,500,1 ), @robotBaseMaterial );
-		
+		meshvis.rotation=new THREE.Vector3(Math.PI/2,0,0)
+		@meshvis=new THREE.Mesh()
+		@meshvis.add(meshvis)
 	makebox: (boxsize) ->
 		@meshvis = new THREE.Mesh( 
 				new THREE.CubeGeometry( boxsize[0]*1,boxsize[1]*1, boxsize[2]*1 ), @robotBaseMaterial );
+				
+	makesphere: (radius) ->
+		@meshvis = new THREE.Mesh( 
+				new THREE.SphereGeometry( radius,20,20 ), @robotBaseMaterial );
+		
 	makeempty: ->
 		@meshvis = new THREE.Mesh();
 		
