@@ -31,7 +31,7 @@ var camera =
     FAR);
 
 var scene = new THREE.Scene();
-
+camera.up = new THREE.Vector3( 1, 0, 0 );
 // add the camera to the scene
 scene.add(camera);
 
@@ -60,7 +60,7 @@ $(document).ready(function()
 */
 function parseRobot(xml)
 {
-
+window.robotmaterialcollection=new App.RobotMaterialCollection();
 window.robotlinkcollection=new App.RobotLinkCollection();
 window.robotjointcollection=new App.RobotJointCollection();
 
@@ -74,9 +74,20 @@ robot.name="robot";
 //console.log("namespace "+this.namespace);
 //console.log(xml);
   //find every Tutorial and print the author
+  $(xmelon).find("color").parent().each(function(index)
+  {
+  var robotcolor=new App.RobotMaterial($.xml2json(this));
+  window.robotmaterialcollection.add(robotcolor);
+  }
+  );
+  
+  
   $(xmelon).find("link").each(function( index)
   {
-  var robotlink=new App.RobotLink($.xml2json(this))
+  var tjson=$.xml2json(this);
+  tjson["materialcollection"]=window.robotmaterialcollection;
+  var robotlink=new App.RobotLink(tjson);
+  //robotlink.set(tjson);
   window.robotlinkcollection.add(robotlink);
   
  

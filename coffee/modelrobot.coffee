@@ -74,8 +74,9 @@ class App.RobotJoint extends Backbone.Model
 		
 
 class App.RobotLink extends Backbone.Model
-	robotBaseMaterial : new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 20 } );
+	
 	initialize: ->
+		@robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 10 } );
 		@id=@get("name");
 		@makeobject3d(); #adds link attribute, consisting of created mesh
 		link=new THREE.Object3D();
@@ -86,6 +87,17 @@ class App.RobotLink extends Backbone.Model
 		@
 	makeobject3d: ->
 		if(_.has(@attributes,"visual"))
+			if(_.has(@attributes.visual,"material"))
+				console.log(@get("materialcollection").get(@attributes.visual.material.name).get("color"))
+				color=@get("materialcollection").get(@attributes.visual.material.name).get("color");#||new THREE.Color(0x6E23BB);
+				@robotBaseMaterial.color=color;
+				@robotBaseMaterial.specular=color;
+				console.log(@robotBaseMaterial.shininess);
+				console.log(@robotBaseMaterial.color);
+				console.log(@robotBaseMaterial);
+				@robotBaseMaterial.color=color;
+				console.log(@robotBaseMaterial);
+				
 			if(_.has(@attributes.visual.geometry,"box"))
 				boxsize=App.el2array(@attributes.visual.geometry.box.size,"0 0 0");
 				#boxsize=boxsize.split(' ')||[0,0,0];
@@ -136,8 +148,19 @@ class App.RobotLink extends Backbone.Model
 		
 	makeempty: ->
 		@meshvis = new THREE.Mesh();
-		
-		
+	
+class App.RobotMaterial extends Backbone.Model
+	initialize: ->
+		@id=@get("name")
+		#color rgba
+		if(_.has(@attributes,"color"))
+			
+			rgba=App.el2array(_.has(@attributes.color,"rgba")&&@attributes.color.rgba,def="0 0 0 1",check=true)
+			@set("color",new THREE.Color().setRGB(rgba[0],rgba[1],rgba[2]))
+		@
+class App.RobotMaterialCollection extends Backbone.Collection
+	model:App.RobotMaterial
+	
 class App.RobotLinkCollection extends Backbone.Collection
 	model:App.RobotLink
 	

@@ -7,11 +7,11 @@
 var camera, scene, renderer;
 var cameraControls, effectController;
 var clock = new THREE.Clock();
-var gridX = true;
+var gridX = false;
 var gridY = false;
 var gridZ = false;
 var axes = true;
-var ground = true;
+var ground = false;
 var arm, forearm;
 
 function fillScene() {
@@ -22,7 +22,7 @@ function fillScene() {
 	var ambientLight = new THREE.AmbientLight( 0x222222 );
 
 	var light = new THREE.DirectionalLight( 0xffffff, 1.0 );
-	light.position.set( 200, 400, 500 );
+	light.position.set( 200, -400, 500 );
 	
 	var light2 = new THREE.DirectionalLight( 0xffffff, 1.0 );
 	light2.position.set( -500, 250, -200 );
@@ -140,10 +140,11 @@ function init() {
 
 	// CAMERA
 	camera = new THREE.PerspectiveCamera( 30, canvasRatio, 1, 10000 );
-	camera.position.set( -5, 2, 5 );
+	camera.position.set( 2.5, 2, 4 );
+	camera.up = new THREE.Vector3( 0, 0, 1 );
 	// CONTROLS
 	cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
-	cameraControls.target.set(0.1,0,0);
+//	cameraControls.target.set(0.1,0,0);
 	//cameraControls.object.lookAt
 	fillScene();
 
