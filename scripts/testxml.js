@@ -67,10 +67,10 @@ window.robotjointcollection=new App.RobotJointCollection();
 
 xmelon=$.parseXML(xml); // to be able to access the DOM  
 //console.log($.xml2json(xmelon));
-var robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 20 } );
+var robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 50 } );
 //	console.log($.xmlTojson(xmelon));
-var robot=new THREE.Object3D();
-robot.name="robot";
+window.robot=new THREE.Object3D();
+window.robot.name="robot";
 //console.log("namespace "+this.namespace);
 //console.log(xml);
   //find every Tutorial and print the author
@@ -92,7 +92,7 @@ robot.name="robot";
   
  
 	//console.log(robotlink.get("link"));
-	robot.add(robotlink.get("link"));
+	window.robot.add(robotlink.get("link"));
 
   });
    $(xmelon).find("joint").each(function( index)
@@ -114,7 +114,7 @@ robot.name="robot";
   // The Hairiest
   // The Tallest
   // The Fattest
-  scene.add(robot);
+  scene.add(window.robot);
  // console.log(scene);
  renderer.render(scene, camera);
 }

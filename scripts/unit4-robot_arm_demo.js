@@ -25,7 +25,7 @@ function fillScene() {
 	light.position.set( 200, -400, 500 );
 	
 	var light2 = new THREE.DirectionalLight( 0xffffff, 1.0 );
-	light2.position.set( -500, 250, -200 );
+	light2.position.set( 73, 184, 184 );
 
 	scene.add(ambientLight);
 	scene.add(light);
@@ -58,69 +58,34 @@ function fillScene() {
 	
 	
 	
-	var torus = new THREE.Mesh( 
-		new THREE.TorusGeometry( 22, 15, 32, 32 ), robotBaseMaterial );
-	torus.rotation.x = 90 * Math.PI/180;
+//	var torus = new THREE.Mesh( 
+//		new THREE.TorusGeometry( 22, 15, 32, 32 ), robotBaseMaterial );
+//	torus.rotation.x = 90 * Math.PI/180;
 //	scene.add( torus );
 
-	forearm = new THREE.Object3D();
-	var faLength = 80;
+//	forearm = new THREE.Object3D();
+//	var faLength = 80;
 
-	createRobotExtender( forearm, faLength, robotForearmMaterial );
-
-	arm = new THREE.Object3D();
-	var uaLength = 120;	
+//	createRobotExtender( forearm, faLength, robotForearmMaterial );
+//
+//	arm = new THREE.Object3D();
+//	var uaLength = 120;	
 	
-	createRobotCrane( arm, uaLength, robotUpperArmMaterial );
+//	createRobotCrane( arm, uaLength, robotUpperArmMaterial );
 	
 	// Move the forearm itself to the end of the upper arm.
-	forearm.position.y = uaLength;	
-	arm.add( forearm );
+//	forearm.position.y = uaLength;	
+//arm.add( forearm );
 	
 	//scene.add( arm );
 	
-	$.get("../testowe/06-flexible.urdf",parseRobot);
+
 	//
+
 	
 }
 
-function createRobotExtender( part, length, material )
-{
-	var cylinder = new THREE.Mesh( 
-		new THREE.CylinderGeometry( 22, 22, 6, 32 ), material );
-	part.add( cylinder );
 
-	var i;
-	for ( i = 0; i < 4; i++ )
-	{
-		var box = new THREE.Mesh( 
-			new THREE.CubeGeometry( 4, length, 4 ), material );
-		box.position.x = (i < 2) ? -8 : 8;
-		box.position.y = length/2;
-		box.position.z = (i%2) ? -8 : 8;
-		part.add( box );
-	}
-	
-	cylinder = new THREE.Mesh( 
-		new THREE.CylinderGeometry( 15, 15, 40, 32 ), material );
-	cylinder.rotation.x = 90 * Math.PI/180;
-	cylinder.position.y = length;
-	part.add( cylinder );
-}
-
-function createRobotCrane( part, length, material )
-{
-	var box = new THREE.Mesh( 
-		new THREE.CubeGeometry( 18, length, 18 ), material );
-	box.position.y = length/2;
-	part.add( box );
-	
-	var sphere = new THREE.Mesh( 
-		new THREE.SphereGeometry( 20, 32, 16 ), material );
-	// place sphere at end of arm
-	sphere.position.y = length;
-	part.add( sphere );
-}
 
 function init() {
 	var canvasWidth = window.innerWidth;
@@ -170,12 +135,15 @@ function render() {
 		fillScene();
 	}
 
-	arm.rotation.y = effectController.uy * Math.PI/180;	// yaw
-	arm.rotation.z = effectController.uz * Math.PI/180;	// roll
+//	arm.rotation.y = effectController.uy * Math.PI/180;	// yaw
+//	arm.rotation.z = effectController.uz * Math.PI/180;	// roll
 	
-	forearm.rotation.y = effectController.fy * Math.PI/180;	// yaw
-	forearm.rotation.z = effectController.fz * Math.PI/180;	// roll
-	
+//	forearm.rotation.y = effectController.fy * Math.PI/180;	// yaw
+//	forearm.rotation.z = effectController.fz * Math.PI/180;	// roll
+/*		if(_.has(window,"light2"))
+	{
+	window.light2.position.set( window.effectController.swiatlox, window.effectController.swiatloy, window.effectController.swiatloz );
+	} */
 	renderer.render(scene, camera);
 }
 
@@ -183,7 +151,7 @@ function render() {
 
 function setupGui() {
 
-	effectController = {
+	window.effectController = {
 
 		newGridX: gridX,
 		newGridY: gridY,
@@ -193,23 +161,47 @@ function setupGui() {
 		
 		uy: 70.0,
 		uz: -15.0,
-
+		swiatlox:-500,
+		swiatloy:250,
+		swiatloz:-200,
 		fy: 10.0,
 		fz: 60.0
 	};
-
-	var gui = new dat.GUI();
-	var h = gui.addFolder("Grid display");
+	if(_.has(window,"gui"))
+	{
+	window.gui.destroy()
+	}
+	window.gui = new dat.GUI();
+/*	var h = gui.addFolder("Grid display");
+	
+	
+	if(_.has(window,"light2"))
+	{
+	console.log(window.light2)
+	window.light2.position.set( -500, 250, -200 );
+	}
+	h.add(window.effectController,"swiatlox",-5000,5000);
+	h.add(window.effectController,"swiatloy",-5000,5000);
+	h.add(window.effectController,"swiatloz",-5000,5000);
+	/*
 	h.add( effectController, "newGridX").name("Show XZ grid");
 	h.add( effectController, "newGridY" ).name("Show YZ grid");
 	h.add( effectController, "newGridZ" ).name("Show XY grid");
 	h.add( effectController, "newGround" ).name("Show ground");
-	h.add( effectController, "newAxes" ).name("Show axes");
-	h = gui.addFolder("Arm angles");
+	h.add( effectController, "newAxes" ).name("Show axes");*/
+//	console.log(gui);
+//	console.log(window.robotjointcollection);
+	robotjointmanipall= new App.RobotJointManipAll({
+      gui:window.gui, joints: window.robotjointcollection
+    });
+	
+	// ({gui:gui})
+	//h = gui.addFolder("Swiatlo");
+/*	h = gui.addFolder("Arm angles");
 	h.add(effectController, "uy", -180.0, 180.0, 0.025).name("Upper arm y");
 	h.add(effectController, "uz", -45.0, 45.0, 0.025).name("Upper arm z");
 	h.add(effectController, "fy", -180.0, 180.0, 0.025).name("Forearm y");
-	h.add(effectController, "fz", -120.0, 120.0, 0.025).name("Forearm z");
+	h.add(effectController, "fz", -120.0, 120.0, 0.025).name("Forearm z");*/
 }
 
 function takeScreenshot() {
@@ -225,8 +217,13 @@ function takeScreenshot() {
 }
 
 $(document).ready(init);
+formula=new App.RobotForm();
+$.when($.get("../testowe/pi_robot_urdf.urdf",parseRobot)).then(function(){
 setupGui();
 animate();
+//console.log("fufu");
+});
+
 $("body").keydown(function(event) {
 	if (event.which === 80) {
 		takeScreenshot();

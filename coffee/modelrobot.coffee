@@ -19,7 +19,7 @@ class App.RobotJoint extends Backbone.Model
 	###
 	initialize: ->
 		@theta=0
-		
+		@name=@attributes.name
 		axis=App.el2array(_.has(@attributes,"axis")&&@attributes.axis.xyz,"1 0 0");
 			#xis=axis.split(" ")
 		@axis=new THREE.Vector3(axis[0],axis[1],axis[2])
@@ -28,15 +28,23 @@ class App.RobotJoint extends Backbone.Model
 		position=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.xyz,"0 0 0")
 		@basicposition=new THREE.Vector3(position[0],position[1],position[2])
 		
-		@lower=@attributes.lower||-Infinity
-		@upper=@attributes.upper||Infinity
+		@lower=(_.has(@attributes,"limit")&&@attributes.limit.lower)||-Math.PI # could be -Infinity
+		@upper=(_.has(@attributes,"limit")&&@attributes.limit.upper)|| Math.PI #could be Infinity
+		@lower=@lower*1
+		@upper=@upper*1
+#		console.log(@name)
+#		console.log(@lower)
 		
+#		console.log(@name)
+#		console.log(@upper)
 		basicMatrix=new THREE.Matrix4()
 		@movementMatrix=new THREE.Matrix4()
 		basicMatrix.setRotationFromEuler(@basicrotation)
 		basicMatrix.setPosition(@basicposition)
 		@basicMatrix=basicMatrix
 		@currentMatrix=new THREE.Matrix4();
+		
+		# console.log(@currentMatrix)
 		#else
 		#	@axis= new THREE.Vector3(1,0,0)
 		@type=@attributes.type;
@@ -55,11 +63,15 @@ class App.RobotJoint extends Backbone.Model
 			@childobject3d.matrixAutoUpdate=false
 			@childobject3d.matrix=@basicMatrix
 			
-	movejoint: (t1,t2)-> #TODO planar type
+	movejoint: (t1,t2) => #TODO planar type
 		t1=t1||@theta
+		#console.log("current matrix")
+		#console.log(@currentMatrix)
 		tempMatrix=new THREE.Matrix4();
 		tempaxis= new THREE.Vector3().copy(@axis);
-		#@currentMatrix=new TH
+	#	console.log(@name)
+	#	console.log(tempaxis)
+		# @currentMatrix=new TH
 		if (@type=="continuous" or (t1<@upper and t1>@lower)) #check whether movement is allowed
 			switch @type
 				when "revolute" then @movementMatrix=tempMatrix.rotateByAxis(@axis,t1)
@@ -67,9 +79,11 @@ class App.RobotJoint extends Backbone.Model
 				when "prismatic" then @movementMatrix=tempMatrix.translate(tempaxis.multiplyScalar(t1))
 				when "fixed" then @movementMatrix.identity()
 				when "planar" then @movementMatrix.identity() #TODO
-		@currentmatrix.multiplyMatrices(@movementMatrix,@basicMatrix)
-		@childobject3d.matrix=@currentmatrix
-			
+			@theta=t1 #set current state of joint
+		@currentMatrix.multiplyMatrices(@basicMatrix,@movementMatrix)
+		@childobject3d.matrix=@currentMatrix
+		
+		@	
 			
 		
 
@@ -88,15 +102,15 @@ class App.RobotLink extends Backbone.Model
 	makeobject3d: ->
 		if(_.has(@attributes,"visual"))
 			if(_.has(@attributes.visual,"material"))
-				console.log(@get("materialcollection").get(@attributes.visual.material.name).get("color"))
+			#	console.log(@get("materialcollection").get(@attributes.visual.material.name).get("color"))
 				color=@get("materialcollection").get(@attributes.visual.material.name).get("color");#||new THREE.Color(0x6E23BB);
 				@robotBaseMaterial.color=color;
 				@robotBaseMaterial.specular=color;
-				console.log(@robotBaseMaterial.shininess);
-				console.log(@robotBaseMaterial.color);
-				console.log(@robotBaseMaterial);
+			#	console.log(@robotBaseMaterial.shininess);
+			#	console.log(@robotBaseMaterial.color);
+			#	console.log(@robotBaseMaterial);
 				@robotBaseMaterial.color=color;
-				console.log(@robotBaseMaterial);
+			#	console.log(@robotBaseMaterial);
 				
 			if(_.has(@attributes.visual.geometry,"box"))
 				boxsize=App.el2array(@attributes.visual.geometry.box.size,"0 0 0");
@@ -116,16 +130,11 @@ class App.RobotLink extends Backbone.Model
 			
 			position=App.el2array(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.xyz,"0 0 0")
 			
-		#	(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.xyz)||"0 0 0";
-		#	position=position.split(' ')||[0,0,0];
 			orientation=App.el2array(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.rpy,"0 0 0")
-			#console.log(orientation)
-		#	(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.rpy)||"0 0 0";
-			#orientation=orientation.split(' ')||[0,0,0];
 			@meshvis.position.set(position[0], position[1],position[2]);
-			console.log(@meshvis.position)
+		#	console.log(@meshvis.position)
 			@meshvis.rotation.set(orientation[0],orientation[1],orientation[2]);
-			console.log(@meshvis.rotation)
+		#	console.log(@meshvis.rotation)
 			@
 			
 		else
@@ -148,6 +157,10 @@ class App.RobotLink extends Backbone.Model
 		
 	makeempty: ->
 		@meshvis = new THREE.Mesh();
+		
+	clearthislink: => 
+		@destroy()
+		
 	
 class App.RobotMaterial extends Backbone.Model
 	initialize: ->
@@ -166,3 +179,61 @@ class App.RobotLinkCollection extends Backbone.Collection
 	
 class App.RobotJointCollection extends Backbone.Collection
 	model:App.RobotJoint
+	
+	
+class App.RobotJointManipAll extends Backbone.View
+	el: $("#menu")
+	jointsarray:{}
+	
+	initialize: ->
+		#console.log(@options.gui)
+		@gui=@options.gui|| new dat.GUI();
+		@joints=@options.joints
+		
+		@anglesfolder=@gui.addFolder("Joint values");
+		@joints.each(@add2gui)
+	#	console.log(@gui)
+	#	console.log("angles folder");
+	#	console.log(@anglesfolder)
+	add2gui: (joint) =>
+		@jointsarray[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
+
+class App.RobotJointManipSingle extends Backbone.View
+
+	initialize:->
+		#console.log("intialize robotjointmanipsingle");
+		@joint=@options.joint
+		@gui=@options.gui
+		@dummy={}
+		@dummy["val"]=0;
+		#console.log(@joint.upper);
+		if(@joint.type!="fixed")
+			@controller=@gui.add(@dummy,"val",@joint.lower,@joint.upper,0.01).name(@joint.get("name"))
+			@controller.onChange(@changeval)
+		
+	changeval: (value) =>
+		@joint.movejoint(value)
+#		console.log( "new value" + value)
+
+window.clearall = (scene,robot,jointcollection,modelcollection) ->
+		scene.remove(robot)
+		#jointcollection.each( (joint) -> joint.destroy())
+		jointcollection.reset()
+		#modelcollection.each( (link) -> link.destroy())
+		
+		modelcollection.reset()
+		
+
+
+class App.RobotForm extends Backbone.View
+	el: $("#robodiv")
+	events:
+		"click #loadbutton": "resetNload"
+		
+	resetNload: ->
+		console.log("fufu2")
+		urdffromform=$(@el).find("#robottext").val()
+		clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
+		parseRobot(urdffromform);
+		setupGui()
+		console.log(urdffromform)
