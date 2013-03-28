@@ -11,3 +11,10 @@ nogo/
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
 mongoose-3.7.exe
+app.yaml
+app2.yaml
+favicon.ico
+main.py
+mongoose-3.7.exe
+makecoffie.bat
+.gitignore

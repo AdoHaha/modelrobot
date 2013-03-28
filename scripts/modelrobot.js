@@ -351,7 +351,6 @@
     RobotForm.prototype.resetNload = function() {
       var urdffromform;
 
-      console.log("fufu2");
       urdffromform = $(this.el).find("#robottext").val();
       clearall(window.scene, window.robot, window.robotjointcollection, window.robotlinkcollection);
       parseRobot(urdffromform);
