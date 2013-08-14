@@ -1,0 +1,35 @@
+<!-- test files -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QUnit Example</title>
+ 
+</head>
+<body>
+
+<div id="robodiv"><form id="robotform"><textarea name="robottext" rows="5" cols="80" id="robottext">Place robot URDF here</textarea>
+<button type="button" id="loadbutton">Load robot</button></form></div>
+<div id="container" style="height: 492px, width: 876px">
+		</div>
+
+
+
+
+
+
+<script src="{{ url_for('static', filename='scripts/three.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/jquery-1.9.1.js')}}"></script>
+<script src="{{ url_for('static', filename='scripts/jquery.xml2json.js')}}" type="text/javascript" language="javascript"></script>
+	<script src="{{ url_for('static',filename='lib/Detector.js')}}"></script>
+		<script src="{{ url_for('static', filename='lib/Coordinates.js')}}"></script>
+		<script src="{{ url_for('static', filename='lib/OrbitAndPanControls.js')}}"></script>
+		<script src="{{ url_for('static', filename='lib/TrackballControls.js')}}"></script>
+<script src="{{ url_for('static', filename='scripts/underscore.js')}}"></script>
+	<script src="{{ url_for('static',filename='scripts/backbone.js')}}"></script>
+	<script src="{{ url_for('static',filename='lib/dat.gui.min.js')}}"></script>
+	<script src="{{ url_for('static',filename='scripts/modelrobot.js')}}"></script>
+<script src="{{ url_for('static',filename='scripts/testxml.js')}}"></script>
+<script src="{{ url_for('static', filename='scripts/unit4-robot_arm_demo.js')}}"></script>
+</body>
+</html>
