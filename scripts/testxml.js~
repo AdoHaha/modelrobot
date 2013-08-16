@@ -116,6 +116,6 @@ window.robot.name="robot";
   // The Fattest
   scene.add(window.robot);
  // console.log(scene);
- renderer.render(scene, App.camera);
+ renderer.render(App.scene, App.camera);
 }
 

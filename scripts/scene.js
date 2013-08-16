@@ -18,7 +18,7 @@
 
   App.fillScene = function() {
     var ambientLight, light, light2;
-    window.scene = new THREE.Scene;
+    window.scene = window.scene || new THREE.Scene;
     scene.fog = new THREE.Fog(0x808080, 2000, 4000);
     ambientLight = new THREE.AmbientLight(0x222222);
     light = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -116,7 +116,7 @@
     App.gui = new dat.GUI();
     true;
     return App.robotjointmanipall = new App.RobotJointManipAll({
-      gui: window.gui,
+      gui: App.gui,
       joints: window.robotjointcollection
     });
   };
@@ -156,9 +156,11 @@
 
   forumula = new App.RobotForm();
 
-  $.when($.get("../testowe/pi_robot_urdf.urdf", parseRobot)).then(function() {
-    App.setupGui();
-    return App.animate();
+  $(function() {
+    return $.when($.get("../testowe/pi_robot_urdf.urdf", window.parseRobot)).then(function() {
+      App.setupGui();
+      return App.animate();
+    });
   });
 
 }).call(this);

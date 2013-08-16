@@ -25,7 +25,7 @@ Static scene filling
 -------------------
 
         App.fillScene = ->
-                window.scene = new THREE.Scene
+                window.scene = window.scene || new THREE.Scene
                 scene.fog = new THREE.Fog 0x808080,2000,4000
                 
                 ambientLight = new THREE.AmbientLight 0x222222
@@ -115,7 +115,7 @@ Controlling scene, using dat gui
                 App.gui = new dat.GUI();
                 true
 
-                App.robotjointmanipall= new App.RobotJointManipAll({gui:window.gui, joints: window.robotjointcollection});                	        
+                App.robotjointmanipall= new App.RobotJointManipAll({gui:App.gui, joints: window.robotjointcollection});                	        
 
 helper function takeScreenShot, will take screenshot when P is pressed
 It opens new window, where it shows work as a png, for easy saving
@@ -160,10 +160,13 @@ Starting it all
 
         $(document).ready(App.init)
         forumula = new App.RobotForm();
-        $.when($.get("../testowe/pi_robot_urdf.urdf",parseRobot)).then( ->
-                App.setupGui();
-                App.animate();
-                )
+        $ ->
+                $.when($.get("../testowe/pi_robot_urdf.urdf",window.parseRobot)).then( ->
+                        App.setupGui();
+                        App.animate();
+                      )
+                
+               
 
 
 #        $("body").keydown( event -> 
