@@ -8,15 +8,8 @@ App.el2array= (el,def="0 0 0",check=true)-> #returns array of numbers or default
 	arrayw=_.map(arrayw,(num)-> num*1)
 	arrayw
 class App.RobotJoint extends Backbone.Model
-	
-	###
- <joint name="gripper_extension" type="prismatic">
-    <parent link="base_link"/>
-    <child link="gripper_pole"/>
-    <limit effort="1000.0" lower="-0.38" upper="0" velocity="0.5"/>
-    <origin rpy="0 0 1.57075" xyz="0 0.19 .2"/>
-	  <axis xyz="0 0 1"/>
-	###
+
+
 	initialize: ->
 		@theta=0
 		@name=@attributes.name
@@ -32,21 +25,16 @@ class App.RobotJoint extends Backbone.Model
 		@upper=(_.has(@attributes,"limit")&&@attributes.limit.upper)|| Math.PI #could be Infinity
 		@lower=@lower*1
 		@upper=@upper*1
-#		console.log(@name)
-#		console.log(@lower)
-		
-#		console.log(@name)
-#		console.log(@upper)
+
+
 		basicMatrix=new THREE.Matrix4()
 		@movementMatrix=new THREE.Matrix4()
 		basicMatrix.setRotationFromEuler(@basicrotation)
 		basicMatrix.setPosition(@basicposition)
 		@basicMatrix=basicMatrix
 		@currentMatrix=new THREE.Matrix4();
-		
-		# console.log(@currentMatrix)
-		#else
-		#	@axis= new THREE.Vector3(1,0,0)
+
+
 		@type=@attributes.type;
 		@on("change:linkcollection",@jointogether)
 		@
@@ -227,7 +215,7 @@ class App.RobotForm extends Backbone.View
 	resetNload: ->
 	#	console.log("fufu2")
 		urdffromform=$(@el).find("#robottext").val()
-		clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
-		parseRobot(urdffromform);
+		window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
+		window.parseRobot(urdffromform);
 		App.setupGui()
 		console.log(urdffromform)

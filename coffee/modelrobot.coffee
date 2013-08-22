@@ -215,7 +215,7 @@ class App.RobotForm extends Backbone.View
 	resetNload: ->
 	#	console.log("fufu2")
 		urdffromform=$(@el).find("#robottext").val()
-		clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
-		parseRobot(urdffromform);
+		window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
+		window.parseRobot(urdffromform);
 		App.setupGui()
 		console.log(urdffromform)

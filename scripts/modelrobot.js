@@ -6,7 +6,7 @@
 
   window.App = window.App || {};
 
-  App.el2array = function(el, def, check) {
+  App.el2array = function(el, def, check, delim) {
     var arrayw, el2array;
     if (def == null) {
       def = "0 0 0";
@@ -14,8 +14,11 @@
     if (check == null) {
       check = true;
     }
+    if (delim == null) {
+      delim = " ";
+    }
     el2array = (check && el) || def;
-    arrayw = el2array.split(" ");
+    arrayw = el2array.split(delim);
     arrayw = _.map(arrayw, function(num) {
       return num * 1;
     });
@@ -350,8 +353,8 @@
     RobotForm.prototype.resetNload = function() {
       var urdffromform;
       urdffromform = $(this.el).find("#robottext").val();
-      clearall(window.scene, window.robot, window.robotjointcollection, window.robotlinkcollection);
-      parseRobot(urdffromform);
+      window.clearall(window.scene, window.robot, window.robotjointcollection, window.robotlinkcollection);
+      window.parseRobot(urdffromform);
       App.setupGui();
       return console.log(urdffromform);
     };
