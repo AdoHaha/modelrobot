@@ -25,7 +25,7 @@ Static scene filling
 -------------------
 
         App.fillScene = ->
-                window.scene = new THREE.Scene
+                window.scene = window.scene || new THREE.Scene
                 scene.fog = new THREE.Fog 0x808080,2000,4000
                 
                 ambientLight = new THREE.AmbientLight 0x222222

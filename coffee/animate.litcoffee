@@ -11,4 +11,7 @@ We will be setting functions to animate the robot
 e f e m b z d")
                 
                 
-   
+Function to animate from the view. 
+It needs an array of arrays where each "row" means joint value for robot
+        App.animateRobot = (steparrays, robot = App.robot, gui=) ->
+                

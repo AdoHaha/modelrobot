@@ -114,7 +114,7 @@ Controlling scene, using dat gui
     
                 App.gui = new dat.GUI();
                 true
-
+Creating gui for robot
                 App.robotjointmanipall= new App.RobotJointManipAll({gui:App.gui, joints: window.robotjointcollection});                	        
 
 helper function takeScreenShot, will take screenshot when P is pressed

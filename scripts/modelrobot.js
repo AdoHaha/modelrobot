@@ -83,7 +83,7 @@
       t1 = t1 || this.theta;
       tempMatrix = new THREE.Matrix4();
       tempaxis = new THREE.Vector3().copy(this.axis);
-      if (this.type === "continuous" || (t1 < this.upper && t1 > this.lower)) {
+      if (this.type === "continuous" || ((this.upper > t1 && t1 > this.lower))) {
         switch (this.type) {
           case "revolute":
             this.movementMatrix = tempMatrix.rotateByAxis(this.axis, t1);
@@ -101,6 +101,8 @@
             this.movementMatrix.identity();
         }
         this.theta = t1;
+      } else {
+        this.movementMatrix.identity();
       }
       this.currentMatrix.multiplyMatrices(this.basicMatrix, this.movementMatrix);
       this.childobject3d.matrix = this.currentMatrix;
@@ -271,6 +273,12 @@
 
     function RobotJointManipAll() {
       var _this = this;
+      this.changejointval = function(name, value) {
+        return RobotJointManipAll.prototype.changejointval.apply(_this, arguments);
+      };
+      this.changepose = function(posearray, namesarray) {
+        return RobotJointManipAll.prototype.changepose.apply(_this, arguments);
+      };
       this.add2gui = function(joint) {
         return RobotJointManipAll.prototype.add2gui.apply(_this, arguments);
       };
@@ -295,6 +303,24 @@
       });
     };
 
+    RobotJointManipAll.prototype.changepose = function(posearray, namesarray) {
+      var index, name, _i, _len;
+      if (posearray.length !== namesarray.length) {
+        console.log("pose and namearray have different lenghts");
+        return false;
+      }
+      for (index = _i = 0, _len = namesarray.length; _i < _len; index = ++_i) {
+        name = namesarray[index];
+        this.changejointval(name, posearray[index]);
+      }
+      return this;
+    };
+
+    RobotJointManipAll.prototype.changejointval = function(name, value) {
+      this.jointsarray[name].changeval(value, true);
+      return this;
+    };
+
     return RobotJointManipAll;
 
   })(Backbone.View);
@@ -305,7 +331,10 @@
 
     function RobotJointManipSingle() {
       var _this = this;
-      this.changeval = function(value) {
+      this.changeval = function(value, updateController) {
+        if (updateController == null) {
+          updateController = false;
+        }
         return RobotJointManipSingle.prototype.changeval.apply(_this, arguments);
       };
       return RobotJointManipSingle.__super__.constructor.apply(this, arguments);
@@ -322,8 +351,20 @@
       }
     };
 
-    RobotJointManipSingle.prototype.changeval = function(value) {
-      return this.joint.movejoint(value);
+    RobotJointManipSingle.prototype.changeval = function(value, updateController) {
+      if (updateController == null) {
+        updateController = false;
+      }
+      if ((this.joint.upper >= value && value >= this.joint.lower)) {
+        this.joint.movejoint(value);
+        if (updateController) {
+          this.dummy["val"] = value;
+          this.controller.updateDisplay();
+        }
+      } else {
+        console.log(this.joint.get("name") + " not between min max");
+      }
+      return this;
     };
 
     return RobotJointManipSingle;

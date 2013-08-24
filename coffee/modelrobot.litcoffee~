@@ -75,14 +75,17 @@ t2 - will be used when planar joint is implemented
                         tempMatrix=new THREE.Matrix4();
                         tempaxis= new THREE.Vector3().copy(@axis);
 
-                        if (@type=="continuous" or (t1<@upper and t1>@lower)) #check whether movement is allowed
+                        if (@type=="continuous" or (@upper > t1 >@lower)) #check whether movement is allowed
                                 switch @type
                                         when "revolute" then @movementMatrix=tempMatrix.rotateByAxis(@axis,t1)
                                         when "continuous" then @movementMatrix=tempMatrix.rotateByAxis(@axis,t1)
                                         when "prismatic" then @movementMatrix=tempMatrix.translate(tempaxis.multiplyScalar(t1))
                                         when "fixed" then @movementMatrix.identity()
                                         when "planar" then @movementMatrix.identity() #TODO
+                                        
                                 @theta=t1 #set current state of joint
+                        else # if not between upper and lower, do not move
+                                @movementMatrix.identity()
                         @currentMatrix.multiplyMatrices(@basicMatrix,@movementMatrix)
                         @childobject3d.matrix=@currentMatrix
                 
@@ -179,8 +182,9 @@ t2 - will be used when planar joint is implemented
         
         class App.RobotJointCollection extends Backbone.Collection
                 model:App.RobotJoint
-        
-        
+       
+Controller/view for joints. It also manages the views. To init it has to have an of joints, which it will internally keep as *joints* . Gui elements for each miniview are keept in array jointsarray
+
         class App.RobotJointManipAll extends Backbone.View
                 el: $("#menu")
                 jointsarray:{}
@@ -192,12 +196,25 @@ t2 - will be used when planar joint is implemented
                 
                         @anglesfolder=@gui.addFolder("Joint values");
                         @joints.each(@add2gui)
-                #        console.log(@gui)
-                #        console.log("angles folder");
-                #        console.log(@anglesfolder)
+                        
+ 
                 add2gui: (joint) =>
                         @jointsarray[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
 
+The idea behind changepose is: you provide two arrays, and using names it iterates through 
+                changepose: (posearray,namesarray) =>
+                        if(posearray.length!=namesarray.length)
+                                console.log("pose and namearray have different lenghts")
+                                return false
+                        for name, index in namesarray
+                                @changejointval(name,posearray[index])
+                        
+                        @
+                                
+                changejointval: (name,value) =>
+                        @jointsarray[name].changeval(value,true)
+                        @
+                        
         class App.RobotJointManipSingle extends Backbone.View
 
                 initialize:->
@@ -211,8 +228,17 @@ t2 - will be used when planar joint is implemented
                                 @controller=@gui.add(@dummy,"val",@joint.lower,@joint.upper,0.01).name(@joint.get("name"))
                                 @controller.onChange(@changeval)
                 
-                changeval: (value) =>
-                        @joint.movejoint(value)
+                changeval: (value,updateController=false) =>
+                        if (@joint.upper >= value >= @joint.lower)
+                        
+                                @joint.movejoint(value)
+                                if updateController
+                                        @dummy["val"]=value
+                                        @controller.updateDisplay()
+                        else
+                                console.log(@joint.get("name")+"not between min max")
+                                                 
+                        @    
         #                console.log( "new value" + value)
 
 Currently this function just tries to reset all. Robot, jointcollection, modelcollection
@@ -242,3 +268,6 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         window.parseRobot(urdffromform);
                         App.setupGui()
                         console.log(urdffromform)
+                        
+                      
+

@@ -180,6 +180,7 @@ class App.RobotJointManipAll extends Backbone.View
 	add2gui: (joint) =>
 		@jointsarray[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
 
+#gui for each element. 
 class App.RobotJointManipSingle extends Backbone.View
 
 	initialize:->
