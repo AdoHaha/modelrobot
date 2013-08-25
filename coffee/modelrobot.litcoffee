@@ -14,7 +14,7 @@ we can have additional info stating whether el value is correct as a third argum
                 el2array=(check&&el)||def
                 arrayw=el2array.split(delim)
                 arrayw=_.map(arrayw,(num)-> num*1)
-                arrayw
+                return arrayw
                 
                 
 Model of robot joint, it is responsible of moving links: connecting them together with parent-child relation, as well as moving with controlls/ animation
@@ -68,6 +68,7 @@ Model of robot joint, it is responsible of moving links: connecting them togethe
 Method to change joint theta value and in process move child link. It changes current value or child matrix and upgrades value of this.theta. 
 t1 - joint value
 t2 - will be used when planar joint is implemented
+When movement is impossible, return false
 
                 movejoint: (t1,t2) => #TODO planar type
                         t1=t1||@theta
@@ -84,8 +85,9 @@ t2 - will be used when planar joint is implemented
                                         when "planar" then @movementMatrix.identity() #TODO
                                         
                                 @theta=t1 #set current state of joint
-                        else # if not between upper and lower, do not move
+                        else # if not between upper and lower, do not move, return that movejoint failed
                                 @movementMatrix.identity()
+                                return false
                         @currentMatrix.multiplyMatrices(@basicMatrix,@movementMatrix)
                         @childobject3d.matrix=@currentMatrix
                 
@@ -227,22 +229,25 @@ The idea behind changepose is: you provide two arrays, and using names it iterat
                         if(@joint.type!="fixed")
                                 @controller=@gui.add(@dummy,"val",@joint.lower,@joint.upper,0.01).name(@joint.get("name"))
                                 @controller.onChange(@changeval)
-                
+                                
+*changeval* is method to control joint from this object, if updateController is false it will just use movejoint method. Otherwise, it will also update the state of slider and state of itself - this is used when this method is accessed from the outside, not from onChange event.
+Checks about validity of movement are made inside @joint, we just check whether it succeeded
+
                 changeval: (value,updateController=false) =>
-                        if (@joint.upper >= value >= @joint.lower)
+                        #if (@joint.upper >= value >= @joint.lower)
                         
-                                @joint.movejoint(value)
+                        if @joint.movejoint(value)
                                 if updateController
                                         @dummy["val"]=value
                                         @controller.updateDisplay()
                         else
-                                console.log(@joint.get("name")+" not between min max")
+                                console.log(@joint.get("name")+" not between min max") #TODO change it to some pretty alert visable to user
                                                  
                         @    
         #                console.log( "new value" + value)
 
 Currently this function just tries to reset all. Robot, jointcollection, modelcollection
-It does not change params of scene
+It does not change params of scene. TODO: soft reset, that is draw robot from new URDF but change just what changed, not all. Especially don't change pose. 
 
 
         window.clearall = (scene,robot,jointcollection,modelcollection) ->
@@ -268,6 +273,66 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         window.parseRobot(urdffromform);
                         App.setupGui()
                         console.log(urdffromform)
+
+                       
+Helper function for robot animation. 
+
+        App.prepareArrayfromCSV = (csvstring) ->
+                # parseCSV: function(delimiter, qualifier, escape, lineDelimiter)
+                resArray=CSVToArray(csvstring," ")
+                console.log(resArray)
+                resArray
+
+AnimationForm class will control robot animation, from the form submission, in different modes
+* play: plays through poses set in @poses with points in time set in @times array
+* pause: stops playing 
+* stop: stops and resets
+* step: goes through @poses 
+        class App.AnimationForm extends Backbone.View
+                el: $("animdiv")
+                names:[]
+                poses:[]
+                deltaTime:0.1
+
+Helper function that prepares 3 arrays from comma seperated values string. Times can be explicetely stated in first column, if not, it will create array of times with deltaTime timestep
+                prepareArraysfromCSV : (csvstring) =>
+                        allfromcsv=CSVToArray(csvstring) #I use some CSVToArray function found on web
+                        if allfromcsv.length<2
+                                console.log("It should have at least names and one pose row")
+                                return false
                         
-                      
+                        #from here, we devide in 3 arrays: names, times, poses
+                        head=allfromcsv[0]
+                        body=allfromcsv[1..]
+                        hastimes=head[0]=="time"
+                        console.log(hastimes)
+                        if hastimes #there is explicitely set array of times
+                                console.log("fufu2???")
+                                @names=_.rest(head)
+                                @poses=[]
+                                @times=[]
+                                _.each(body, (element) ->
+                                        @times.push(_.first(element))
+                                        @poses.push(_.rest(element))
+                                       ,@)
+                        else
+                                @names=head
+                                @poses=[]
+                                _.each(body,(element) ->
+                                        @poses.push(element)
+                                ,@)
+                                
+                                @times=_.range(0,@poses.length,@deltaTime) #to step each DetltaTime
+                        return @                
+                                
+                nextstep : => #TODO
+                        if times.length==poses.length>0 #is init
+                                
+                        else
+                                return false                        
+                
+Function to animate from the view. 
+It needs an array of arrays where each "row" means joint value for robot
+        #App.animateRobot = (steparrays, robot = App.robot, gui=) ->
+                                     
 

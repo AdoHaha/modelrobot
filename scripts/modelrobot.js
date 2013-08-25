@@ -103,6 +103,7 @@
         this.theta = t1;
       } else {
         this.movementMatrix.identity();
+        return false;
       }
       this.currentMatrix.multiplyMatrices(this.basicMatrix, this.movementMatrix);
       this.childobject3d.matrix = this.currentMatrix;
@@ -355,8 +356,7 @@
       if (updateController == null) {
         updateController = false;
       }
-      if ((this.joint.upper >= value && value >= this.joint.lower)) {
-        this.joint.movejoint(value);
+      if (this.joint.movejoint(value)) {
         if (updateController) {
           this.dummy["val"] = value;
           this.controller.updateDisplay();
@@ -401,6 +401,68 @@
     };
 
     return RobotForm;
+
+  })(Backbone.View);
+
+  App.prepareArrayfromCSV = function(csvstring) {
+    var resArray;
+    resArray = CSVToArray(csvstring, " ");
+    console.log(resArray);
+    return resArray;
+  };
+
+  App.AnimationForm = (function(_super) {
+
+    __extends(AnimationForm, _super);
+
+    function AnimationForm() {
+      var _this = this;
+      this.prepareArraysfromCSV = function(csvstring) {
+        return AnimationForm.prototype.prepareArraysfromCSV.apply(_this, arguments);
+      };
+      return AnimationForm.__super__.constructor.apply(this, arguments);
+    }
+
+    AnimationForm.prototype.el = $("animdiv");
+
+    AnimationForm.prototype.names = [];
+
+    AnimationForm.prototype.poses = [];
+
+    AnimationForm.prototype.deltaTime = 0.1;
+
+    AnimationForm.prototype.prepareArraysfromCSV = function(csvstring) {
+      var allfromcsv, body, hastimes, head;
+      allfromcsv = CSVToArray(csvstring);
+      if (allfromcsv.length < 2) {
+        console.log("It should have at least names and one pose row");
+        return false;
+      }
+      head = allfromcsv[0];
+      body = allfromcsv.slice(1);
+      hastimes = head[0] === "time";
+      console.log(hastimes);
+      if (hastimes) {
+        console.log("fufu2???");
+        this.names = _.rest(head);
+        this.poses = [];
+        this.times = [];
+        _.each(body, function(element) {
+          this.times.push(_.first(element));
+          return this.poses.push(_.rest(element));
+        }, this);
+      } else {
+        this.names = head;
+        this.poses = [];
+        _.each(body, function(element) {
+          return this.poses.push(element);
+        }, this);
+        this.times = _.range(0, this.poses.length, this.deltaTime);
+      }
+      return this;
+    };
+
+    return AnimationForm;
 
   })(Backbone.View);
 
