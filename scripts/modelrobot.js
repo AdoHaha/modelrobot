@@ -434,6 +434,12 @@
       return this;
     };
 
+    Clock.prototype.set = function(timeinsec) {
+      this.zerotime = timeinsec;
+      this.elapsedTime = timeinsec;
+      return this;
+    };
+
     return Clock;
 
   })(THREE.Clock);
@@ -444,6 +450,15 @@
 
     function AnimationForm() {
       var _this = this;
+      this.prevstep = function() {
+        return AnimationForm.prototype.prevstep.apply(_this, arguments);
+      };
+      this.nextstep = function() {
+        return AnimationForm.prototype.nextstep.apply(_this, arguments);
+      };
+      this.settostaticframe = function(framenum) {
+        return AnimationForm.prototype.settostaticframe.apply(_this, arguments);
+      };
       this.update = function() {
         return AnimationForm.prototype.update.apply(_this, arguments);
       };
@@ -493,7 +508,9 @@
       "keydown #robotcsv": "pp",
       "click #playbutton": "playbutton",
       "click #pausebutton": "pausebutton",
-      "click #stopbutton": "stopbutton"
+      "click #stopbutton": "stopbutton",
+      "click #nextbutton": "nextstep",
+      "click #prevbutton": "prevstep"
     };
 
     AnimationForm.prototype.playbutton = function() {
@@ -552,7 +569,7 @@
         _.each(body, function(element) {
           return this.poses.push(element);
         }, this);
-        this.times = _.range(0, this.poses.length, this.deltaTime);
+        this.times = _.range(0, (this.poses.length - 1) * this.deltaTime, this.deltaTime);
       }
       return this;
     };
@@ -601,6 +618,37 @@
         this.play();
       }
       return this;
+    };
+
+    AnimationForm.prototype.settostaticframe = function(framenum) {
+      var pose;
+      pose = this.poses[framenum];
+      this.robotcontroller.changepose(pose, this.names);
+      this.curframe = framenum;
+      this.curtime.set(this.times[framenum]);
+      return this;
+    };
+
+    AnimationForm.prototype.nextstep = function() {
+      var testframe;
+      this.state = "stepmode";
+      testframe = this.curframe + 1;
+      if (testframe >= (this.times.length - 1)) {
+
+      } else {
+        return this.settostaticframe(testframe);
+      }
+    };
+
+    AnimationForm.prototype.prevstep = function() {
+      var testframe;
+      this.state = "stepmode";
+      testframe = this.curframe - 1;
+      if (testframe < 0) {
+
+      } else {
+        return this.settostaticframe(testframe);
+      }
     };
 
     return AnimationForm;

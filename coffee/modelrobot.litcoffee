@@ -291,6 +291,10 @@ Helper clock, I have just added zerotime - to be able to have
                 reset: () -> #because stop just pauses
                         @stop().elapsedTime=0
                         @
+                set: (timeinsec) -> #"sets the clock" - 
+                        @zerotime=timeinsec
+                        @elapsedTime=timeinsec
+                        @
                         
                         
         
@@ -324,6 +328,8 @@ AnimationForm class will control robot animation, from the form submission, in d
                         "click #playbutton": "playbutton"
                         "click #pausebutton": "pausebutton"
                         "click #stopbutton": "stopbutton"
+                        "click #nextbutton": "nextstep"
+                        "click #prevbutton": "prevstep"
                 playbutton:->
                         @state="playing"
                         @curtime.start()
@@ -386,7 +392,7 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                                         @poses.push(element)
                                 ,@)
                                 
-                                @times=_.range(0,@poses.length,@deltaTime) #to step each DetltaTime
+                                @times=_.range(0,(@poses.length-1)*@deltaTime,@deltaTime) #to step each DetltaTime
                         return @                
                 findframetoshow: (currtime) => #we assume that frames are sorted by time (it is done in prepareArraysFromCSV)
                         frame=@curframe
@@ -430,12 +436,28 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                         if(@state=="playing")
                                 #App.notsofast("updating")
                                 @play()
-                        @               
-#                nextstep : => #TODO
-#                        if times.length==poses.length>0 #is init
-#                                
-#                        else
-#                                return false                        
+                        @
+                 settostaticframe : (framenum) =>
+                         pose=@poses[framenum]
+                         @robotcontroller.changepose(pose,@names)
+                         @curframe=framenum
+                         @curtime.set(@times[framenum])
+                         @
+                 nextstep : => 
+                        @state="stepmode"
+                        testframe=@curframe+1
+                        if(testframe>=(@times.length-1))
+                        #last one was last ;)
+                        else
+                                @settostaticframe(testframe)
+                 prevstep : =>
+                        @state="stepmode"
+                        testframe=@curframe-1
+                        if ( testframe < 0 )
+                                #we have come to beginning TODO maybie rewind?
+                        else
+                               @settostaticframe(testframe)
+                               
                 
 Just a small helper to show what is with animation
         App.notsofast = _.throttle( (tekkx)->
