@@ -116,7 +116,7 @@ Controlling scene, using dat gui
                 true
 Creating gui for robot
                 App.robotjointmanipall= new App.RobotJointManipAll({gui:App.gui, joints: window.robotjointcollection});                	        
-
+                App.animform.robotcontroller=App.robotjointmanipall #TODO, this is awkward hack
 helper function takeScreenShot, will take screenshot when P is pressed
 It opens new window, where it shows work as a png, for easy saving
 
@@ -153,14 +153,20 @@ Function to animate our scene
 
                         App.fillScene();
                 window.renderer.render(scene,App.camera)
+                
+                
+App.animform is an animation controller with different states. 
+                App.animform.update() if App.animform?
                 true
                 
 Starting it all
 ------------
 
         $(document).ready(App.init)
-        forumula = new App.RobotForm();
+        
         $ ->
+                App.forumula = new App.RobotForm();
+                App.animform = new App.AnimationForm({robotcontroller:App.robotjointmanipall});
                 $.when($.get("../testowe/pi_robot_urdf.urdf",window.parseRobot)).then( ->
                         App.setupGui();
                         App.animate();

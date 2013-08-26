@@ -307,7 +307,7 @@
     RobotJointManipAll.prototype.changepose = function(posearray, namesarray) {
       var index, name, _i, _len;
       if (posearray.length !== namesarray.length) {
-        console.log("pose and namearray have different lenghts");
+        console.log("pose and namearray have different lengths");
         return false;
       }
       for (index = _i = 0, _len = namesarray.length; _i < _len; index = ++_i) {
@@ -404,12 +404,39 @@
 
   })(Backbone.View);
 
-  App.prepareArrayfromCSV = function(csvstring) {
-    var resArray;
-    resArray = CSVToArray(csvstring, " ");
-    console.log(resArray);
-    return resArray;
-  };
+  App.Clock = (function(_super) {
+
+    __extends(Clock, _super);
+
+    function Clock(autostart, zeroTime) {
+      var _ref;
+      this.zeroTime = zeroTime;
+      if ((_ref = this.zeroTime) == null) {
+        this.zeroTime = 0;
+      }
+      Clock.__super__.constructor.call(this, autostart);
+    }
+
+    Clock.prototype.start = function(zerotime) {
+      Clock.__super__.start.apply(this, arguments);
+      this.zeroTime = zerotime != null ? zerotime : this.zeroTime;
+      this.oldTime = this.oldTime - this.zeroTime;
+      return this;
+    };
+
+    Clock.prototype.stop = function() {
+      Clock.__super__.stop.apply(this, arguments);
+      return this;
+    };
+
+    Clock.prototype.reset = function() {
+      this.stop().elapsedTime = 0;
+      return this;
+    };
+
+    return Clock;
+
+  })(THREE.Clock);
 
   App.AnimationForm = (function(_super) {
 
@@ -417,19 +444,86 @@
 
     function AnimationForm() {
       var _this = this;
+      this.update = function() {
+        return AnimationForm.prototype.update.apply(_this, arguments);
+      };
+      this.pause = function() {
+        return AnimationForm.prototype.pause.apply(_this, arguments);
+      };
+      this.stop = function() {
+        return AnimationForm.prototype.stop.apply(_this, arguments);
+      };
+      this.play = function() {
+        return AnimationForm.prototype.play.apply(_this, arguments);
+      };
+      this.findframetoshow = function(currtime) {
+        return AnimationForm.prototype.findframetoshow.apply(_this, arguments);
+      };
       this.prepareArraysfromCSV = function(csvstring) {
         return AnimationForm.prototype.prepareArraysfromCSV.apply(_this, arguments);
+      };
+      this.loadURDFfromForm = function() {
+        return AnimationForm.prototype.loadURDFfromForm.apply(_this, arguments);
       };
       return AnimationForm.__super__.constructor.apply(this, arguments);
     }
 
-    AnimationForm.prototype.el = $("animdiv");
+    AnimationForm.prototype.el = $("#animdiv");
 
     AnimationForm.prototype.names = [];
 
     AnimationForm.prototype.poses = [];
 
+    AnimationForm.prototype.times = [];
+
     AnimationForm.prototype.deltaTime = 0.1;
+
+    AnimationForm.prototype.curframe = 0;
+
+    AnimationForm.prototype.initialize = function() {
+      this.curtime = new App.Clock(false);
+      this.robotcontroller = this.options.robotcontroller;
+      this.zerotime = 0;
+      return this.state = "stopped";
+    };
+
+    AnimationForm.prototype.events = {
+      "click #loadcsv": "loadURDFfromForm",
+      "keypress #journaltext": "keypressed",
+      "keydown #robotcsv": "pp",
+      "click #playbutton": "playbutton",
+      "click #pausebutton": "pausebutton",
+      "click #stopbutton": "stopbutton"
+    };
+
+    AnimationForm.prototype.playbutton = function() {
+      this.state = "playing";
+      this.curtime.start();
+      return this.play();
+    };
+
+    AnimationForm.prototype.stopbutton = function() {
+      this.state = "stopped";
+      this.stop();
+      return this.robotcontroller.changepose(this.poses[0], this.names);
+    };
+
+    AnimationForm.prototype.pausebutton = function() {
+      this.state = "paused";
+      return this.pause();
+    };
+
+    AnimationForm.prototype.pp = function(e) {
+      e.stopPropagation();
+      return this;
+    };
+
+    AnimationForm.prototype.loadURDFfromForm = function() {
+      var formcsv;
+      formcsv = $("#robotcsv").val();
+      this.prepareArraysfromCSV(formcsv);
+      return this;
+    };
 
     AnimationForm.prototype.prepareArraysfromCSV = function(csvstring) {
       var allfromcsv, body, hastimes, head;
@@ -441,12 +535,13 @@
       head = allfromcsv[0];
       body = allfromcsv.slice(1);
       hastimes = head[0] === "time";
-      console.log(hastimes);
       if (hastimes) {
-        console.log("fufu2???");
         this.names = _.rest(head);
         this.poses = [];
         this.times = [];
+        body = _.sortBy(body, function(element) {
+          return _.first(element);
+        });
         _.each(body, function(element) {
           this.times.push(_.first(element));
           return this.poses.push(_.rest(element));
@@ -462,8 +557,59 @@
       return this;
     };
 
+    AnimationForm.prototype.findframetoshow = function(currtime) {
+      var frame;
+      frame = this.curframe;
+      while ((frame <= this.times.length) && (this.times[frame + 1] < currtime)) {
+        frame += 1;
+      }
+      return frame;
+    };
+
+    AnimationForm.prototype.play = function() {
+      var currtime, pose;
+      currtime = this.curtime.getElapsedTime();
+      this.curframe = this.findframetoshow(currtime);
+      pose = this.poses[this.curframe];
+      if (this.curframe >= (this.times.length - 1)) {
+        this.stop();
+      }
+      if (pose !== this.pose) {
+        this.robotcontroller.changepose(pose, this.names);
+      }
+      this.pose = pose;
+      return this;
+    };
+
+    AnimationForm.prototype.stop = function() {
+      this.savetime = 0;
+      this.curframe = 0;
+      this.curtime.reset();
+      this.state = "stopped";
+      return this;
+    };
+
+    AnimationForm.prototype.pause = function() {
+      this.savetime = this.curtime.getElapsedTime();
+      this.curtime.stop();
+      this.state = "paused";
+      return this;
+    };
+
+    AnimationForm.prototype.update = function() {
+      if (this.state === "playing") {
+        this.play();
+      }
+      return this;
+    };
+
     return AnimationForm;
 
   })(Backbone.View);
+
+  App.notsofast = _.throttle(function(tekkx) {
+    console.log(tekkx);
+    return true;
+  }, 1000);
 
 }).call(this);

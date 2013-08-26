@@ -206,7 +206,7 @@ Controller/view for joints. It also manages the views. To init it has to have an
 The idea behind changepose is: you provide two arrays, and using names it iterates through 
                 changepose: (posearray,namesarray) =>
                         if(posearray.length!=namesarray.length)
-                                console.log("pose and namearray have different lenghts")
+                                console.log("pose and namearray have different lengths")
                                 return false
                         for name, index in namesarray
                                 @changejointval(name,posearray[index])
@@ -257,7 +257,8 @@ It does not change params of scene. TODO: soft reset, that is draw robot from ne
                         #modelcollection.each( (link) -> link.destroy())
                 
                         modelcollection.reset()
-                
+                        
+            
 
 Functions connected to top form, where URDF is placed. TODO: it schouldn't reset all if not asked, just update. This will make it more interactive.
 
@@ -274,14 +275,27 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         App.setupGui()
                         console.log(urdffromform)
 
-                       
-Helper function for robot animation. 
+Helper clock, I have just added zerotime - to be able to have 
+        class App.Clock extends THREE.Clock #just adding zerotime - we can manipulate thing that was called oldtime so that get elapsedTime can be non zero at the beginning
+                constructor: (autostart,@zeroTime)->
+                        @zeroTime?=0
+                        super autostart
+                start: (zerotime)->    
+                        super #XXX it is running but we still play with it ?
+                        @zeroTime =zerotime ? @zeroTime
+                        this.oldTime=@oldTime-@zeroTime
+                        @
+                stop: () -> #I like chaining , btw stop is essentially a pouse?
+                        super
+                        @
+                reset: () -> #because stop just pauses
+                        @stop().elapsedTime=0
+                        @
+                        
+                        
+        
 
-        App.prepareArrayfromCSV = (csvstring) ->
-                # parseCSV: function(delimiter, qualifier, escape, lineDelimiter)
-                resArray=CSVToArray(csvstring," ")
-                console.log(resArray)
-                resArray
+
 
 AnimationForm class will control robot animation, from the form submission, in different modes
 * play: plays through poses set in @poses with points in time set in @times array
@@ -289,14 +303,59 @@ AnimationForm class will control robot animation, from the form submission, in d
 * stop: stops and resets
 * step: goes through @poses 
         class App.AnimationForm extends Backbone.View
-                el: $("animdiv")
+                el: $("#animdiv")
                 names:[]
                 poses:[]
+                times:[]
                 deltaTime:0.1
+                curframe:0
+                
+                initialize:->
+                        #console.log("intialize robotjointmanipsingle");
+                        @curtime=new App.Clock(false) # init timer without autostart
+                        
+                        @robotcontroller=@options.robotcontroller
+                        @zerotime=0 # it will be used when pousing, stepping
+                        @state="stopped"
+                events:
+                        "click #loadcsv": "loadURDFfromForm"
+                        "keypress #journaltext": "keypressed"
+                        "keydown #robotcsv": "pp"
+                        "click #playbutton": "playbutton"
+                        "click #pausebutton": "pausebutton"
+                        "click #stopbutton": "stopbutton"
+                playbutton:->
+                        @state="playing"
+                        @curtime.start()
+                        @play()
+                stopbutton:->
+                        @state="stopped"
+                        @stop()
+                        @robotcontroller.changepose(@poses[0],@names) #full rewind
+                        
+                pausebutton:->
+                        @state="paused"
+                        @pause()
+                        
+                        
+                pp: (e) ->
+                        #console.log("eneter")
+                        e.stopPropagation()
+                        @
+                
+                loadURDFfromForm: ()=>
+                        #console.log("wshoa")
+                        formcsv=$("#robotcsv").val()
+                        #console.log(formcsv)
+                        @prepareArraysfromCSV(formcsv)
+                        @
+
+
 
 Helper function that prepares 3 arrays from comma seperated values string. Times can be explicetely stated in first column, if not, it will create array of times with deltaTime timestep
                 prepareArraysfromCSV : (csvstring) =>
                         allfromcsv=CSVToArray(csvstring) #I use some CSVToArray function found on web
+                        #console.log(allfromcsv)
                         if allfromcsv.length<2
                                 console.log("It should have at least names and one pose row")
                                 return false
@@ -305,12 +364,17 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                         head=allfromcsv[0]
                         body=allfromcsv[1..]
                         hastimes=head[0]=="time"
-                        console.log(hastimes)
+                        #console.log(hastimes)
                         if hastimes #there is explicitely set array of times
-                                console.log("fufu2???")
+                                
                                 @names=_.rest(head)
                                 @poses=[]
                                 @times=[]
+                                body=_.sortBy(body, (element) ->
+                                        return _.first(element) 
+                                        )
+                                
+                                 #making sure times are growing (sortinig)
                                 _.each(body, (element) ->
                                         @times.push(_.first(element))
                                         @poses.push(_.rest(element))
@@ -324,15 +388,59 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                                 
                                 @times=_.range(0,@poses.length,@deltaTime) #to step each DetltaTime
                         return @                
+                findframetoshow: (currtime) => #we assume that frames are sorted by time (it is done in prepareArraysFromCSV)
+                        frame=@curframe
+                       
+                        while ( ((frame)<=@times.length) && (@times[frame+1]<currtime)       )
                                 
-                nextstep : => #TODO
-                        if times.length==poses.length>0 #is init
+                                frame+=1
                                 
-                        else
-                                return false                        
+                        #thinking whether to change @currframe here                   
+                        return frame
+                 play: =>
+                        #if @curtime.running
+                        currtime=@curtime.getElapsedTime()
+                        
+                        #console.log(currtime)
+                        @curframe=@findframetoshow(currtime)
+                        #App.notsofast(@curframe)
+                        #console.log(@currframe)
+                        pose=@poses[@curframe]
+                        #console.log(pose)
+                        if(@curframe>=(@times.length-1)) #shouldn't ever be bigger
+                                #console.log("fin")
+                                @stop()
+                        if(pose!=@pose) #don't calculate when there is no need
+                                @robotcontroller.changepose(pose,@names)
+                        @pose=pose
+                        @
+                 stop: =>
+                        @savetime=0 #it will restart with curtime =0
+                        @curframe=0 #rewind
+                        @curtime.reset()
+                        @state="stopped"
+                        @
+                 pause: =>
+                        @savetime=@curtime.getElapsedTime() #it will restart with curtime =savetime
+                        @curtime.stop()
+                        @state="paused"
+                        @
+                 update: () => #this will be updated at each render frame (it has to be put at render)
+                        
+                        if(@state=="playing")
+                                #App.notsofast("updating")
+                                @play()
+                        @               
+#                nextstep : => #TODO
+#                        if times.length==poses.length>0 #is init
+#                                
+#                        else
+#                                return false                        
                 
-Function to animate from the view. 
-It needs an array of arrays where each "row" means joint value for robot
-        #App.animateRobot = (steparrays, robot = App.robot, gui=) ->
-                                     
+Just a small helper to show what is with animation
+        App.notsofast = _.throttle( (tekkx)->
+                                console.log(tekkx)
+                                return true
+                     ,1000)
+        #App.notsofast("fufu")                                          
 
