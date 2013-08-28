@@ -4,6 +4,7 @@ We base whole program on Backbone.js. Each part is a model, as well as joints.
 
 
 I tried  so that all robot parts ware  in App namespace
+        
         window.App = window.App||{};
 
 
@@ -218,9 +219,11 @@ The idea behind changepose is: you provide two arrays, and using names it iterat
                 changejointval: (name,value) =>
                         @jointsdict[name].changeval(value,true)
                         @
+                        
 *jointsval* Method that returns values of selected joints as array. When names is empty, it will give values of all joints and all names.
 This is so that it can be used to generate CSV of joint poses.
 Returns array array[0] joint values array[1] joint names
+
                 jointsval: (names) =>
                         if (!(names?) or names=="" or names.length==0) #empty or not specified
                                 movable=@joints.filter( (joint) ->
@@ -313,6 +316,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         console.log(urdffromform)
 
 Helper clock, I have just added zerotime - to be able to have 
+
         class App.Clock extends THREE.Clock #just adding zerotime - we can manipulate thing that was called oldtime so that get elapsedTime can be non zero at the beginning
                 constructor: (autostart,@zeroTime)->
                         @zeroTime?=0
@@ -343,6 +347,7 @@ AnimationForm class will control robot animation, from the form submission, in d
 * pause: stops playing 
 * stop: stops and resets
 * step: goes through @poses 
+
         class App.AnimationForm extends Backbone.View
                 el: $("#animdiv")
                 names:[]
@@ -429,6 +434,7 @@ AnimationForm class will control robot animation, from the form submission, in d
 
 
 Helper function that prepares 3 arrays from comma seperated values string. Times can be explicetely stated in first column, if not, it will create array of times with deltaTime timestep
+
                 prepareArraysfromCSV : (csvstring) =>
                         #clear all as this can be users intention
                         @names=[]
@@ -544,6 +550,7 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                         @prettify()       
                 
 Just a small helper to show what is with animation
+
         App.notsofast = _.throttle( (tekkx)->
                                 console.log(tekkx)
                                 return true
