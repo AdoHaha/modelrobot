@@ -10,13 +10,14 @@
 
 <div id="robodiv"><form id="robotform"><div>Robot's URDF</div><textarea name="robottext" rows="5" cols="80" id="robottext" placeholder="Place robot's URDF here"></textarea>
 <button type="button" id="loadbutton">Load robot URDF</button></form></div>
-<div id="animdiv"><form id="animform"><div>Robot's poses CSV</div><textarea name="animcsv" rows="2" cols="80" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
+<div id="animdiv"><form id="animform"><div>Robot's poses CSV</div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" cols="80" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
 <button type="button" id="loadcsv">Load CSV</button>
 <button type="button" id="playbutton">Play</button>
 <button type="button" id="pausebutton">Pause</button>
 <button type="button" id="stopbutton">Stop</button>
 <button type="button" id="prevbutton"><</button>
 <button type="button" id="nextbutton">></button>
+<button type="button" id="addposition">Add current position</button>
 </form></div>
 <div id="container" style="height: 492px, width: 876px">
 		</div>

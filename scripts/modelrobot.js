@@ -31,6 +31,9 @@
 
     function RobotJoint() {
       var _this = this;
+      this.jointval = function() {
+        return RobotJoint.prototype.jointval.apply(_this, arguments);
+      };
       this.movejoint = function(t1, t2) {
         return RobotJoint.prototype.movejoint.apply(_this, arguments);
       };
@@ -108,6 +111,10 @@
       this.currentMatrix.multiplyMatrices(this.basicMatrix, this.movementMatrix);
       this.childobject3d.matrix = this.currentMatrix;
       return this;
+    };
+
+    RobotJoint.prototype.jointval = function() {
+      return this.theta;
     };
 
     return RobotJoint;
@@ -274,6 +281,9 @@
 
     function RobotJointManipAll() {
       var _this = this;
+      this.jointsval = function(names) {
+        return RobotJointManipAll.prototype.jointsval.apply(_this, arguments);
+      };
       this.changejointval = function(name, value) {
         return RobotJointManipAll.prototype.changejointval.apply(_this, arguments);
       };
@@ -288,7 +298,7 @@
 
     RobotJointManipAll.prototype.el = $("#menu");
 
-    RobotJointManipAll.prototype.jointsarray = {};
+    RobotJointManipAll.prototype.jointsdict = {};
 
     RobotJointManipAll.prototype.initialize = function() {
       this.gui = this.options.gui || new dat.GUI();
@@ -298,7 +308,7 @@
     };
 
     RobotJointManipAll.prototype.add2gui = function(joint) {
-      return this.jointsarray[joint.get("name")] = new App.RobotJointManipSingle({
+      return this.jointsdict[joint.get("name")] = new App.RobotJointManipSingle({
         joint: joint,
         gui: this.anglesfolder
       });
@@ -318,8 +328,22 @@
     };
 
     RobotJointManipAll.prototype.changejointval = function(name, value) {
-      this.jointsarray[name].changeval(value, true);
+      this.jointsdict[name].changeval(value, true);
       return this;
+    };
+
+    RobotJointManipAll.prototype.jointsval = function(names) {
+      var movable, values;
+      if (!(names != null) || names === "" || names.length === 0) {
+        movable = this.joints.filter(function(joint) {
+          return joint.type !== "fixed";
+        });
+        names = _.pluck(movable, "name");
+      }
+      values = _.map(names, function(name) {
+        return this.jointsdict[name].jointval();
+      }, this);
+      return [values, names];
     };
 
     return RobotJointManipAll;
@@ -332,6 +356,9 @@
 
     function RobotJointManipSingle() {
       var _this = this;
+      this.jointval = function() {
+        return RobotJointManipSingle.prototype.jointval.apply(_this, arguments);
+      };
       this.changeval = function(value, updateController) {
         if (updateController == null) {
           updateController = false;
@@ -345,9 +372,11 @@
       this.joint = this.options.joint;
       this.gui = this.options.gui;
       this.dummy = {};
-      this.dummy["val"] = 0;
+      this.dummy["val"] = 0.01;
       if (this.joint.type !== "fixed") {
-        this.controller = this.gui.add(this.dummy, "val", this.joint.lower, this.joint.upper, 0.01).name(this.joint.get("name"));
+        this.controller = this.gui.add(this.dummy, 'val', this.joint.lower, this.joint.upper, 0.01).name(this.joint.get("name"));
+        this.dummy["val"] = 0;
+        this.controller.updateDisplay();
         return this.controller.onChange(this.changeval);
       }
     };
@@ -365,6 +394,16 @@
         console.log(this.joint.get("name") + " not between min max");
       }
       return this;
+    };
+
+    RobotJointManipSingle.prototype.jointval = function() {
+      var jointv;
+      jointv = this.joint.jointval();
+      if ((this.dummy["val"] = !jointv)) {
+        this.dummy["val"] = jointv;
+        this.controller.updateDisplay();
+      }
+      return jointv;
     };
 
     return RobotJointManipSingle;
@@ -477,6 +516,9 @@
       this.prepareArraysfromCSV = function(csvstring) {
         return AnimationForm.prototype.prepareArraysfromCSV.apply(_this, arguments);
       };
+      this.prettify = function() {
+        return AnimationForm.prototype.prettify.apply(_this, arguments);
+      };
       this.loadURDFfromForm = function() {
         return AnimationForm.prototype.loadURDFfromForm.apply(_this, arguments);
       };
@@ -491,29 +533,53 @@
 
     AnimationForm.prototype.times = [];
 
-    AnimationForm.prototype.deltaTime = 0.1;
+    AnimationForm.prototype.deltaTime = 0.06;
 
     AnimationForm.prototype.curframe = 0;
+
+    AnimationForm.prototype.hastimes = false;
 
     AnimationForm.prototype.initialize = function() {
       this.curtime = new App.Clock(false);
       this.robotcontroller = this.options.robotcontroller;
       this.zerotime = 0;
-      return this.state = "stopped";
+      this.state = "stopped";
+      this.textform = $("#robotcsv");
+      this.lh = 18;
+      this.line_height_value = "" + this.lh + "px";
+      return this.textform.css("line-height", this.line_height_value);
     };
 
     AnimationForm.prototype.events = {
       "click #loadcsv": "loadURDFfromForm",
-      "keypress #journaltext": "keypressed",
       "keydown #robotcsv": "pp",
       "click #playbutton": "playbutton",
       "click #pausebutton": "pausebutton",
       "click #stopbutton": "stopbutton",
       "click #nextbutton": "nextstep",
-      "click #prevbutton": "prevstep"
+      "click #prevbutton": "prevstep",
+      "click #addposition": "addposition"
+    };
+
+    AnimationForm.prototype.addposition = function() {
+      var addtime, currentstate;
+      currentstate = this.robotcontroller.jointsval(this.names);
+      if (this.names.length === 0) {
+        this.textform.val(currentstate[1] + "\n" + currentstate[0]);
+      } else {
+        addtime = "";
+        if (this.hastimes) {
+          addtime += (this.deltaTime + parseFloat(_.last(this.times))) + ",";
+        }
+        this.textform.val(this.textform.val() + addtime + currentstate[0]);
+      }
+      return this.loadURDFfromForm();
     };
 
     AnimationForm.prototype.playbutton = function() {
+      if (this.state === "finished") {
+        this.stop();
+      }
       this.state = "playing";
       this.curtime.start();
       return this.play();
@@ -537,13 +603,28 @@
 
     AnimationForm.prototype.loadURDFfromForm = function() {
       var formcsv;
-      formcsv = $("#robotcsv").val();
+      formcsv = this.textform.val();
+      formcsv = $.trim(formcsv);
       this.prepareArraysfromCSV(formcsv);
+      this.textform.val(formcsv + "\n");
+      return this;
+    };
+
+    AnimationForm.prototype.prettify = function() {
+      this.textform.scrollTop(this.lh * (this.curframe + 1));
+      if (this.curframe > 0) {
+        $("#jointnames").text(this.names + "");
+      } else {
+        $("#jointnames").text(".");
+      }
       return this;
     };
 
     AnimationForm.prototype.prepareArraysfromCSV = function(csvstring) {
-      var allfromcsv, body, hastimes, head;
+      var allfromcsv, body, head, lastn;
+      this.names = [];
+      this.poses = [];
+      this.times = [];
       allfromcsv = CSVToArray(csvstring);
       if (allfromcsv.length < 2) {
         console.log("It should have at least names and one pose row");
@@ -551,25 +632,26 @@
       }
       head = allfromcsv[0];
       body = allfromcsv.slice(1);
-      hastimes = head[0] === "time";
-      if (hastimes) {
+      this.hastimes = head[0] === "time";
+      if (this.hastimes) {
         this.names = _.rest(head);
-        this.poses = [];
-        this.times = [];
         body = _.sortBy(body, function(element) {
           return _.first(element);
         });
         _.each(body, function(element) {
-          this.times.push(_.first(element));
+          this.times.push(parseFloat(_.first(element)));
           return this.poses.push(_.rest(element));
         }, this);
       } else {
         this.names = head;
-        this.poses = [];
         _.each(body, function(element) {
           return this.poses.push(element);
         }, this);
-        this.times = _.range(0, (this.poses.length - 1) * this.deltaTime, this.deltaTime);
+        lastn = this.poses.length;
+        this.times = _.range(0, lastn);
+        this.times = _.map(this.times, function(time) {
+          return time * this.deltaTime;
+        }, this);
       }
       return this;
     };
@@ -589,12 +671,13 @@
       this.curframe = this.findframetoshow(currtime);
       pose = this.poses[this.curframe];
       if (this.curframe >= (this.times.length - 1)) {
-        this.stop();
+        this.state = "finished";
       }
       if (pose !== this.pose) {
         this.robotcontroller.changepose(pose, this.names);
       }
       this.pose = pose;
+      this.prettify();
       return this;
     };
 
@@ -603,6 +686,7 @@
       this.curframe = 0;
       this.curtime.reset();
       this.state = "stopped";
+      this.prettify();
       return this;
     };
 
@@ -633,11 +717,12 @@
       var testframe;
       this.state = "stepmode";
       testframe = this.curframe + 1;
-      if (testframe >= (this.times.length - 1)) {
+      if (testframe >= this.times.length) {
 
       } else {
-        return this.settostaticframe(testframe);
+        this.settostaticframe(testframe);
       }
+      return this.prettify();
     };
 
     AnimationForm.prototype.prevstep = function() {
@@ -647,8 +732,9 @@
       if (testframe < 0) {
 
       } else {
-        return this.settostaticframe(testframe);
+        this.settostaticframe(testframe);
       }
+      return this.prettify();
     };
 
     return AnimationForm;

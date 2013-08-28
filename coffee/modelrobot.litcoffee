@@ -91,7 +91,9 @@ When movement is impossible, return false
                         @currentMatrix.multiplyMatrices(@basicMatrix,@movementMatrix)
                         @childobject3d.matrix=@currentMatrix
                 
-                        @        
+                        @
+                jointval: () => #just an interface
+                        return @theta         
                         
                 
 
@@ -185,11 +187,11 @@ When movement is impossible, return false
         class App.RobotJointCollection extends Backbone.Collection
                 model:App.RobotJoint
        
-Controller/view for joints. It also manages the views. To init it has to have an of joints, which it will internally keep as *joints* . Gui elements for each miniview are keept in array jointsarray
+Controller/view for joints. It also manages the views. To init it has to have an of joints, which it will internally keep as *joints* . Gui elements for each miniview are keept in dict jointsdict
 
         class App.RobotJointManipAll extends Backbone.View
                 el: $("#menu")
-                jointsarray:{}
+                jointsdict:{} #TODO this name is rather bad
         
                 initialize: ->
                         #console.log(@options.gui)
@@ -201,7 +203,7 @@ Controller/view for joints. It also manages the views. To init it has to have an
                         
  
                 add2gui: (joint) =>
-                        @jointsarray[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
+                        @jointsdict[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
 
 The idea behind changepose is: you provide two arrays, and using names it iterates through 
                 changepose: (posearray,namesarray) =>
@@ -214,8 +216,32 @@ The idea behind changepose is: you provide two arrays, and using names it iterat
                         @
                                 
                 changejointval: (name,value) =>
-                        @jointsarray[name].changeval(value,true)
+                        @jointsdict[name].changeval(value,true)
                         @
+*jointsval* Method that returns values of selected joints as array. When names is empty, it will give values of all joints and all names.
+This is so that it can be used to generate CSV of joint poses.
+Returns array array[0] joint values array[1] joint names
+                jointsval: (names) =>
+                        if (!(names?) or names=="" or names.length==0) #empty or not specified
+                                movable=@joints.filter( (joint) ->
+                                        return joint.type!="fixed"
+                                )
+                                names=_.pluck(movable,"name")
+                                #names=_.map(@jointsdict,(value,key) ->
+                                #        return key
+                                #, @)
+                                      
+                        values=_.map(names, (name) -> 
+
+                                @jointsdict[name].jointval() 
+                        , @)
+                               
+                        return [values,names]
+                                 
+                                
+                        
+                
+                
                         
         class App.RobotJointManipSingle extends Backbone.View
 
@@ -224,10 +250,12 @@ The idea behind changepose is: you provide two arrays, and using names it iterat
                         @joint=@options.joint
                         @gui=@options.gui
                         @dummy={}
-                        @dummy["val"]=0;
+                        @dummy["val"]=0.01;
                         #console.log(@joint.upper);
                         if(@joint.type!="fixed")
-                                @controller=@gui.add(@dummy,"val",@joint.lower,@joint.upper,0.01).name(@joint.get("name"))
+                                @controller=@gui.add(@dummy,'val',@joint.lower,@joint.upper,0.01).name(@joint.get("name"))
+                                @dummy["val"]=0
+                                @controller.updateDisplay()
                                 @controller.onChange(@changeval)
                                 
 *changeval* is method to control joint from this object, if updateController is false it will just use movejoint method. Otherwise, it will also update the state of slider and state of itself - this is used when this method is accessed from the outside, not from onChange event.
@@ -243,7 +271,16 @@ Checks about validity of movement are made inside @joint, we just check whether 
                         else
                                 console.log(@joint.get("name")+" not between min max") #TODO change it to some pretty alert visable to user
                                                  
-                        @    
+                        @
+                        
+*jointval* Giving the current value of joint, using the occasion to set it right when it is not ;)
+
+                jointval: () =>
+                        jointv=@joint.jointval()
+                        if(@dummy["val"]=!jointv)
+                                @dummy["val"]=jointv
+                                @controller.updateDisplay()
+                        return jointv        
         #                console.log( "new value" + value)
 
 Currently this function just tries to reset all. Robot, jointcollection, modelcollection
@@ -311,8 +348,9 @@ AnimationForm class will control robot animation, from the form submission, in d
                 names:[]
                 poses:[]
                 times:[]
-                deltaTime:0.1
+                deltaTime:0.06
                 curframe:0
+                hastimes:false
                 
                 initialize:->
                         #console.log("intialize robotjointmanipsingle");
@@ -321,16 +359,38 @@ AnimationForm class will control robot animation, from the form submission, in d
                         @robotcontroller=@options.robotcontroller
                         @zerotime=0 # it will be used when pousing, stepping
                         @state="stopped"
+                        @textform=$("#robotcsv")
+                        @lh=18
+                        @line_height_value=""+@lh+"px"
+                        @textform.css("line-height",@line_height_value)
                 events:
                         "click #loadcsv": "loadURDFfromForm"
-                        "keypress #journaltext": "keypressed"
+                        
                         "keydown #robotcsv": "pp"
                         "click #playbutton": "playbutton"
                         "click #pausebutton": "pausebutton"
                         "click #stopbutton": "stopbutton"
                         "click #nextbutton": "nextstep"
                         "click #prevbutton": "prevstep"
+                        "click #addposition": "addposition"
+                addposition: -> #it assumes that current csv is loaded
+                        currentstate=@robotcontroller.jointsval(@names)
+                        if @names.length==0
+                                @textform.val(currentstate[1]+"\n"+currentstate[0])
+                        else
+                                addtime=""
+                                if @hastimes #there are explicit times
+                                        addtime+=(@deltaTime+parseFloat(_.last(@times)))+","
+                                        
+                                        #sanity check if it is all numbers
+                                        
+                                @textform.val(@textform.val()+addtime+currentstate[0])
+                                #@textform.append("\n"+currentstate[0])
+                        @loadURDFfromForm() 
                 playbutton:->
+                        if @state=="finished"
+                                @stop() #rewind
+                        
                         @state="playing"
                         @curtime.start()
                         @play()
@@ -351,16 +411,32 @@ AnimationForm class will control robot animation, from the form submission, in d
                 
                 loadURDFfromForm: ()=>
                         #console.log("wshoa")
-                        formcsv=$("#robotcsv").val()
+                        formcsv=@textform.val()
+                        formcsv=$.trim(formcsv)
                         #console.log(formcsv)
                         @prepareArraysfromCSV(formcsv)
+                        @textform.val(formcsv+"\n")
                         @
-
+                prettify: ()=>
+                        @textform.scrollTop(@lh*(@curframe+1))
+                        if(@curframe>0)
+                                $("#jointnames").text(@names+"")
+                        else
+                                $("#jointnames").text(".")
+                        @
+                
+                        
 
 
 Helper function that prepares 3 arrays from comma seperated values string. Times can be explicetely stated in first column, if not, it will create array of times with deltaTime timestep
                 prepareArraysfromCSV : (csvstring) =>
+                        #clear all as this can be users intention
+                        @names=[]
+                        @poses=[]
+                        @times=[]
+                        #csvstring=$.trim()
                         allfromcsv=CSVToArray(csvstring) #I use some CSVToArray function found on web
+                        
                         #console.log(allfromcsv)
                         if allfromcsv.length<2
                                 console.log("It should have at least names and one pose row")
@@ -369,30 +445,34 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                         #from here, we devide in 3 arrays: names, times, poses
                         head=allfromcsv[0]
                         body=allfromcsv[1..]
-                        hastimes=head[0]=="time"
+                        @hastimes=head[0]=="time"
                         #console.log(hastimes)
-                        if hastimes #there is explicitely set array of times
+                        if @hastimes #there is explicitely set array of times
                                 
                                 @names=_.rest(head)
-                                @poses=[]
-                                @times=[]
+                                
                                 body=_.sortBy(body, (element) ->
                                         return _.first(element) 
                                         )
                                 
                                  #making sure times are growing (sortinig)
                                 _.each(body, (element) ->
-                                        @times.push(_.first(element))
+                                        @times.push(parseFloat(_.first(element)))
                                         @poses.push(_.rest(element))
                                        ,@)
                         else
                                 @names=head
-                                @poses=[]
+                                
                                 _.each(body,(element) ->
                                         @poses.push(element)
                                 ,@)
+                                lastn=(@poses.length)
+                                @times=_.range(0,lastn) #range sucks with floating point
                                 
-                                @times=_.range(0,(@poses.length-1)*@deltaTime,@deltaTime) #to step each DetltaTime
+                                @times=_.map(@times, (time) -> 
+                                        time*@deltaTime
+                                 ,@) #to step each DetltaTime
+                                
                         return @                
                 findframetoshow: (currtime) => #we assume that frames are sorted by time (it is done in prepareArraysFromCSV)
                         frame=@curframe
@@ -415,16 +495,19 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                         #console.log(pose)
                         if(@curframe>=(@times.length-1)) #shouldn't ever be bigger
                                 #console.log("fin")
-                                @stop()
+                                #@stop()
+                                @state="finished"
                         if(pose!=@pose) #don't calculate when there is no need
                                 @robotcontroller.changepose(pose,@names)
                         @pose=pose
+                        @prettify()
                         @
                  stop: =>
                         @savetime=0 #it will restart with curtime =0
                         @curframe=0 #rewind
                         @curtime.reset()
                         @state="stopped"
+                        @prettify()
                         @
                  pause: =>
                         @savetime=@curtime.getElapsedTime() #it will restart with curtime =savetime
@@ -446,10 +529,11 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                  nextstep : => 
                         @state="stepmode"
                         testframe=@curframe+1
-                        if(testframe>=(@times.length-1))
+                        if(testframe>=(@times.length))
                         #last one was last ;)
                         else
                                 @settostaticframe(testframe)
+                        @prettify()
                  prevstep : =>
                         @state="stepmode"
                         testframe=@curframe-1
@@ -457,7 +541,7 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                                 #we have come to beginning TODO maybie rewind?
                         else
                                @settostaticframe(testframe)
-                               
+                        @prettify()       
                 
 Just a small helper to show what is with animation
         App.notsofast = _.throttle( (tekkx)->
