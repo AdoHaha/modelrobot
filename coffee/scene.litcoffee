@@ -6,6 +6,7 @@ This file sets whole scene for showing robot model, it is based on files from In
 Global variables
 ---------------
 there are also Coordinates and dat (??)
+
         window.App = window.App||{};
         
         App.gridX = false
@@ -82,6 +83,7 @@ seting CAMERA params
                 camera.up = new THREE.Vector3( 0, 0, 1 );
                 
 setting CONTROLS params
+
                 App.camera=camera
                 App.cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
                 #cameraControls.target.set(0.1,0,0);
@@ -113,10 +115,13 @@ Controlling scene, using dat gui
                         App.gui.destroy()
     
                 App.gui = new dat.GUI();
-                true
+                
+                
 Creating gui for robot
+
                 App.robotjointmanipall= new App.RobotJointManipAll({gui:App.gui, joints: window.robotjointcollection});                	        
                 App.animform.robotcontroller=App.robotjointmanipall #TODO, this is awkward hack
+                
 helper function takeScreenShot, will take screenshot when P is pressed
 It opens new window, where it shows work as a png, for easy saving
 
@@ -156,6 +161,7 @@ Function to animate our scene
                 
                 
 App.animform is an animation controller with different states. 
+                
                 App.animform.update() if App.animform?
                 true
                 

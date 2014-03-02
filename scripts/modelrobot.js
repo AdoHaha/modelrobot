@@ -394,6 +394,8 @@
     __extends(RobotForm, _super);
 
     function RobotForm() {
+      this.closeScreenshot = __bind(this.closeScreenshot, this);
+      this.changeURDFval = __bind(this.changeURDFval, this);
       _ref8 = RobotForm.__super__.constructor.apply(this, arguments);
       return _ref8;
     }
@@ -401,7 +403,13 @@
     RobotForm.prototype.el = $("#robodiv");
 
     RobotForm.prototype.events = {
-      "click #loadbutton": "resetNload"
+      "click #loadbutton": "resetNload",
+      "click #screenshot": "showScreenshot",
+      "click #screenshotplace": "closeScreenshot"
+    };
+
+    RobotForm.prototype.initialize = function() {
+      return $(".robotlink").on("click", this.changeURDF);
     };
 
     RobotForm.prototype.resetNload = function() {
@@ -411,6 +419,34 @@
       window.parseRobot(urdffromform);
       App.setupGui();
       return console.log(urdffromform);
+    };
+
+    RobotForm.prototype.changeURDF = function(event) {
+      var linkval;
+      event.preventDefault();
+      linkval = $(this).attr("href");
+      $.get(linkval, App.forumula.changeURDFval);
+      return true;
+    };
+
+    RobotForm.prototype.changeURDFval = function(xmlval) {
+      var textval;
+      textval = (new XMLSerializer()).serializeToString(xmlval);
+      $("#robottext").val(textval);
+      return true;
+    };
+
+    RobotForm.prototype.showScreenshot = function() {
+      var img1;
+      App.render();
+      img1 = window.renderer.domElement.toDataURL("image/png");
+      $("#screenshotplace").html('<img src="' + img1 + '"/>');
+      return $("#screenshottext").text("Click image to close");
+    };
+
+    RobotForm.prototype.closeScreenshot = function() {
+      $("#screenshotplace").html('');
+      return $("#screenshottext").text("");
     };
 
     return RobotForm;

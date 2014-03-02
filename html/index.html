@@ -8,12 +8,18 @@
 </head>
 <body>
 
-<div id="robodiv"><form id="robotform"><div>Robot's URDF</div><textarea name="robottext" rows="5" cols="80" id="robottext" placeholder="Place robot's URDF here"></textarea>
-
-<button type="button" id="loadbutton">Load robot URDF</button><br>
-<button type="button" id="screenshot">Make screenshot</button>
-</form></div>
-<div id="animdiv"><form id="animform"><div>Robot's poses CSV</div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" cols="80" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
+<div id="robodiv"><span id="screenshottext"></span><div id="screenshotplace"></div>
+<form id="robotform"><div><h3>Robot's URDF</h3></div><textarea name="robottext" rows="5" cols="80" id="robottext" placeholder="Place robot's URDF here"></textarea>
+<br>
+<button type="button" id="loadbutton">Load robot URDF</button>
+<button type="button" id="screenshot">Make screenshot</button><br>
+</form>
+Example robots:
+{% for item in linki %}
+        <a href="../testowe/{{ item[1] }}" target="_blank" class="robotlink">{{ item[0] }}</a> 
+    {% endfor %}
+</div>
+<div id="animdiv"><form id="animform"><div><h3>Robot's poses CSV</h3></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" cols="80" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
 <button type="button" id="loadcsv">Load CSV</button>
 <button type="button" id="playbutton">Play</button>
 <button type="button" id="pausebutton">Pause</button>

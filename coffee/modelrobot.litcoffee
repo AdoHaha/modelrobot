@@ -307,7 +307,12 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                 el: $("#robodiv")
                 events:
                         "click #loadbutton": "resetNload"
-                
+                        "click #screenshot": "showScreenshot"
+                        "click #screenshotplace": "closeScreenshot"
+                        #"click .robotlink": "changeURDF"
+                initialize:->
+                    $(".robotlink").on("click", @changeURDF);
+                    
                 resetNload: ->
                 #        console.log("fufu2")
                         urdffromform=$(@el).find("#robottext").val()
@@ -315,7 +320,30 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         window.parseRobot(urdffromform);
                         App.setupGui()
                         console.log(urdffromform)
-
+                        
+                changeURDF: (event)->
+                    event.preventDefault();
+                    linkval=$(this).attr("href")
+                  
+                    $.get(linkval, App.forumula.changeURDFval) 
+                    return true
+                    
+                changeURDFval: (xmlval)=>
+                    textval = (new XMLSerializer()).serializeToString(xmlval);
+                    #console.log(xmlval)
+                    $("#robottext").val(textval)
+                    return true
+                     
+                showScreenshot: ->
+                        App.render();
+                        img1 = window.renderer.domElement.toDataURL("image/png");
+                        #imgTarget = window.open('', 'For documenting your work');
+                        #imgTarget.document.write('<img src="'+img1+'"/>');
+                        $( "#screenshotplace" ).html( '<img src="'+img1+'"/>' );
+                        $("#screenshottext").text("Click image to close");
+                closeScreenshot: =>
+                        $( "#screenshotplace" ).html( '' );
+                        $("#screenshottext").text("");         
 Helper clock, I have just added zerotime - to be able to have 
 
         class App.Clock extends THREE.Clock #just adding zerotime - we can manipulate thing that was called oldtime so that get elapsedTime can be non zero at the beginning
