@@ -207,6 +207,7 @@ Controller/view for joints. It also manages the views. To init it has to have an
                         @jointsdict[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
 
 The idea behind changepose is: you provide two arrays, and using names it iterates through 
+
                 changepose: (posearray,namesarray) =>
                         if(posearray.length!=namesarray.length)
                                 console.log("pose and namearray have different lengths")

@@ -272,6 +272,7 @@
     function RobotJointManipAll() {
       this.jointsval = __bind(this.jointsval, this);
       this.changejointval = __bind(this.changejointval, this);
+      this.changepose = __bind(this.changepose, this);
       this.add2gui = __bind(this.add2gui, this);
       _ref6 = RobotJointManipAll.__super__.constructor.apply(this, arguments);
       return _ref6;
@@ -289,10 +290,22 @@
     };
 
     RobotJointManipAll.prototype.add2gui = function(joint) {
-      this.jointsdict[joint.get("name")] = new App.RobotJointManipSingle({
+      return this.jointsdict[joint.get("name")] = new App.RobotJointManipSingle({
         joint: joint,
         gui: this.anglesfolder
       });
+    };
+
+    RobotJointManipAll.prototype.changepose = function(posearray, namesarray) {
+      var index, name, _i, _len;
+      if (posearray.length !== namesarray.length) {
+        console.log("pose and namearray have different lengths");
+        return false;
+      }
+      for (index = _i = 0, _len = namesarray.length; _i < _len; index = ++_i) {
+        name = namesarray[index];
+        this.changejointval(name, posearray[index]);
+      }
       return this;
     };
 
