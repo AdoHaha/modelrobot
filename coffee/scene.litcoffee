@@ -30,16 +30,24 @@ Static scene filling
                 scene.fog = new THREE.Fog 0x808080,2000,4000
                 
                 ambientLight = new THREE.AmbientLight 0x222222
-                light = new THREE.DirectionalLight 0xffffff, 1.0 
+                light = new THREE.DirectionalLight 0xffffff, 0.7 
                 light.position.set(200,-400,500)
                 
                 light2 = new THREE.DirectionalLight( 0xffffff, 1.0 );
                 
                 light2.position.set(73,184,184)
                 
+                
+                dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+                
+                dirLight.color.setHSL( 0.1, 1, 0.95 );
+                dirLight.position.set( 0, 40, 0 );
+                dirLight.position.multiplyScalar( 50 );
+				
+                scene.add( dirLight );
                 scene.add(ambientLight)
                 scene.add(light)
-                
+                scene.add(dirLight);
                 if App.ground
                         Coordinates.drawGround({size:10000})
                 

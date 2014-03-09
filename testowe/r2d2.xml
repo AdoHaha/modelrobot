@@ -179,7 +179,7 @@
     <visual>
       <origin rpy="0.0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://pr2_description/meshes/gripper_v0/l_finger.dae"/>
+        <box size="0.1 0.02 0.02" />
       </geometry>
     </visual>
   </link>
@@ -210,7 +210,7 @@
     <visual>
       <origin rpy="-3.1415 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://pr2_description/meshes/gripper_v0/l_finger.dae"/>
+         <box size="0.1 0.02 0.02" />
       </geometry>
     </visual>
   </link>

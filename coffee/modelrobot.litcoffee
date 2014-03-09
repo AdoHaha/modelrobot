@@ -76,8 +76,9 @@ When movement is impossible, return false
 
                         tempMatrix=new THREE.Matrix4();
                         tempaxis= new THREE.Vector3().copy(@axis);
-
-                        if (@type=="continuous" or (@upper > t1 >@lower)) #check whether movement is allowed
+                        if (@upper? and @lower?)
+                            t1=Math.max(@lower,Math.min(t1,@upper));
+                        if (@type=="continuous" or (@upper >= t1 >=@lower)) #check whether movement is allowed
                                 switch @type
                                         when "revolute" then @movementMatrix=tempMatrix.rotateByAxis(@axis,t1)
                                         when "continuous" then @movementMatrix=tempMatrix.rotateByAxis(@axis,t1)
@@ -274,7 +275,7 @@ Checks about validity of movement are made inside @joint, we just check whether 
                                         @controller.updateDisplay()
                         else
                                 console.log(@joint.get("name")+" not between min max") #TODO change it to some pretty alert visable to user
-                                                 
+                                              
                         @
                         
 *jointval* Giving the current value of joint, using the occasion to set it right when it is not ;)
@@ -284,6 +285,7 @@ Checks about validity of movement are made inside @joint, we just check whether 
                         if(@dummy["val"]=!jointv)
                                 @dummy["val"]=jointv
                                 @controller.updateDisplay()
+                        #@controller.updateDisplay()
                         return jointv        
         #                console.log( "new value" + value)
 
@@ -410,7 +412,9 @@ AnimationForm class will control robot animation, from the form submission, in d
                 addposition: -> #it assumes that current csv is loaded
                         currentstate=@robotcontroller.jointsval(@names)
                         if @names.length==0
-                                @textform.val(currentstate[1]+"\n"+currentstate[0])
+                                @textform.val("time,"+currentstate[1]+"\n"+"0.0,"+currentstate[0])
+                                #there always will be time;
+                                @hastimes=true;
                         else
                                 addtime=""
                                 if @hastimes #there are explicit times
