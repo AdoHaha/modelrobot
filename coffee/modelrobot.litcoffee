@@ -72,7 +72,9 @@ t2 - will be used when planar joint is implemented
 When movement is impossible, return false
 
                 movejoint: (t1,t2) => #TODO planar type
-                        t1=t1||@theta
+
+                        
+                        t1=t1 ? @theta
 
                         tempMatrix=new THREE.Matrix4();
                         tempaxis= new THREE.Vector3().copy(@axis);
@@ -207,7 +209,7 @@ Controller/view for joints. It also manages the views. To init it has to have an
                 add2gui: (joint) =>
                         @jointsdict[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
 
-The idea behind changepose is: you provide two arrays, and using names it iterates through 
+The idea behind changepose is: you provide two arrays, and it iterates through using names 
 
                 changepose: (posearray,namesarray) =>
                         if(posearray.length!=namesarray.length)
@@ -237,7 +239,6 @@ Returns array array[0] joint values array[1] joint names
                                 #, @)
                                       
                         values=_.map(names, (name) -> 
-
                                 @jointsdict[name].jointval() 
                         , @)
                                
@@ -270,9 +271,12 @@ Checks about validity of movement are made inside @joint, we just check whether 
                         #if (@joint.upper >= value >= @joint.lower)
                         
                         if @joint.movejoint(value)
+                                
+                                @dummy["val"]=value
                                 if updateController
                                         @dummy["val"]=value
                                         @controller.updateDisplay()
+                                        
                         else
                                 console.log(@joint.get("name")+" not between min max") #TODO change it to some pretty alert visable to user
                                               
@@ -311,6 +315,9 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         "click #loadbutton": "resetNload"
                         "click #screenshot": "showScreenshot"
                         "click #screenshotplace": "closeScreenshot"
+                        "click #frontview":"frontView"
+                        "click #topview":"topView"
+                        "click #sideview":"sideView"
                         #"click .robotlink": "changeURDF"
                 initialize:->
                     $(".robotlink").on("click", @changeURDF);
@@ -345,7 +352,25 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         $("#screenshottext").text("Click image to close");
                 closeScreenshot: =>
                         $( "#screenshotplace" ).html( '' );
-                        $("#screenshottext").text("");         
+                        $("#screenshottext").text("");
+
+                        
+Simple camera views, for fast setting
+        
+                frontView: =>
+                        console.log(App.camera.position);
+                        App.camera.position.set( 5.12, 0, 0 );
+                        
+                        return App.camera
+                topView: =>
+                        App.camera.position.set(0,0,5.12);
+                        return App.camera 
+                
+                sideView: =>
+                        App.camera.position.set(0,5.12,0);
+                        return App.camera          
+                        
+                            
 Helper clock, I have just added zerotime - to be able to have 
 
         class App.Clock extends THREE.Clock #just adding zerotime - we can manipulate thing that was called oldtime so that get elapsedTime can be non zero at the beginning

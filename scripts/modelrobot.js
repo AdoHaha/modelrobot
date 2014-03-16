@@ -75,7 +75,7 @@
 
     RobotJoint.prototype.movejoint = function(t1, t2) {
       var tempMatrix, tempaxis;
-      t1 = t1 || this.theta;
+      t1 = t1 != null ? t1 : this.theta;
       tempMatrix = new THREE.Matrix4();
       tempaxis = new THREE.Vector3().copy(this.axis);
       if ((this.upper != null) && (this.lower != null)) {
@@ -354,6 +354,7 @@
         updateController = false;
       }
       if (this.joint.movejoint(value)) {
+        this.dummy["val"] = value;
         if (updateController) {
           this.dummy["val"] = value;
           this.controller.updateDisplay();
@@ -388,6 +389,9 @@
     __extends(RobotForm, _super);
 
     function RobotForm() {
+      this.sideView = __bind(this.sideView, this);
+      this.topView = __bind(this.topView, this);
+      this.frontView = __bind(this.frontView, this);
       this.closeScreenshot = __bind(this.closeScreenshot, this);
       this.changeURDFval = __bind(this.changeURDFval, this);
       return RobotForm.__super__.constructor.apply(this, arguments);
@@ -398,7 +402,10 @@
     RobotForm.prototype.events = {
       "click #loadbutton": "resetNload",
       "click #screenshot": "showScreenshot",
-      "click #screenshotplace": "closeScreenshot"
+      "click #screenshotplace": "closeScreenshot",
+      "click #frontview": "frontView",
+      "click #topview": "topView",
+      "click #sideview": "sideView"
     };
 
     RobotForm.prototype.initialize = function() {
@@ -440,6 +447,22 @@
     RobotForm.prototype.closeScreenshot = function() {
       $("#screenshotplace").html('');
       return $("#screenshottext").text("");
+    };
+
+    RobotForm.prototype.frontView = function() {
+      console.log(App.camera.position);
+      App.camera.position.set(5.12, 0, 0);
+      return App.camera;
+    };
+
+    RobotForm.prototype.topView = function() {
+      App.camera.position.set(0, 0, 5.12);
+      return App.camera;
+    };
+
+    RobotForm.prototype.sideView = function() {
+      App.camera.position.set(0, 5.12, 0);
+      return App.camera;
     };
 
     return RobotForm;
