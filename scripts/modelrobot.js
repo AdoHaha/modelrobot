@@ -637,7 +637,7 @@
       if (this.hastimes) {
         this.names = _.rest(head);
         body = _.sortBy(body, function(element) {
-          return _.first(element);
+          return parseFloat(_.first(element));
         });
         _.each(body, function(element) {
           this.times.push(parseFloat(_.first(element)));

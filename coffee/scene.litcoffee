@@ -68,20 +68,29 @@ Static scene filling
 
 Seting initial parameters
 -------------------------
-		
+
+		    
         App.init = ->
                 
                 canvasWidth = window.innerWidth;
-                canvasHeight = window.innerHeight;
+                offsetHeight = document.getElementById('controldiv').offsetHeight;
+                offsetWidth= document.getElementById('controldiv').offsetWidth;
+                #if((window.innerWidth-offsetWidth-5)>0)
+                
+                canvasWidth = window.innerWidth-offsetWidth-148;
+                #else
+                #    canvasWidth = window.innerWidth
+                
+                canvasHeight= window.innerHeight    
                 canvasRatio = canvasWidth / canvasHeight
                 window.renderer = new THREE.WebGLRenderer { antialias: true}
 
-                renderer.gammaInput = true
-                renderer.gammaOutput = true
-                renderer.setSize(canvasWidth, canvasHeight);
-                renderer.setClearColorHex( 0xAAAAAA, 1.0 );
+                window.renderer.gammaInput = true
+                window.renderer.gammaOutput = true
+                window.renderer.setSize(canvasWidth, canvasHeight);
+                window.renderer.setClearColorHex( 0xAAAAAA, 1.0 );
                 container = document.getElementById('container')
-                container.appendChild( renderer.domElement );
+                container.appendChild( window.renderer.domElement );
 	        
 seting CAMERA params
 
@@ -129,10 +138,14 @@ Creating gui for robot
 
                 App.robotjointmanipall= new App.RobotJointManipAll({gui:App.gui, joints: window.robotjointcollection});                	        
                 App.animform.robotcontroller=App.robotjointmanipall #TODO, this is awkward hack
+                App.gui.__folders["Joint values"].open()
+                
+                
                 
 helper function takeScreenShot, will take screenshot when P is pressed
 It opens new window, where it shows work as a png, for easy saving
-
+                
+                
         App.takeScreenshot = ->
                 #effectController.newGround = true, effectController.newGridX = false, effectController.newGridY = false,          #effectController.newGridZ = false, effectController.newAxes = false;
                 #init();

@@ -75,19 +75,22 @@
   };
 
   App.init = function() {
-    var camera, canvasHeight, canvasRatio, canvasWidth, container;
+    var camera, canvasHeight, canvasRatio, canvasWidth, container, offsetHeight, offsetWidth;
     canvasWidth = window.innerWidth;
+    offsetHeight = document.getElementById('controldiv').offsetHeight;
+    offsetWidth = document.getElementById('controldiv').offsetWidth;
+    canvasWidth = window.innerWidth - offsetWidth - 148;
     canvasHeight = window.innerHeight;
     canvasRatio = canvasWidth / canvasHeight;
     window.renderer = new THREE.WebGLRenderer({
       antialias: true
     });
-    renderer.gammaInput = true;
-    renderer.gammaOutput = true;
-    renderer.setSize(canvasWidth, canvasHeight);
-    renderer.setClearColorHex(0xAAAAAA, 1.0);
+    window.renderer.gammaInput = true;
+    window.renderer.gammaOutput = true;
+    window.renderer.setSize(canvasWidth, canvasHeight);
+    window.renderer.setClearColorHex(0xAAAAAA, 1.0);
     container = document.getElementById('container');
-    container.appendChild(renderer.domElement);
+    container.appendChild(window.renderer.domElement);
     camera = new THREE.PerspectiveCamera(30, canvasRatio, 1, 10000);
     camera.position.set(2.5, 2, 4);
     camera.up = new THREE.Vector3(0, 0, 1);
@@ -122,7 +125,8 @@
       gui: App.gui,
       joints: window.robotjointcollection
     });
-    return App.animform.robotcontroller = App.robotjointmanipall;
+    App.animform.robotcontroller = App.robotjointmanipall;
+    return App.gui.__folders["Joint values"].open();
   };
 
   App.takeScreenshot = function() {

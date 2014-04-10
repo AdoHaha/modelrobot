@@ -6,13 +6,23 @@
   <title>Model your robots in URDF and show them directely here!</title>
  
 </head>
+
+
+  <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    
 <body>
 
+<div id="controldiv" style="float:left">
 <div id="robodiv"><span id="screenshottext"></span><div id="screenshotplace"></div>
-<form id="robotform"><div><h3>Robot's URDF</h3></div><textarea name="robottext" rows="5" cols="80" id="robottext" placeholder="Place robot's URDF here"></textarea>
+<form id="robotform"><div><b>Robot's URDF</b></div><textarea name="robottext" rows="15" cols="80" id="robottext" placeholder="Place robot's URDF here"></textarea>
 <br>
 <button type="button" id="loadbutton">Load robot URDF</button>
-<button type="button" id="screenshot">Make screenshot</button><br>
+<br>
+<button type="button" id="screenshot">Make screenshot</button>
+
 <b>Camera controls:</b><button type="button" id="frontview">Front view</button>
 <button type="button" id="topview">Top view</button>
 <button type="button" id="sideview">Side view</button>
@@ -23,7 +33,7 @@ Example robots:
         <a href="../testowe/{{ item[1] }}" target="_blank" class="robotlink">{{ item[0] }}</a> 
     {% endfor %}
 </div>
-<div id="animdiv"><form id="animform"><div><h3>Robot's poses CSV</h3></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" cols="80" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
+<div id="animdiv"><form id="animform"><div><b>Robot's poses CSV</b></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" cols="80" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
 <button type="button" id="loadcsv">Load CSV</button>
 <button type="button" id="playbutton">Play</button>
 <button type="button" id="pausebutton">Pause</button>
@@ -32,17 +42,19 @@ Example robots:
 <button type="button" id="nextbutton">></button>
 <button type="button" id="addposition">Add current position</button>
 </form></div>
-<div id="container" style="height: 492px, width: 876px">
+</div>
+<div id="container" style="float:left;width:50%">
 		</div>
 
 
 
 
 
-
+ 
 <script src="./scripts/three.js"></script>
 <script src="./scripts/jquery-1.9.1.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
+<script src="./lib/bootstrap.min.js"></script>
 	<script src="./lib/Detector.js"></script>
 		<script src="./lib/Coordinates.js"></script>
 		<script src="./lib/OrbitAndPanControls.js"></script>

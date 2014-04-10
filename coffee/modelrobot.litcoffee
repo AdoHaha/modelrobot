@@ -516,13 +516,14 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                                 @names=_.rest(head)
                                 
                                 body=_.sortBy(body, (element) ->
-                                        return _.first(element) 
+                                        return parseFloat(_.first(element)) 
                                         )
                                 
                                  #making sure times are growing (sortinig)
                                 _.each(body, (element) ->
                                         @times.push(parseFloat(_.first(element)))
                                         @poses.push(_.rest(element))
+                                        
                                        ,@)
                         else
                                 @names=head
@@ -540,9 +541,7 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                         return @                
                 findframetoshow: (currtime) => #we assume that frames are sorted by time (it is done in prepareArraysFromCSV)
                         frame=@curframe
-                       
                         while ( ((frame)<=@times.length) && (@times[frame+1]<currtime)       )
-                                
                                 frame+=1
                                 
                         #thinking whether to change @currframe here                   
@@ -561,8 +560,15 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                                 #console.log("fin")
                                 #@stop()
                                 @state="finished"
+                        
                         if(pose!=@pose) #don't calculate when there is no need
-                                @robotcontroller.changepose(pose,@names)
+                        
+                            @robotcontroller.changepose(pose,@names)
+                        
+                        #console.log(pose)
+                        #else:
+                        #    console.log("same")
+                            
                         @pose=pose
                         @prettify()
                         @
