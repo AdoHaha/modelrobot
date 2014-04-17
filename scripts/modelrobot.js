@@ -116,6 +116,10 @@
 
   })(Backbone.Model);
 
+  window.true_mod = function(x, m) {
+    return (x % m + m) % m;
+  };
+
   App.RobotTrajectory = (function(_super) {
     __extends(RobotTrajectory, _super);
 
@@ -124,44 +128,44 @@
     }
 
     RobotTrajectory.prototype.initialize = function(name) {
-      var allpoints, material;
+      var i, material, _i, _ref;
       this.trajectory = new THREE.Shape();
       this.link_name = this.attributes.name;
       this.allpoints = new THREE.Geometry();
-      this.allvertices = [];
+      this.N = 1000;
+      for (i = _i = 0, _ref = this.N; _i <= _ref; i = _i += 1) {
+        this.allpoints.vertices.push(new THREE.Vector3(1.0, 1.0, 1.0));
+      }
+      this.n = 0;
       this.throttled_add_to_trajectory = _.throttle(this.add_to_trajectory, 50);
       material = new THREE.LineBasicMaterial({
-        color: 0xff0000
+        color: 0xff0000,
+        linewidth: 3
       });
       this.line = new THREE.Line(this.allpoints, material);
-      allpoints = [];
       window.scene.add(this.line);
       return true;
     };
 
     RobotTrajectory.prototype.add_to_trajectory = function() {
-      var diff, error, lastvector, len, material, matrix, newpoint;
+      var diff, error, lastvector, len, matrix, newpoint, number, numbers, _i, _ref, _ref1;
       try {
         matrix = window.robotlinkcollection.get(this.link_name).get("link").matrixWorld.elements;
-        console.log(matrix);
         newpoint = new THREE.Vector3(matrix[12], matrix[13], matrix[14]);
         len = 1000;
-        if (this.allpoints.vertices.length > 0) {
-          lastvector = this.allpoints.vertices[this.allpoints.vertices.length - 1];
-          diff = new THREE.Vector3();
-          diff.subVectors(newpoint, lastvector);
-          len = diff.length();
-        }
+        lastvector = this.allpoints.vertices[true_mod(this.n - 1, this.N)];
+        diff = new THREE.Vector3();
+        diff.subVectors(newpoint, lastvector);
+        len = diff.length();
         if (len > 0.0001) {
-          this.allpoints.vertices.push(newpoint);
+          number = true_mod(this.n, this.N);
+          this.allpoints.vertices[number] = newpoint;
+          for (numbers = _i = _ref = this.n, _ref1 = this.N; _i <= _ref1; numbers = _i += 1) {
+            this.allpoints.vertices[numbers] = newpoint;
+          }
           this.allpoints.verticesNeedUpdate = true;
-          console.log(this.allpoints);
-          console.log(this.line);
-          material = new THREE.LineBasicMaterial({
-            color: 0xff0000
-          });
-          this.allpoints.buffersNeedUpdate = true;
-          this.allpoints.__dirtyVertices = true;
+          this.allpoints.elementsNeedUpdate = true;
+          this.n++;
         } else {
           return false;
         }
