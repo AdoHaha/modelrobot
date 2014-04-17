@@ -164,6 +164,7 @@
     if (App.animform != null) {
       App.animform.update();
     }
+    App.trajectoryview.update();
     return true;
   };
 
@@ -174,6 +175,7 @@
     App.animform = new App.AnimationForm({
       robotcontroller: App.robotjointmanipall
     });
+    App.trajectoryview = new App.TrajectoryView();
     return $.when($.get("../testowe/pi_robot_urdf.urdf", window.parseRobot)).then(function() {
       App.setupGui();
       return App.animate();

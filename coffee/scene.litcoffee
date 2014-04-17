@@ -189,6 +189,7 @@ Function to animate our scene
 App.animform is an animation controller with different states. 
                 
                 App.animform.update() if App.animform?
+                App.trajectoryview.update()
                 true
                 
 Starting it all
@@ -199,6 +200,7 @@ Starting it all
         $ ->
                 App.forumula = new App.RobotForm();
                 App.animform = new App.AnimationForm({robotcontroller:App.robotjointmanipall});
+                App.trajectoryview=new App.TrajectoryView()
                 $.when($.get("../testowe/pi_robot_urdf.urdf",window.parseRobot)).then( ->
                         App.setupGui();
                         App.animate();

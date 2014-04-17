@@ -5,9 +5,22 @@ Function in this file prepares robot in App namespace from xml string ( URDF fil
 
         window.parseRobot= (xml) ->
                 window.scene = window.scene || new THREE.Scene
-                window.robotmaterialcollection=new App.RobotMaterialCollection();
-                window.robotlinkcollection=new App.RobotLinkCollection();
-                window.robotjointcollection=new App.RobotJointCollection();
+                if window.robotmaterialcollection?
+                    window.robotmaterialcollection.reset()
+                else
+                    window.robotmaterialcollection=new App.RobotMaterialCollection() ;
+                    
+                if window.robotlinkcollection?
+                    window.robotlinkcollection.reset()
+                else
+                    window.robotlinkcollection=new App.RobotLinkCollection();
+                
+                if window.robotjointcollection?
+                    window.robotjointcollection.reset()
+                else
+                    window.robotjointcollection=new App.RobotJointCollection();
+                #window.robotlinkcollection=new App.RobotLinkCollection();
+                
 
 
 Using jQery parseXML function, as return we get JQery parsable XML document
@@ -76,7 +89,7 @@ Joints are not added to robot, as they control robot when it is moved, so they i
                 #console.log(scene)
                 window.scene.add(window.robot);
                 renderer.render(window.scene, App.camera);
-                
+                App.trajectoryview.create_list()
 
 
 

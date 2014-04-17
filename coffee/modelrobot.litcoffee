@@ -114,17 +114,23 @@ RobotTrajectory is a class to  that remembers how some particular link of robot 
                     @allpoints= new THREE.Geometry(); #this has all point vertices
                     @N=1000
                     for i in [0..@N] by 1
-                        @allpoints.vertices.push(new THREE.Vector3(1.0,1.0,1.0))
+                        @allpoints.vertices.push(new THREE.Vector3(0.0,0.0,1.0))
                     @n=0
                     
                     #@allvertices=[]
-                    @throttled_add_to_trajectory=_.throttle(@add_to_trajectory,50) #will add min 50ms aside
+                    @throttled_add_to_trajectory=_.throttle(@add_to_trajectory,20) #will add min 50ms aside
                     material = new THREE.LineBasicMaterial({color: 0xff0000,linewidth:3});
                     @line= new THREE.Line(@allpoints,material)
                     #allpoints=[]
                     window.scene.add(@line)
                     return true
-                add_to_trajectory: ->    
+                
+                new_name: (name)=>
+                    @attributes.name=name
+                    @link_name=name
+                    @clear_trajectory()
+                    return true
+                add_to_trajectory: =>    
                     try
                         matrix=window.robotlinkcollection.get(@link_name).get("link").matrixWorld.elements  #TODO maybie only once? 
                         #console.log(matrix)     
@@ -144,10 +150,14 @@ Not adding points that are very near
                         if len>0.0001 #when SI this would mean one thenth of mm
                                 
                                 #@allpoints=new THREE.Geometry()
-                                number=true_mod(@n,@N)
-                                @allpoints.vertices[number]=newpoint
-                                for numbers in [@n..@N] by 1 #this will run only in first N iterations ;)
-                                    @allpoints.vertices[numbers]=newpoint
+                                #number=true_mod(@n,@N)
+                                if(@n<@N)
+                                    @allpoints.vertices[@n]=newpoint
+                                    for numbers in [@n..@N] by 1 #this will run only in first N iterations ;)
+                                        @allpoints.vertices[numbers]=newpoint
+                                else
+                                    @allpoints.vertices.shift() #deleting first element
+                                    @allpoints.vertices.push(newpoint)
                                 @allpoints.verticesNeedUpdate = true;
                                 @allpoints.elementsNeedUpdate = true;
                                 @n++
@@ -157,11 +167,17 @@ Not adding points that are very near
                         
                      catch error
                         console.log("couldn't find link:"+name)
+                        console.log(error)
                      
-                     
-                     return false   
-                     
-                            
+                     return false  
+                      
+                clear_trajectory: =>                      
+                    for i in [0..@N] by 1
+                        @allpoints.vertices[i].set(0,0,0);
+                    @allpoints.verticesNeedUpdate = true;
+                    @allpoints.elementsNeedUpdate = true;
+                    @n=0      
+                                          
         class App.RobotLink extends Backbone.Model
         
                 initialize: ->
@@ -455,10 +471,55 @@ Helper clock, I have just added zerotime - to be able to have
                         @
                         
                         
-        
+This watches over trajectory generation
 
-
-
+        class App.TrajectoryView extends Backbone.View
+                el: $("#trajectory")
+                initialize:->
+                    @tracing=false
+                    @robot_trajectory=new App.RobotTrajectory("Nothing")
+                    #@create_list()
+                    
+                create_list:->
+                            $("#all_links").empty()
+                            window.robotlinkcollection.each( (link)->
+                                 linkname=link.get("name")
+                                 $("#all_links").append( new Option(linkname,linkname) );
+                                 #console.log(linkname)
+                            )
+                            @tracing=false  
+                            $("#tracebutton").removeClass("btn-danger").addClass("btn-success")
+                            @clear
+                            return true  
+                events: 
+                    "click #tracebutton": "trace"
+                    "click #clear_trajectory": "clear"
+                clear:->
+                    console.log("clearing")
+                    @robot_trajectory.clear_trajectory()
+                    
+                trace:->
+                    console.log("tracing")
+                    if not @tracing
+                        #name=$("#link_name_form").val()
+                        name=$( "#all_links").val()
+                        if name? and name isnt ""
+                            @robot_trajectory.new_name(name)
+                            @tracing=true
+                            $("#tracebutton").removeClass("btn-success").addClass("btn-danger")
+                            
+                            
+                    else
+                        @tracing=false
+                        $("#tracebutton").removeClass("btn-danger").addClass("btn-success")
+                    return true
+                update:->
+                    #@robot_trajectory.add_to_trajectory()
+                    if(@tracing)
+                    
+                        @robot_trajectory.throttled_add_to_trajectory()
+                    return true
+                    
 AnimationForm class will control robot animation, from the form submission, in different modes
 * play: plays through poses set in @poses with points in time set in @times array
 * pause: stops playing 

@@ -124,6 +124,9 @@
     __extends(RobotTrajectory, _super);
 
     function RobotTrajectory() {
+      this.clear_trajectory = __bind(this.clear_trajectory, this);
+      this.add_to_trajectory = __bind(this.add_to_trajectory, this);
+      this.new_name = __bind(this.new_name, this);
       return RobotTrajectory.__super__.constructor.apply(this, arguments);
     }
 
@@ -134,10 +137,10 @@
       this.allpoints = new THREE.Geometry();
       this.N = 1000;
       for (i = _i = 0, _ref = this.N; _i <= _ref; i = _i += 1) {
-        this.allpoints.vertices.push(new THREE.Vector3(1.0, 1.0, 1.0));
+        this.allpoints.vertices.push(new THREE.Vector3(0.0, 0.0, 1.0));
       }
       this.n = 0;
-      this.throttled_add_to_trajectory = _.throttle(this.add_to_trajectory, 50);
+      this.throttled_add_to_trajectory = _.throttle(this.add_to_trajectory, 20);
       material = new THREE.LineBasicMaterial({
         color: 0xff0000,
         linewidth: 3
@@ -147,8 +150,15 @@
       return true;
     };
 
+    RobotTrajectory.prototype.new_name = function(name) {
+      this.attributes.name = name;
+      this.link_name = name;
+      this.clear_trajectory();
+      return true;
+    };
+
     RobotTrajectory.prototype.add_to_trajectory = function() {
-      var diff, error, lastvector, len, matrix, newpoint, number, numbers, _i, _ref, _ref1;
+      var diff, error, lastvector, len, matrix, newpoint, numbers, _i, _ref, _ref1;
       try {
         matrix = window.robotlinkcollection.get(this.link_name).get("link").matrixWorld.elements;
         newpoint = new THREE.Vector3(matrix[12], matrix[13], matrix[14]);
@@ -158,10 +168,14 @@
         diff.subVectors(newpoint, lastvector);
         len = diff.length();
         if (len > 0.0001) {
-          number = true_mod(this.n, this.N);
-          this.allpoints.vertices[number] = newpoint;
-          for (numbers = _i = _ref = this.n, _ref1 = this.N; _i <= _ref1; numbers = _i += 1) {
-            this.allpoints.vertices[numbers] = newpoint;
+          if (this.n < this.N) {
+            this.allpoints.vertices[this.n] = newpoint;
+            for (numbers = _i = _ref = this.n, _ref1 = this.N; _i <= _ref1; numbers = _i += 1) {
+              this.allpoints.vertices[numbers] = newpoint;
+            }
+          } else {
+            this.allpoints.vertices.shift();
+            this.allpoints.vertices.push(newpoint);
           }
           this.allpoints.verticesNeedUpdate = true;
           this.allpoints.elementsNeedUpdate = true;
@@ -172,8 +186,19 @@
       } catch (_error) {
         error = _error;
         console.log("couldn't find link:" + name);
+        console.log(error);
       }
       return false;
+    };
+
+    RobotTrajectory.prototype.clear_trajectory = function() {
+      var i, _i, _ref;
+      for (i = _i = 0, _ref = this.N; _i <= _ref; i = _i += 1) {
+        this.allpoints.vertices[i].set(0, 0, 0);
+      }
+      this.allpoints.verticesNeedUpdate = true;
+      this.allpoints.elementsNeedUpdate = true;
+      return this.n = 0;
     };
 
     return RobotTrajectory;
@@ -570,6 +595,71 @@
     return Clock;
 
   })(THREE.Clock);
+
+  App.TrajectoryView = (function(_super) {
+    __extends(TrajectoryView, _super);
+
+    function TrajectoryView() {
+      return TrajectoryView.__super__.constructor.apply(this, arguments);
+    }
+
+    TrajectoryView.prototype.el = $("#trajectory");
+
+    TrajectoryView.prototype.initialize = function() {
+      this.tracing = false;
+      return this.robot_trajectory = new App.RobotTrajectory("Nothing");
+    };
+
+    TrajectoryView.prototype.create_list = function() {
+      $("#all_links").empty();
+      window.robotlinkcollection.each(function(link) {
+        var linkname;
+        linkname = link.get("name");
+        return $("#all_links").append(new Option(linkname, linkname));
+      });
+      this.tracing = false;
+      $("#tracebutton").removeClass("btn-danger").addClass("btn-success");
+      this.clear;
+      return true;
+    };
+
+    TrajectoryView.prototype.events = {
+      "click #tracebutton": "trace",
+      "click #clear_trajectory": "clear"
+    };
+
+    TrajectoryView.prototype.clear = function() {
+      console.log("clearing");
+      return this.robot_trajectory.clear_trajectory();
+    };
+
+    TrajectoryView.prototype.trace = function() {
+      var name;
+      console.log("tracing");
+      if (!this.tracing) {
+        name = $("#all_links").val();
+        if ((name != null) && name !== "") {
+          this.robot_trajectory.new_name(name);
+          this.tracing = true;
+          $("#tracebutton").removeClass("btn-success").addClass("btn-danger");
+        }
+      } else {
+        this.tracing = false;
+        $("#tracebutton").removeClass("btn-danger").addClass("btn-success");
+      }
+      return true;
+    };
+
+    TrajectoryView.prototype.update = function() {
+      if (this.tracing) {
+        this.robot_trajectory.throttled_add_to_trajectory();
+      }
+      return true;
+    };
+
+    return TrajectoryView;
+
+  })(Backbone.View);
 
   App.AnimationForm = (function(_super) {
     __extends(AnimationForm, _super);
