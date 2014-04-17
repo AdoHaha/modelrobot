@@ -75,15 +75,11 @@
   };
 
   App.init = function() {
-    var camera, canvasHeight, canvasRatio, canvasWidth, container, documentWidth, offsetHeight, offsetWidth;
-    documentWidth = $("body").width() - 20;
+    var camera, canvasHeight, canvasRatio, canvasWidth, container, offsetHeight, offsetWidth;
+    canvasWidth = window.innerWidth;
     offsetHeight = document.getElementById('controldiv').offsetHeight;
     offsetWidth = document.getElementById('controldiv').offsetWidth;
-    canvasWidth = documentWidth - offsetWidth - 1;
-    if (canvasWidth < 300) {
-      canvasWidth = documentWidth;
-    }
-    $("#container").width(canvasWidth + 1);
+    canvasWidth = window.innerWidth - offsetWidth - 148;
     canvasHeight = window.innerHeight;
     canvasRatio = canvasWidth / canvasHeight;
     window.renderer = new THREE.WebGLRenderer({

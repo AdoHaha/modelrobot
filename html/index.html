@@ -10,14 +10,14 @@
 
   <!-- Bootstrap core CSS -->
     <link href="./css/bootstrap.min.css" rel="stylesheet">
-
+    <link href="./css/additional.css" rel="stylesheet">
     <!-- Custom styles for this template -->
     
 <body>
 
-<div id="controldiv" style="float:left">
+<div id="controldiv">
 <div id="robodiv"><span id="screenshottext"></span><div id="screenshotplace"></div>
-<form id="robotform"><div><b>Robot's URDF</b></div><textarea name="robottext" rows="15" cols="80" id="robottext" placeholder="Place robot's URDF here"></textarea>
+<form id="robotform"><div><b>Robot's URDF</b></div><textarea id="robottext" name="robottext" rows="15" id="robottext" placeholder="Place robot's URDF here"></textarea>
 <br>
 <button type="button" id="loadbutton">Load robot URDF</button>
 <br>
@@ -33,7 +33,7 @@ Example robots:
         <a href="../testowe/{{ item[1] }}" target="_blank" class="robotlink">{{ item[0] }}</a> 
     {% endfor %}
 </div>
-<div id="animdiv"><form id="animform"><div><b>Robot's poses CSV</b></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" cols="80" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
+<div id="animdiv"><form id="animform"><div><b>Robot's poses CSV</b></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
 <button type="button" id="loadcsv">Load CSV</button>
 <button type="button" id="playbutton">Play</button>
 <button type="button" id="pausebutton">Pause</button>

@@ -72,12 +72,17 @@ Seting initial parameters
 		    
         App.init = ->
                 
-                canvasWidth = window.innerWidth;
-                offsetHeight = document.getElementById('controldiv').offsetHeight;
+                documentWidth = $("body").width()-20;
+                
+                offsetHeight = document.getElementById('controldiv').offsetHeight; #box on left
                 offsetWidth= document.getElementById('controldiv').offsetWidth;
                 #if((window.innerWidth-offsetWidth-5)>0)
                 
-                canvasWidth = window.innerWidth-offsetWidth-148;
+                canvasWidth = documentWidth-offsetWidth-1;
+                if canvasWidth<300
+                    canvasWidth=documentWidth;
+                $("#container").width(canvasWidth+1)
+               
                 #else
                 #    canvasWidth = window.innerWidth
                 

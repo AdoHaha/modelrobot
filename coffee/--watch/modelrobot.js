@@ -116,66 +116,6 @@
 
   })(Backbone.Model);
 
-  App.RobotTrajectory = (function(_super) {
-    __extends(RobotTrajectory, _super);
-
-    function RobotTrajectory() {
-      return RobotTrajectory.__super__.constructor.apply(this, arguments);
-    }
-
-    RobotTrajectory.prototype.initialize = function(name) {
-      var allpoints, material;
-      this.trajectory = new THREE.Shape();
-      this.link_name = this.attributes.name;
-      this.allpoints = new THREE.Geometry();
-      this.allvertices = [];
-      this.throttled_add_to_trajectory = _.throttle(this.add_to_trajectory, 50);
-      material = new THREE.LineBasicMaterial({
-        color: 0xff0000
-      });
-      this.line = new THREE.Line(this.allpoints, material);
-      allpoints = [];
-      window.scene.add(this.line);
-      return true;
-    };
-
-    RobotTrajectory.prototype.add_to_trajectory = function() {
-      var diff, error, lastvector, len, material, matrix, newpoint;
-      try {
-        matrix = window.robotlinkcollection.get(this.link_name).get("link").matrixWorld.elements;
-        console.log(matrix);
-        newpoint = new THREE.Vector3(matrix[12], matrix[13], matrix[14]);
-        len = 1000;
-        if (this.allpoints.vertices.length > 0) {
-          lastvector = this.allpoints.vertices[this.allpoints.vertices.length - 1];
-          diff = new THREE.Vector3();
-          diff.subVectors(newpoint, lastvector);
-          len = diff.length();
-        }
-        if (len > 0.0001) {
-          this.allpoints.vertices.push(newpoint);
-          this.allpoints.verticesNeedUpdate = true;
-          console.log(this.allpoints);
-          console.log(this.line);
-          material = new THREE.LineBasicMaterial({
-            color: 0xff0000
-          });
-          this.allpoints.buffersNeedUpdate = true;
-          this.allpoints.__dirtyVertices = true;
-        } else {
-          return false;
-        }
-      } catch (_error) {
-        error = _error;
-        console.log("couldn't find link:" + name);
-      }
-      return false;
-    };
-
-    return RobotTrajectory;
-
-  })(Backbone.Model);
-
   App.RobotLink = (function(_super) {
     __extends(RobotLink, _super);
 

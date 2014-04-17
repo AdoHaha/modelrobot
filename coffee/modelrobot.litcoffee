@@ -99,8 +99,67 @@ When movement is impossible, return false
                 jointval: () => #just an interface
                         return @theta         
                         
-                
+                        
+RobotTrajectory is a class to  that remembers how some particular link of robot moved
 
+
+        class App.RobotTrajectory extends Backbone.Model
+                initialize: (name)->
+                    @trajectory=new THREE.Shape()
+                    @link_name=@attributes.name
+                    @allpoints= new THREE.Geometry(); #this has all point vertices
+                    @allvertices=[]
+                    @throttled_add_to_trajectory=_.throttle(@add_to_trajectory,50) #will add min 50ms aside
+                    material = new THREE.LineBasicMaterial({color: 0xff0000});
+                    @line= new THREE.Line(@allpoints,material)
+                    allpoints=[]
+                    window.scene.add(@line)
+                    return true
+                add_to_trajectory: ->    
+                    try
+                        matrix=window.robotlinkcollection.get(@link_name).get("link").matrixWorld.elements  #TODO maybie only once? 
+                        console.log(matrix)     
+                        newpoint=new THREE.Vector3(matrix[12],matrix[13],matrix[14])
+                        
+                                                
+Not adding points that are very near
+
+                        len=1000
+                        if(@allpoints.vertices.length>0)
+                            lastvector=@allpoints.vertices[@allpoints.vertices.length-1]
+                            diff=new THREE.Vector3()
+                            diff.subVectors(newpoint,lastvector)
+                            len=diff.length()
+                         
+                         if len>0.0001 #when SI this would mean one thenth of mm
+                                
+                                #@allpoints=new THREE.Geometry()
+                                @allpoints.vertices.push(newpoint)
+                                #@allpoints.vertices.push( new THREE.Vector3( -10, 0, 0 ) );
+                                #@allpoints.vertices.push( new THREE.Vector3( 0, 10, 0 ) );
+                                #@allpoints.vertices.push( new THREE.Vector3( 10, 0, 0 ) );
+                                @allpoints.verticesNeedUpdate=true
+                                console.log(@allpoints)
+                                console.log(@line)
+                                material = new THREE.LineBasicMaterial({color: 0xff0000});
+                                #window.scene.remove(@line)
+                                #= new THREE.Line(@allpoints,material)
+                                #delete @allpoints.
+                                #@line=line = new THREE.Line(@allpoints, material);
+                                #window.scene.add(@line)
+                                #return true  
+                                @allpoints.buffersNeedUpdate=true
+                                @allpoints.__dirtyVertices = true;
+                         else
+                                return false
+                        
+                     catch error
+                        console.log("couldn't find link:"+name)
+                     
+                     
+                     return false   
+                     
+                            
         class App.RobotLink extends Backbone.Model
         
                 initialize: ->
