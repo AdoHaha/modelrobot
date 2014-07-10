@@ -171,15 +171,23 @@
   $(document).ready(App.init);
 
   $(function() {
-    App.forumula = new App.RobotForm();
+    App.router = new App.Router();
     App.animform = new App.AnimationForm({
       robotcontroller: App.robotjointmanipall
     });
     App.trajectoryview = new App.TrajectoryView();
-    return $.when($.get("../testowe/pi_robot_urdf.urdf", window.parseRobot)).then(function() {
-      App.setupGui();
-      return App.animate();
+    App.usersrobots = new App.AllRobots();
+    App.usersrobots.url = "/robots";
+    App.currentrobot = new App.RobotURDF();
+    App.forumula = new App.RobotForm({
+      model: App.currentrobot
     });
+    App.usersrobots.add(App.currentrobot);
+    App.currentrobot.id = window.robot_id;
+    Backbone.history.start({
+      pushState: true
+    });
+    return App.currentrobot.fetch();
   });
 
 }).call(this);

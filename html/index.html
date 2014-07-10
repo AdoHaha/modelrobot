@@ -16,10 +16,22 @@
 <body>
 
 <div id="controldiv">
-<div id="robodiv"><span id="screenshottext"></span><div id="screenshotplace"></div>
-<form id="robotform"><div><b>Robot's URDF</b></div><textarea id="robottext" name="robottext" rows="15" id="robottext" placeholder="Place robot's URDF here"></textarea>
+<span id="screenshottext"></span><div id="screenshotplace"></div>
+<div id="robodiv">
+
+<form id="robotform"><div><b>Robot's URDF</b>
+{% if url_linktext is defined %}
+<span style="float:right">
+<a href="{{url}}">{{url_linktext}}</a>
+</span>
+{% endif%}
+</div>
+<textarea id="robottext" name="robottext" rows="15" id="robottext" placeholder="Place robot's URDF here"></textarea>
 <br>
 <button type="button" id="loadbutton">Load robot URDF</button>
+{% if user %}
+<button type="button" id="saverobot">Save robot</button> <input type="checkbox" name="visible" id="visible">Visible
+{% endif %}
 <br>
 <button type="button" id="screenshot">Make screenshot</button>
 
@@ -27,13 +39,13 @@
 <button type="button" id="topview">Top view</button>
 <button type="button" id="sideview">Side view</button>
 <br>
-</form>
+<!--</form>-->
 Example robots:
 {% for item in linki %}
         <a href="../testowe/{{ item[1] }}" target="_blank" class="robotlink">{{ item[0] }}</a> 
     {% endfor %}
 </div>
-<div id="animdiv"><form id="animform"><div><b>Robot's poses CSV</b></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
+<div id="animdiv"><!--<form id="animform">--><div><b>Robot's poses CSV</b></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
 <button type="button" id="loadcsv">Load CSV</button>
 <button type="button" id="playbutton">Play</button>
 <button type="button" id="pausebutton">Pause</button>
@@ -43,8 +55,10 @@ Example robots:
 <button type="button" id="addposition">Add current position</button>
 <br>
 <div id="trajectory">
-Trace trajectory of:<select id="all_links"></select><button type="button" id="tracebutton" class="btn-success">Trace</button><button type="button" id="clear_trajectory" class="btn-alert">Clear trajectory</button>
+Trace trajectory of:<select id="all_links"></select><button type="button" id="tracebutton" class="btn-success">Trace</button>
+<button type="button" id="clear_trajectory" class="btn-alert">Clear trajectory</button>
 </div>
+
 </form></div>
 
 </div>
@@ -52,10 +66,16 @@ Trace trajectory of:<select id="all_links"></select><button type="button" id="tr
 		</div>
 
 
+<script>
+{% if robot_start_id is defined %}
+window.start_with_default=false;
+window.robot_id={{robot_start_id}};
 
-
-
- 
+{% else %}
+window.start_with_default=true;
+window.robot_id=5629499534213120;
+ {% endif %}
+ </script>
 <script src="./scripts/three.js"></script>
 <script src="./scripts/jquery-1.9.1.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>

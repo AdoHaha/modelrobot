@@ -1,0 +1,5 @@
+               
+               App.usersrobots=new App.AllRobots()
+                App.usersrobots.url="/robots"
+                App.currentrobot= new App.RobotURDF()
+                App.currentrobot

@@ -198,13 +198,33 @@ Starting it all
         $(document).ready(App.init)
         
         $ ->
-                App.forumula = new App.RobotForm();
+                App.router=new App.Router()
+                
                 App.animform = new App.AnimationForm({robotcontroller:App.robotjointmanipall});
                 App.trajectoryview=new App.TrajectoryView()
-                $.when($.get("../testowe/pi_robot_urdf.urdf",window.parseRobot)).then( ->
-                        App.setupGui();
-                        App.animate();
-                      )
+                
+
+                App.usersrobots=new App.AllRobots()
+                App.usersrobots.url="/robots"
+                App.currentrobot= new App.RobotURDF()
+                App.forumula = new App.RobotForm({model:App.currentrobot});
+                App.usersrobots.add(App.currentrobot)
+                #console.log(window.robot_id)
+                App.currentrobot.id=window.robot_id
+                Backbone.history.start({pushState:true})
+                App.currentrobot.fetch()
+                
+                
+                #if window.start_with_default
+                #    pass
+                    #delete App.currentrobot.id
+                
+                    
+                
+                #$.when($.get("../testowe/pi_robot_urdf.urdf",window.parseRobot)).then( ->
+                #        App.setupGui();
+                #        App.animate();
+                #      )
                 
                
 

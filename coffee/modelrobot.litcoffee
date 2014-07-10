@@ -16,10 +16,25 @@ we can have additional info stating whether el value is correct as a third argum
                 arrayw=el2array.split(delim)
                 arrayw=_.map(arrayw,(num)-> num*1)
                 return arrayw
+ 
+ Class responsible for changing addresses in browser               
                 
-                
+        class App.Router extends Backbone.Router
+        
+            routes:
+                "new_robot": "new_robot"
+                ":id": "change_robot"
+            
+            change_robot: (id)->
+                App.currentrobot.id=id
+                App.currentrobot.fetch()
+            new_robot: ->
+                delete App.currentrobot.id
+
+
 Model of robot joint, it is responsible of moving links: connecting them together with parent-child relation, as well as moving with controlls/ animation
 
+                    
         class App.RobotJoint extends Backbone.Model
 
 
@@ -320,8 +335,28 @@ Returns array array[0] joint values array[1] joint names
                         , @)
                                
                         return [values,names]
-                                 
-                                
+
+
+        
+        class App.AllRobots extends Backbone.Collection  
+            model:App.RobotURDF
+            
+            
+            
+        class App.AllCSVs extends Backbone.Collection
+     
+RobotURDF is a true Backbone Model, communicating with App Engine Server
+There can be only one such model on scene ###TODO this seems fundamentaly wrong
+
+        class App.RobotURDF extends Backbone.Model
+            initialize:->
+                
+                @on("change",@change_address)
+                return true
+            change_address:->
+                App.router.navigate("/"+@id)
+                      
+                                        
                         
                 
                 
@@ -387,7 +422,7 @@ It does not change params of scene. TODO: soft reset, that is draw robot from ne
 Functions connected to top form, where URDF is placed. TODO: it schouldn't reset all if not asked, just update. This will make it more interactive.
 
         class App.RobotForm extends Backbone.View
-                el: $("#robodiv")
+                el: $("#controldiv")
                 events:
                         "click #loadbutton": "resetNload"
                         "click #screenshot": "showScreenshot"
@@ -395,17 +430,36 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         "click #frontview":"frontView"
                         "click #topview":"topView"
                         "click #sideview":"sideView"
+                        "click #saverobot": "saveRobot"
+                        "change #visible": "visible"
                         #"click .robotlink": "changeURDF"
                 initialize:->
                     $(".robotlink").on("click", @changeURDF);
-                    
-                resetNload: ->
-                #        console.log("fufu2")
-                        urdffromform=$(@el).find("#robottext").val()
+                    this.listenTo(this.model, "change", this.newRobot);
+                visible: ->
+                    @model.set({"visible":$('#visible').prop('checked')})    
+                saveRobot: ->
+                     #console.log("zapisuje")
+                     #event.preventDefault();
+                     @resetNload()
+                     @model.save()
+                newRobot: ->
+                    #console.log("robot changed")
+                    if window.robotlinkcollection?
                         window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
-                        window.parseRobot(urdffromform);
-                        App.setupGui()
-                        console.log(urdffromform)
+                    window.parseRobot(@model.attributes.urdf)
+                    App.setupGui();
+                    App.animate();
+                    $("#robottext").val(@model.attributes.urdf)
+                    $('#visible').prop('checked', @model.attributes.visible);
+                resetNload: ->
+                        
+                        urdffromform=$(@el).find("#robottext").val()
+                        @model.set({urdf:urdffromform})
+                        #window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
+                        #window.parseRobot(urdffromform);
+                        #App.setupGui()
+                        #console.log(urdffromform)
                         
                 changeURDF: (event)->
                     event.preventDefault();
@@ -556,6 +610,9 @@ AnimationForm class will control robot animation, from the form submission, in d
                         "click #nextbutton": "nextstep"
                         "click #prevbutton": "prevstep"
                         "click #addposition": "addposition"
+                        "click #save": "saverobot"
+                saverobot: ->
+                        document.getElementById("robotform").submit();
                 addposition: -> #it assumes that current csv is loaded
                         currentstate=@robotcontroller.jointsval(@names)
                         if @names.length==0
