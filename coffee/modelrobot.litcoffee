@@ -447,19 +447,20 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     #console.log("robot changed")
                     if window.robotlinkcollection?
                         window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
-                    window.parseRobot(@model.attributes.urdf)
-                    App.setupGui();
-                    App.animate();
-                    $("#robottext").val(@model.attributes.urdf)
-                    $('#visible').prop('checked', @model.attributes.visible);
+
+                    if window.parseRobot(@model.attributes.urdf)
+                    
+                        App.setupGui();
+                        App.animate();
+                        $("#robottext").val(@model.attributes.urdf)
+                        $('#visible').prop('checked', @model.attributes.visible);
+                    else
+                        window.alert("there was something wrong with your URDF");
                 resetNload: ->
                         
                         urdffromform=$(@el).find("#robottext").val()
                         @model.set({urdf:urdffromform})
-                        #window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
-                        #window.parseRobot(urdffromform);
-                        #App.setupGui()
-                        #console.log(urdffromform)
+
                         
                 changeURDF: (event)->
                     event.preventDefault();

@@ -4,6 +4,11 @@ Function in this file prepares robot in App namespace from xml string ( URDF fil
 
 
         window.parseRobot= (xml) ->
+                try
+                    xmelon=$.parseXML(xml); # enabling use of jQuery functions 
+                catch error
+                    console.log(error)
+                    return false    
                 window.scene = window.scene || new THREE.Scene
                 if window.robotmaterialcollection?
                     window.robotmaterialcollection.reset()
@@ -24,15 +29,14 @@ Function in this file prepares robot in App namespace from xml string ( URDF fil
 
 
 Using jQery parseXML function, as return we get JQery parsable XML document
-
+                
                 xmelon=$.parseXML(xml); # enabling use of jQuery functions  
                 
 Setting global robot object, where all parsed parts will be put
 
                 robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 50 } );
-                window.robot=new THREE.Object3D();
+                window.robot=new THREE.Object3D(); #XXX why global
                 window.robot.name="robot";
-
 
 Naive parsing into robot object
 -------------------------------
@@ -91,5 +95,5 @@ Joints are not added to robot, as they control robot when it is moved, so they i
                 renderer.render(window.scene, App.camera);
                 App.trajectoryview.create_list()
 
-
+                return true
 
