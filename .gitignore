@@ -18,6 +18,7 @@ main.py
 mongoose-3.7.exe
 makecoffie.bat
 .gitignore
-
+deploy_to_google.sh
 *~
 */*~
+main.pyc

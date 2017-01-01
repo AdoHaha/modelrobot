@@ -42,10 +42,10 @@ Model of robot joint, it is responsible of moving links: connecting them togethe
                         @theta=0
                         @name=@attributes.name
                         axis=App.el2array(_.has(@attributes,"axis")&&@attributes.axis.xyz,"1 0 0");
-                                #xis=axis.split(" ")
+                               
                         @axis=new THREE.Vector3(axis[0],axis[1],axis[2])
                         rotation=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.rpy,"0 0 0")
-                        @basicrotation=new THREE.Vector3(rotation[0],rotation[1],rotation[2])
+                        @basicrotation=new THREE.Euler(rotation[0],rotation[1],rotation[2])
                         position=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.xyz,"0 0 0")
                         @basicposition=new THREE.Vector3(position[0],position[1],position[2])
                 
@@ -57,7 +57,7 @@ Model of robot joint, it is responsible of moving links: connecting them togethe
 
                         basicMatrix=new THREE.Matrix4()
                         @movementMatrix=new THREE.Matrix4()
-                        basicMatrix.setRotationFromEuler(@basicrotation)
+                        basicMatrix.makeRotationFromEuler(@basicrotation)
                         basicMatrix.setPosition(@basicposition)
                         @basicMatrix=basicMatrix
                         @currentMatrix=new THREE.Matrix4();
@@ -97,9 +97,9 @@ When movement is impossible, return false
                             t1=Math.max(@lower,Math.min(t1,@upper));
                         if (@type=="continuous" or (@upper >= t1 >=@lower)) #check whether movement is allowed
                                 switch @type
-                                        when "revolute" then @movementMatrix=tempMatrix.rotateByAxis(@axis,t1)
-                                        when "continuous" then @movementMatrix=tempMatrix.rotateByAxis(@axis,t1)
-                                        when "prismatic" then @movementMatrix=tempMatrix.translate(tempaxis.multiplyScalar(t1))
+                                        when "revolute" then @movementMatrix=tempMatrix.makeRotationAxis(@axis,t1)
+                                        when "continuous" then @movementMatrix=tempMatrix.makeRotationAxis(@axis,t1)
+                                        when "prismatic" then @movementMatrix=tempMatrix.setPosition(tempaxis.multiplyScalar(t1))
                                         when "fixed" then @movementMatrix.identity()
                                         when "planar" then @movementMatrix.identity() #TODO
                                         
@@ -235,9 +235,9 @@ Not adding points that are very near
                         
                                 orientation=App.el2array(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.rpy,"0 0 0")
                                 @meshvis.position.set(position[0], position[1],position[2]);
-                        #        console.log(@meshvis.position)
-                                @meshvis.rotation.set(orientation[0],orientation[1],orientation[2]);
-                        #        console.log(@meshvis.rotation)
+                      
+                                @meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2]));
+                                console.log(@meshvis.rotation)
                                 @
                         
                         else
@@ -247,7 +247,9 @@ Not adding points that are very near
                 makecylinder: (length,radius) ->
                         meshvis = new THREE.Mesh( 
                                         new THREE.CylinderGeometry( radius,radius, length,500,1 ), @robotBaseMaterial );
-                        meshvis.rotation=new THREE.Vector3(Math.PI/2,0,0)
+                        
+                        meshvis.setRotationFromEuler(new THREE.Euler(Math.PI/2,0.0,0.0,'XYZ'))
+                        console.log(meshvis.rotation);
                         @meshvis=new THREE.Mesh()
                         @meshvis.add(meshvis)
                 makebox: (boxsize) ->

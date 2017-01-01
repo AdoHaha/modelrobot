@@ -67,7 +67,7 @@
       axis = App.el2array(_.has(this.attributes, "axis") && this.attributes.axis.xyz, "1 0 0");
       this.axis = new THREE.Vector3(axis[0], axis[1], axis[2]);
       rotation = App.el2array(_.has(this.attributes, "origin") && this.attributes.origin.rpy, "0 0 0");
-      this.basicrotation = new THREE.Vector3(rotation[0], rotation[1], rotation[2]);
+      this.basicrotation = new THREE.Euler(rotation[0], rotation[1], rotation[2]);
       position = App.el2array(_.has(this.attributes, "origin") && this.attributes.origin.xyz, "0 0 0");
       this.basicposition = new THREE.Vector3(position[0], position[1], position[2]);
       this.lower = (_.has(this.attributes, "limit") && this.attributes.limit.lower) || -Math.PI;
@@ -76,7 +76,7 @@
       this.upper = this.upper * 1;
       basicMatrix = new THREE.Matrix4();
       this.movementMatrix = new THREE.Matrix4();
-      basicMatrix.setRotationFromEuler(this.basicrotation);
+      basicMatrix.makeRotationFromEuler(this.basicrotation);
       basicMatrix.setPosition(this.basicposition);
       this.basicMatrix = basicMatrix;
       this.currentMatrix = new THREE.Matrix4();
@@ -109,13 +109,13 @@
       if (this.type === "continuous" || ((this.upper >= t1 && t1 >= this.lower))) {
         switch (this.type) {
           case "revolute":
-            this.movementMatrix = tempMatrix.rotateByAxis(this.axis, t1);
+            this.movementMatrix = tempMatrix.makeRotationAxis(this.axis, t1);
             break;
           case "continuous":
-            this.movementMatrix = tempMatrix.rotateByAxis(this.axis, t1);
+            this.movementMatrix = tempMatrix.makeRotationAxis(this.axis, t1);
             break;
           case "prismatic":
-            this.movementMatrix = tempMatrix.translate(tempaxis.multiplyScalar(t1));
+            this.movementMatrix = tempMatrix.setPosition(tempaxis.multiplyScalar(t1));
             break;
           case "fixed":
             this.movementMatrix.identity();
@@ -279,7 +279,8 @@
         position = App.el2array(_.has(this.attributes.visual, "origin") && this.attributes.visual.origin.xyz, "0 0 0");
         orientation = App.el2array(_.has(this.attributes.visual, "origin") && this.attributes.visual.origin.rpy, "0 0 0");
         this.meshvis.position.set(position[0], position[1], position[2]);
-        this.meshvis.rotation.set(orientation[0], orientation[1], orientation[2]);
+        this.meshvis.setRotationFromEuler(new THREE.Euler(orientation[0], orientation[1], orientation[2]));
+        console.log(this.meshvis.rotation);
         return this;
       } else {
         console.log("there are no visual attributes");
@@ -291,7 +292,8 @@
     RobotLink.prototype.makecylinder = function(length, radius) {
       var meshvis;
       meshvis = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 500, 1), this.robotBaseMaterial);
-      meshvis.rotation = new THREE.Vector3(Math.PI / 2, 0, 0);
+      meshvis.setRotationFromEuler(new THREE.Euler(Math.PI / 2, 0.0, 0.0, 'XYZ'));
+      console.log(meshvis.rotation);
       this.meshvis = new THREE.Mesh();
       return this.meshvis.add(meshvis);
     };

@@ -93,7 +93,8 @@ Seting initial parameters
                 window.renderer.gammaInput = true
                 window.renderer.gammaOutput = true
                 window.renderer.setSize(canvasWidth, canvasHeight);
-                window.renderer.setClearColorHex( 0xAAAAAA, 1.0 );
+                #window.renderer.setClearColorHex();
+                window.renderer.setClearColor(new THREE.Color(0xAAAAAA), 1.0 );
                 container = document.getElementById('container')
                 container.appendChild( window.renderer.domElement );
 	        
@@ -107,7 +108,7 @@ seting CAMERA params
 setting CONTROLS params
 
                 App.camera=camera
-                App.cameraControls = new THREE.OrbitAndPanControls(camera, renderer.domElement);
+                App.cameraControls = new THREE.TrackballControls(camera, renderer.domElement);
                 #cameraControls.target.set(0.1,0,0);
 	        #cameraControls.object.lookAt
 	        App.fillScene();
