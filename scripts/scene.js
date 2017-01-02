@@ -99,7 +99,9 @@
     camera.position.set(2.5, 2, 4);
     camera.up = new THREE.Vector3(0, 0, 1);
     App.camera = camera;
-    return App.cameraControls = new THREE.TrackballControls(camera, renderer.domElement);
+    App.cameraControls = new THREE.TrackballControls(camera, renderer.domElement);
+    App.cameraControls.rotateSpeed = 4;
+    return App.cameraControls.target.set(0, 0, 0);
   };
 
   App.fillScene();

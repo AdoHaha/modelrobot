@@ -280,7 +280,6 @@
         orientation = App.el2array(_.has(this.attributes.visual, "origin") && this.attributes.visual.origin.rpy, "0 0 0");
         this.meshvis.position.set(position[0], position[1], position[2]);
         this.meshvis.setRotationFromEuler(new THREE.Euler(orientation[0], orientation[1], orientation[2]));
-        console.log(this.meshvis.rotation);
         return this;
       } else {
         console.log("there are no visual attributes");
@@ -293,7 +292,6 @@
       var meshvis;
       meshvis = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 500, 1), this.robotBaseMaterial);
       meshvis.setRotationFromEuler(new THREE.Euler(Math.PI / 2, 0.0, 0.0, 'XYZ'));
-      console.log(meshvis.rotation);
       this.meshvis = new THREE.Mesh();
       return this.meshvis.add(meshvis);
     };
@@ -637,18 +635,23 @@
     };
 
     RobotForm.prototype.frontView = function() {
-      console.log(App.camera.position);
-      App.camera.position.set(5.12, 0, 0);
+      App.camera.position.set(5, 0, 0);
+      App.camera.lookAt(0, 0, 0);
+      App.camera.up = new THREE.Vector3(0, 0, 1);
       return App.camera;
     };
 
     RobotForm.prototype.topView = function() {
-      App.camera.position.set(0, 0, 5.12);
+      App.camera.position.set(0, 0, 5);
+      App.camera.lookAt(0, 0, 0);
+      App.camera.up = new THREE.Vector3(1, 0, 0);
       return App.camera;
     };
 
     RobotForm.prototype.sideView = function() {
-      App.camera.position.set(0, 5.12, 0);
+      App.camera.position.set(0, 5, 0);
+      App.camera.lookAt(0, 0, 0);
+      App.camera.up = new THREE.Vector3(0, 0, 1);
       return App.camera;
     };
 

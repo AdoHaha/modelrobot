@@ -237,7 +237,7 @@ Not adding points that are very near
                                 @meshvis.position.set(position[0], position[1],position[2]);
                       
                                 @meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2]));
-                                console.log(@meshvis.rotation)
+                                #console.log(@meshvis.rotation)
                                 @
                         
                         else
@@ -249,7 +249,7 @@ Not adding points that are very near
                                         new THREE.CylinderGeometry( radius,radius, length,500,1 ), @robotBaseMaterial );
                         
                         meshvis.setRotationFromEuler(new THREE.Euler(Math.PI/2,0.0,0.0,'XYZ'))
-                        console.log(meshvis.rotation);
+                        #console.log(meshvis.rotation);
                         @meshvis=new THREE.Mesh()
                         @meshvis.add(meshvis)
                 makebox: (boxsize) ->
@@ -492,16 +492,23 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
 Simple camera views, for fast setting
         
                 frontView: =>
-                        console.log(App.camera.position);
-                        App.camera.position.set( 5.12, 0, 0 );
                         
+                        App.camera.position.set( 5, 0, 0 );
+                        
+                        App.camera.lookAt(0,0,0);
+                        App.camera.up=new THREE.Vector3(0,0,1)
+                        #App.camera.setRotationFromEuler(new THREE.Euler(0,0.0,0.0,'XYZ'))
                         return App.camera
                 topView: =>
-                        App.camera.position.set(0,0,5.12);
+                        App.camera.position.set(0,0,5);
+                        App.camera.lookAt(0,0,0);
+                        App.camera.up=new THREE.Vector3(1,0,0)
                         return App.camera 
                 
                 sideView: =>
-                        App.camera.position.set(0,5.12,0);
+                        App.camera.position.set(0,5,0);
+                        App.camera.lookAt(0,0,0);
+                        App.camera.up=new THREE.Vector3(0,0,1)
                         return App.camera          
                         
                             
@@ -516,7 +523,7 @@ Helper clock, I have just added zerotime - to be able to have
                         @zeroTime =zerotime ? @zeroTime
                         this.oldTime=@oldTime-@zeroTime
                         @
-                stop: () -> #I like chaining , btw stop is essentially a pouse?
+                stop: () -> #I like chaining , btw stop is essentially a pause?
                         super
                         @
                 reset: () -> #because stop just pauses

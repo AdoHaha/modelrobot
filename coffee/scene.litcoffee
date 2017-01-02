@@ -109,7 +109,9 @@ setting CONTROLS params
 
                 App.camera=camera
                 App.cameraControls = new THREE.TrackballControls(camera, renderer.domElement);
-                #cameraControls.target.set(0.1,0,0);
+                App.cameraControls.rotateSpeed=4
+                App.cameraControls.target.set(0,0,0);
+
 	        #cameraControls.object.lookAt
 	        App.fillScene();
 	        true
@@ -141,11 +143,11 @@ Controlling scene, using dat gui
                 
                 
 Creating gui for robot
-
+                
                 App.robotjointmanipall= new App.RobotJointManipAll({gui:App.gui, joints: window.robotjointcollection});                	        
                 App.animform.robotcontroller=App.robotjointmanipall #TODO, this is awkward hack
                 App.gui.__folders["Joint values"].open()
-                
+               
                 
                 
 helper function takeScreenShot, will take screenshot when P is pressed
