@@ -565,6 +565,7 @@
       "click #topview": "topView",
       "click #sideview": "sideView",
       "click #saverobot": "saveRobot",
+      "click #armode": "arMode",
       "change #visible": "visible"
     };
 
@@ -582,6 +583,20 @@
     RobotForm.prototype.saveRobot = function() {
       this.resetNload();
       return this.model.save();
+    };
+
+    RobotForm.prototype.arMode = function() {
+      var pageid, qrcode;
+      pageid = App.currentrobot.id;
+      qrcode = new QRCode(document.getElementById("qrcode"), {
+        text: "https://mymodelrobot.appspot.com/ar/" + pageid,
+        width: 128,
+        height: 128,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      return window.open("https://mymodelrobot.appspot.com/ar/" + pageid, "_blank");
     };
 
     RobotForm.prototype.newRobot = function() {
@@ -776,7 +791,9 @@
       this.findframetoshow = bind(this.findframetoshow, this);
       this.prepareArraysfromCSV = bind(this.prepareArraysfromCSV, this);
       this.prettify = bind(this.prettify, this);
-      this.loadURDFfromForm = bind(this.loadURDFfromForm, this);
+      this.loadCSVfromForm = bind(this.loadCSVfromForm, this);
+      this.CSVfiledrop = bind(this.CSVfiledrop, this);
+      this.CSVfiledrag = bind(this.CSVfiledrag, this);
       return AnimationForm.__super__.constructor.apply(this, arguments);
     }
 
@@ -806,7 +823,9 @@
     };
 
     AnimationForm.prototype.events = {
-      "click #loadcsv": "loadURDFfromForm",
+      "click #loadcsv": "loadCSVfromForm",
+      "drop #robotcsv": "CSVfiledrop",
+      "drag #robotcsv": "CSVfiledrag",
       "keydown #robotcsv": "pp",
       "click #playbutton": "playbutton",
       "click #pausebutton": "pausebutton",
@@ -815,6 +834,35 @@
       "click #prevbutton": "prevstep",
       "click #addposition": "addposition",
       "click #save": "saverobot"
+    };
+
+    AnimationForm.prototype.CSVfiledrag = function(evt) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      return evt.originalEvent.dataTransfer.dropEffect = 'copy';
+    };
+
+    AnimationForm.prototype.CSVfiledrop = function(evt) {
+      var f, files, j, len1, output, reader, results;
+      window.evt = evt;
+      console.log(evt);
+      evt.stopPropagation();
+      evt.preventDefault();
+      files = evt.originalEvent.dataTransfer.files;
+      output = [];
+      reader = new FileReader();
+      reader.onload = (function(_this) {
+        return function(event) {
+          $("#robotcsv").val(event.target.result);
+          return _this.loadCSVfromForm();
+        };
+      })(this);
+      results = [];
+      for (j = 0, len1 = files.length; j < len1; j++) {
+        f = files[j];
+        results.push(reader.readAsText(f));
+      }
+      return results;
     };
 
     AnimationForm.prototype.saverobot = function() {
@@ -834,7 +882,7 @@
         }
         this.textform.val(this.textform.val() + addtime + currentstate[0]);
       }
-      return this.loadURDFfromForm();
+      return this.loadCSVfromForm();
     };
 
     AnimationForm.prototype.playbutton = function() {
@@ -862,8 +910,9 @@
       return this;
     };
 
-    AnimationForm.prototype.loadURDFfromForm = function() {
+    AnimationForm.prototype.loadCSVfromForm = function() {
       var formcsv;
+      console.log("loading csv");
       formcsv = this.textform.val();
       formcsv = $.trim(formcsv);
       this.prepareArraysfromCSV(formcsv);
