@@ -3,16 +3,36 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Model your robots in URDF and show them directely here!</title>
+  <title>Model your robots in URDF and show them here!</title>
  
+
+
+<script src="./scripts/qrcode.js"></script>
+
+<script>
+{% if robot_start_id is defined %}
+window.start_with_default=false;
+window.robot_id={{robot_start_id}};
+
+{% else %}
+window.start_with_default=true;
+window.robot_id=5629499534213120;
+ {% endif %}
+ </script>
+
+
 </head>
+
+
 
 
   <!-- Bootstrap core CSS -->
     <link href="./css/bootstrap.min.css" rel="stylesheet">
     <link href="./css/additional.css" rel="stylesheet">
+
     <!-- Custom styles for this template -->
-    
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <link href="./css/ambiance_mod.css" rel="stylesheet">
 <body>
 
 <div id="controldiv">
@@ -26,12 +46,16 @@
 </span>
 {% endif%}
 </div>
+<div id="robottextbox">
 <textarea id="robottext" name="robottext" rows="15" id="robottext" placeholder="Place robot's URDF here"></textarea>
+</div>
 <br>
 <button type="button" id="loadbutton">Load robot URDF</button>
 {% if user %}
-<button type="button" id="saverobot">Save robot</button> <input type="checkbox" name="visible" id="visible">Visible
+<button type="button" id="saverobot">Save robot</button> <input type="checkbox" name="visible" id="visible">Visible</input>
 {% endif %}
+<button type="button" id="armode">AR Mode</button>
+<span id="qrcode" style="z-index:2"></span>
 <br>
 <button type="button" id="screenshot">Make screenshot</button>
 
@@ -45,7 +69,7 @@ Example robots:
         <a href="../testowe/{{ item[1] }}" target="_blank" class="robotlink">{{ item[0] }}</a> 
     {% endfor %}
 </div>
-<div id="animdiv"><!--<form id="animform">--><div><b>Robot's poses CSV</b></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" id="robotcsv" placeholder="Place here CSV (comma seperated values) of robot's poses"></textarea><br>
+<div id="animdiv"><!--<form id="animform">--><div><b>Robot's poses CSV</b></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" id="robotcsv" placeholder="Place your CSV(comma seperated values) of robot's poses here"></textarea><br>
 <button type="button" id="loadcsv">Load CSV</button>
 <button type="button" id="playbutton">Play</button>
 <button type="button" id="pausebutton">Pause</button>
@@ -56,7 +80,9 @@ Example robots:
 <br>
 <div id="trajectory">
 Trace trajectory of:<select id="all_links"></select><button type="button" id="tracebutton" class="btn-success">Trace</button>
-<button type="button" id="clear_trajectory" class="btn-alert">Clear trajectory</button>
+<button type="button" id="clear_trajectory" class="btn-alert">Clear trajectory</button><br>
+
+
 </div>
 
 </form></div>
@@ -65,17 +91,8 @@ Trace trajectory of:<select id="all_links"></select><button type="button" id="tr
 <div id="container" style="float:left;width:50%">
 		</div>
 
-
-<script>
-{% if robot_start_id is defined %}
-window.start_with_default=false;
-window.robot_id={{robot_start_id}};
-
-{% else %}
-window.start_with_default=true;
-window.robot_id=5629499534213120;
- {% endif %}
- </script>
+<script src="lib/codemirror.js"></script>
+<script src="lib/mode/xml/xml.js"></script>
 <script src="./scripts/three.min.js"></script>
 <script src="./scripts/jquery-1.9.1.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>

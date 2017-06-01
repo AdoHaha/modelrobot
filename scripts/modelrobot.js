@@ -552,6 +552,8 @@
       this.frontView = bind(this.frontView, this);
       this.closeScreenshot = bind(this.closeScreenshot, this);
       this.changeURDFval = bind(this.changeURDFval, this);
+      this.URDFfiledrop = bind(this.URDFfiledrop, this);
+      this.URDFfiledrag = bind(this.URDFfiledrag, this);
       return RobotForm.__super__.constructor.apply(this, arguments);
     }
 
@@ -560,17 +562,53 @@
     RobotForm.prototype.events = {
       "click #loadbutton": "resetNload",
       "click #screenshot": "showScreenshot",
+      "drop #robottextbox": "URDFfiledrop",
+      "drag #robottextbox": "URDFfiledrag",
       "click #screenshotplace": "closeScreenshot",
       "click #frontview": "frontView",
       "click #topview": "topView",
       "click #sideview": "sideView",
       "click #saverobot": "saveRobot",
+      "click #armode": "arMode",
       "change #visible": "visible"
     };
 
     RobotForm.prototype.initialize = function() {
       $(".robotlink").on("click", this.changeURDF);
-      return this.listenTo(this.model, "change", this.newRobot);
+      this.listenTo(this.model, "change", this.newRobot);
+      return this.myCodeMirror = CodeMirror.fromTextArea($("#robottext")[0], {
+        mode: "text/html",
+        lineNumbers: true,
+        theme: "ambiance"
+      });
+    };
+
+    RobotForm.prototype.URDFfiledrag = function(evt) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      return evt.originalEvent.dataTransfer.dropEffect = 'copy';
+    };
+
+    RobotForm.prototype.URDFfiledrop = function(evt) {
+      var f, files, j, len1, output, reader, results;
+      evt.stopPropagation();
+      evt.preventDefault();
+      files = evt.originalEvent.dataTransfer.files;
+      output = [];
+      reader = new FileReader();
+      reader.onload = (function(_this) {
+        return function(event) {
+          _this.myCodeMirror.setValue(event.target.result);
+          _this.myCodeMirror.save();
+          return _this.resetNload();
+        };
+      })(this);
+      results = [];
+      for (j = 0, len1 = files.length; j < len1; j++) {
+        f = files[j];
+        results.push(reader.readAsText(f));
+      }
+      return results;
     };
 
     RobotForm.prototype.visible = function() {
@@ -584,6 +622,20 @@
       return this.model.save();
     };
 
+    RobotForm.prototype.arMode = function() {
+      var pageid, qrcode;
+      pageid = App.currentrobot.id;
+      qrcode = new QRCode(document.getElementById("qrcode"), {
+        text: "https://mymodelrobot.appspot.com/ar/" + pageid,
+        width: 128,
+        height: 128,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      return window.open("https://mymodelrobot.appspot.com/ar/" + pageid, "_blank");
+    };
+
     RobotForm.prototype.newRobot = function() {
       if (window.robotlinkcollection != null) {
         window.clearall(window.scene, window.robot, window.robotjointcollection, window.robotlinkcollection);
@@ -591,7 +643,8 @@
       if (window.parseRobot(this.model.attributes.urdf)) {
         App.setupGui();
         App.animate();
-        $("#robottext").val(this.model.attributes.urdf);
+        this.myCodeMirror.setValue(this.model.attributes.urdf);
+        this.myCodeMirror.save();
         return $('#visible').prop('checked', this.model.attributes.visible);
       } else {
         return window.alert("there was something wrong with your URDF");
@@ -600,6 +653,7 @@
 
     RobotForm.prototype.resetNload = function() {
       var urdffromform;
+      this.myCodeMirror.save();
       urdffromform = $(this.el).find("#robottext").val();
       return this.model.set({
         urdf: urdffromform
@@ -617,7 +671,8 @@
     RobotForm.prototype.changeURDFval = function(xmlval) {
       var textval;
       textval = (new XMLSerializer()).serializeToString(xmlval);
-      $("#robottext").val(textval);
+      this.myCodeMirror.setValue(textval);
+      this.myCodeMirror.save();
       return true;
     };
 
@@ -776,7 +831,9 @@
       this.findframetoshow = bind(this.findframetoshow, this);
       this.prepareArraysfromCSV = bind(this.prepareArraysfromCSV, this);
       this.prettify = bind(this.prettify, this);
-      this.loadURDFfromForm = bind(this.loadURDFfromForm, this);
+      this.loadCSVfromForm = bind(this.loadCSVfromForm, this);
+      this.CSVfiledrop = bind(this.CSVfiledrop, this);
+      this.CSVfiledrag = bind(this.CSVfiledrag, this);
       return AnimationForm.__super__.constructor.apply(this, arguments);
     }
 
@@ -806,7 +863,9 @@
     };
 
     AnimationForm.prototype.events = {
-      "click #loadcsv": "loadURDFfromForm",
+      "click #loadcsv": "loadCSVfromForm",
+      "drop #robotcsv": "CSVfiledrop",
+      "drag #robotcsv": "CSVfiledrag",
       "keydown #robotcsv": "pp",
       "click #playbutton": "playbutton",
       "click #pausebutton": "pausebutton",
@@ -815,6 +874,35 @@
       "click #prevbutton": "prevstep",
       "click #addposition": "addposition",
       "click #save": "saverobot"
+    };
+
+    AnimationForm.prototype.CSVfiledrag = function(evt) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      return evt.originalEvent.dataTransfer.dropEffect = 'copy';
+    };
+
+    AnimationForm.prototype.CSVfiledrop = function(evt) {
+      var f, files, j, len1, output, reader, results;
+      window.evt = evt;
+      console.log(evt);
+      evt.stopPropagation();
+      evt.preventDefault();
+      files = evt.originalEvent.dataTransfer.files;
+      output = [];
+      reader = new FileReader();
+      reader.onload = (function(_this) {
+        return function(event) {
+          $("#robotcsv").val(event.target.result);
+          return _this.loadCSVfromForm();
+        };
+      })(this);
+      results = [];
+      for (j = 0, len1 = files.length; j < len1; j++) {
+        f = files[j];
+        results.push(reader.readAsText(f));
+      }
+      return results;
     };
 
     AnimationForm.prototype.saverobot = function() {
@@ -834,7 +922,7 @@
         }
         this.textform.val(this.textform.val() + addtime + currentstate[0]);
       }
-      return this.loadURDFfromForm();
+      return this.loadCSVfromForm();
     };
 
     AnimationForm.prototype.playbutton = function() {
@@ -862,8 +950,9 @@
       return this;
     };
 
-    AnimationForm.prototype.loadURDFfromForm = function() {
+    AnimationForm.prototype.loadCSVfromForm = function() {
       var formcsv;
+      console.log("loading csv");
       formcsv = this.textform.val();
       formcsv = $.trim(formcsv);
       this.prepareArraysfromCSV(formcsv);
