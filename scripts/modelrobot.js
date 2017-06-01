@@ -562,8 +562,8 @@
     RobotForm.prototype.events = {
       "click #loadbutton": "resetNload",
       "click #screenshot": "showScreenshot",
-      "drop #robottext": "URDFfiledrop",
-      "drag #robottext": "URDFfiledrag",
+      "drop #robottextbox": "URDFfiledrop",
+      "drag #robottextbox": "URDFfiledrag",
       "click #screenshotplace": "closeScreenshot",
       "click #frontview": "frontView",
       "click #topview": "topView",
@@ -575,7 +575,12 @@
 
     RobotForm.prototype.initialize = function() {
       $(".robotlink").on("click", this.changeURDF);
-      return this.listenTo(this.model, "change", this.newRobot);
+      this.listenTo(this.model, "change", this.newRobot);
+      return this.myCodeMirror = CodeMirror.fromTextArea($("#robottext")[0], {
+        mode: "text/html",
+        lineNumbers: true,
+        theme: "ambiance"
+      });
     };
 
     RobotForm.prototype.URDFfiledrag = function(evt) {
@@ -593,7 +598,8 @@
       reader = new FileReader();
       reader.onload = (function(_this) {
         return function(event) {
-          $("#robottext").val(event.target.result);
+          _this.myCodeMirror.setValue(event.target.result);
+          _this.myCodeMirror.save();
           return _this.resetNload();
         };
       })(this);
@@ -637,7 +643,8 @@
       if (window.parseRobot(this.model.attributes.urdf)) {
         App.setupGui();
         App.animate();
-        $("#robottext").val(this.model.attributes.urdf);
+        this.myCodeMirror.setValue(this.model.attributes.urdf);
+        this.myCodeMirror.save();
         return $('#visible').prop('checked', this.model.attributes.visible);
       } else {
         return window.alert("there was something wrong with your URDF");
@@ -646,6 +653,7 @@
 
     RobotForm.prototype.resetNload = function() {
       var urdffromform;
+      this.myCodeMirror.save();
       urdffromform = $(this.el).find("#robottext").val();
       return this.model.set({
         urdf: urdffromform
@@ -663,7 +671,8 @@
     RobotForm.prototype.changeURDFval = function(xmlval) {
       var textval;
       textval = (new XMLSerializer()).serializeToString(xmlval);
-      $("#robottext").val(textval);
+      this.myCodeMirror.setValue(textval);
+      this.myCodeMirror.save();
       return true;
     };
 

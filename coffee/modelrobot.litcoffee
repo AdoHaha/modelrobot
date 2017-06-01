@@ -428,8 +428,8 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                 events:
                         "click #loadbutton": "resetNload"
                         "click #screenshot": "showScreenshot"
-                        "drop #robottext": "URDFfiledrop"
-                        "drag #robottext": "URDFfiledrag"
+                        "drop #robottextbox": "URDFfiledrop"
+                        "drag #robottextbox": "URDFfiledrag"
                         "click #screenshotplace": "closeScreenshot"
                         "click #frontview":"frontView"
                         "click #topview":"topView"
@@ -441,7 +441,12 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                 initialize:->
                     $(".robotlink").on("click", @changeURDF);
                     this.listenTo(this.model, "change", this.newRobot);
-                    
+                    this.myCodeMirror = CodeMirror.fromTextArea($("#robottext")[0], {
+                          mode: "text/html",
+                          lineNumbers: true,
+                          theme: "ambiance"
+                          });
+
                 URDFfiledrag: (evt)=>
                         evt.stopPropagation();
                         evt.preventDefault();
@@ -459,15 +464,16 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         
                         
                         reader.onload= (event) =>
-		                            $("#robottext").val(event.target.result)
+		                            @myCodeMirror.setValue(event.target.result)
+		                            @myCodeMirror.save()
+		                            #$("#robottext").val(event.target.result)
 		                            this.resetNload()
                         for f in files
                             reader.readAsText(f);     
                 visible: ->
                     @model.set({"visible":$('#visible').prop('checked')})    
                 saveRobot: ->
-                     #console.log("zapisuje")
-                     #event.preventDefault();
+
                      @resetNload()
                      @model.save()
                 arMode: ->
@@ -490,12 +496,14 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     
                         App.setupGui();
                         App.animate();
-                        $("#robottext").val(@model.attributes.urdf)
+                        #$("#robottext").val(@model.attributes.urdf)
+                        @myCodeMirror.setValue(@model.attributes.urdf)
+                        @myCodeMirror.save()
                         $('#visible').prop('checked', @model.attributes.visible);
                     else
                         window.alert("there was something wrong with your URDF");
                 resetNload: ->
-                        
+                        @myCodeMirror.save() #this pushes the codemirror code to textarea (robottext)
                         urdffromform=$(@el).find("#robottext").val()
                         @model.set({urdf:urdffromform})
 
@@ -510,7 +518,9 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                 changeURDFval: (xmlval)=>
                     textval = (new XMLSerializer()).serializeToString(xmlval);
                     #console.log(xmlval)
-                    $("#robottext").val(textval)
+                    @myCodeMirror.setValue(textval)
+                    @myCodeMirror.save()
+                    #$("#robottext").val(textval)
                     return true
                      
                 showScreenshot: ->
