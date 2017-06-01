@@ -552,6 +552,8 @@
       this.frontView = bind(this.frontView, this);
       this.closeScreenshot = bind(this.closeScreenshot, this);
       this.changeURDFval = bind(this.changeURDFval, this);
+      this.URDFfiledrop = bind(this.URDFfiledrop, this);
+      this.URDFfiledrag = bind(this.URDFfiledrag, this);
       return RobotForm.__super__.constructor.apply(this, arguments);
     }
 
@@ -560,6 +562,8 @@
     RobotForm.prototype.events = {
       "click #loadbutton": "resetNload",
       "click #screenshot": "showScreenshot",
+      "drop #robottext": "URDFfiledrop",
+      "drag #robottext": "URDFfiledrag",
       "click #screenshotplace": "closeScreenshot",
       "click #frontview": "frontView",
       "click #topview": "topView",
@@ -572,6 +576,33 @@
     RobotForm.prototype.initialize = function() {
       $(".robotlink").on("click", this.changeURDF);
       return this.listenTo(this.model, "change", this.newRobot);
+    };
+
+    RobotForm.prototype.URDFfiledrag = function(evt) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      return evt.originalEvent.dataTransfer.dropEffect = 'copy';
+    };
+
+    RobotForm.prototype.URDFfiledrop = function(evt) {
+      var f, files, j, len1, output, reader, results;
+      evt.stopPropagation();
+      evt.preventDefault();
+      files = evt.originalEvent.dataTransfer.files;
+      output = [];
+      reader = new FileReader();
+      reader.onload = (function(_this) {
+        return function(event) {
+          $("#robottext").val(event.target.result);
+          return _this.resetNload();
+        };
+      })(this);
+      results = [];
+      for (j = 0, len1 = files.length; j < len1; j++) {
+        f = files[j];
+        results.push(reader.readAsText(f));
+      }
+      return results;
     };
 
     RobotForm.prototype.visible = function() {

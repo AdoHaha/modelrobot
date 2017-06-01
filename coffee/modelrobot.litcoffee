@@ -428,6 +428,8 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                 events:
                         "click #loadbutton": "resetNload"
                         "click #screenshot": "showScreenshot"
+                        "drop #robottext": "URDFfiledrop"
+                        "drag #robottext": "URDFfiledrag"
                         "click #screenshotplace": "closeScreenshot"
                         "click #frontview":"frontView"
                         "click #topview":"topView"
@@ -439,6 +441,28 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                 initialize:->
                     $(".robotlink").on("click", @changeURDF);
                     this.listenTo(this.model, "change", this.newRobot);
+                    
+                URDFfiledrag: (evt)=>
+                        evt.stopPropagation();
+                        evt.preventDefault();
+                        evt.originalEvent.dataTransfer.dropEffect = 'copy'; # Explicitly show this is a copy.
+                URDFfiledrop: (evt)=>
+                        #window.evt=evt
+                        #console.log(evt)
+                        evt.stopPropagation();
+                        evt.preventDefault();
+                        files = evt.originalEvent.dataTransfer.files; # FileList object.
+
+                        #// files is a FileList of File objects. List some properties.
+                        output = [];
+                        reader = new FileReader();
+                        
+                        
+                        reader.onload= (event) =>
+		                            $("#robottext").val(event.target.result)
+		                            this.resetNload()
+                        for f in files
+                            reader.readAsText(f);     
                 visible: ->
                     @model.set({"visible":$('#visible').prop('checked')})    
                 saveRobot: ->
