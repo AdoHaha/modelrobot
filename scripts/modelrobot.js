@@ -239,73 +239,95 @@
     }
 
     RobotLink.prototype.initialize = function() {
-      var link;
+      var j, len1, link, mesh, ref;
       this.robotBaseMaterial = new THREE.MeshPhongMaterial({
         color: 0x6E23BB,
         specular: 0x6E23BB,
         shininess: 10
       });
       this.id = this.get("name");
+      this.meshvis_array = [];
       this.makeobject3d();
       link = new THREE.Object3D();
       link.name = this.get("name");
-      link.add(this.meshvis);
+      ref = this.meshvis_array;
+      for (j = 0, len1 = ref.length; j < len1; j++) {
+        mesh = ref[j];
+        link.add(mesh);
+      }
       this.set("link", link);
       return this;
     };
 
     RobotLink.prototype.makeobject3d = function() {
-      var boxsize, color, length, orientation, position, radius;
+      var boxsize, color, j, len1, length, meshvis, meshvis_array, orientation, position, radius, ref, robotBaseMaterial, vis_no, visual_element;
       if (_.has(this.attributes, "visual")) {
-        if (_.has(this.attributes.visual, "material")) {
-          color = this.get("materialcollection").get(this.attributes.visual.material.name).get("color");
-          this.robotBaseMaterial.color = color;
-          this.robotBaseMaterial.specular = color;
-          this.robotBaseMaterial.color = color;
+        if (!Array.isArray(this.attributes.visual)) {
+          this.attributes.visual = [this.attributes.visual];
         }
-        if (_.has(this.attributes.visual.geometry, "box")) {
-          boxsize = App.el2array(this.attributes.visual.geometry.box.size, "0 0 0");
-          this.makebox(boxsize);
-        } else if (_.has(this.attributes.visual.geometry, "cylinder")) {
-          length = this.attributes.visual.geometry.cylinder.length || 0;
-          radius = this.attributes.visual.geometry.cylinder.radius || 0;
-          this.makecylinder(length, radius);
-        } else if (_.has(this.attributes.visual.geometry, "sphere")) {
-          radius = this.attributes.visual.geometry.sphere.radius || 0;
-          this.makesphere(radius);
-        } else {
-          this.makeempty();
+        meshvis_array = [];
+        ref = this.attributes.visual;
+        for (vis_no = j = 0, len1 = ref.length; j < len1; vis_no = ++j) {
+          visual_element = ref[vis_no];
+          robotBaseMaterial = this.robotBaseMaterial;
+          if (_.has(visual_element, "material")) {
+            color = this.get("materialcollection").get(visual_element.material.name).get("color");
+            robotBaseMaterial.color = color;
+            robotBaseMaterial.specular = color;
+          }
+          if (_.has(visual_element.geometry, "box")) {
+            boxsize = App.el2array(visual_element.geometry.box.size, "0 0 0");
+            meshvis = this.makebox(boxsize, robotBaseMaterial);
+          } else if (_.has(visual_element.geometry, "cylinder")) {
+            length = visual_element.geometry.cylinder.length || 0;
+            radius = visual_element.geometry.cylinder.radius || 0;
+            meshvis = this.makecylinder(length, radius, robotBaseMaterial);
+          } else if (_.has(visual_element.geometry, "sphere")) {
+            radius = visual_element.geometry.sphere.radius || 0;
+            meshvis = this.makesphere(radius, robotBaseMaterial);
+          } else {
+            meshvis = this.makeempty();
+          }
+          position = App.el2array(_.has(visual_element, "origin") && visual_element.origin.xyz, "0 0 0");
+          orientation = App.el2array(_.has(visual_element, "origin") && visual_element.origin.rpy, "0 0 0");
+          meshvis.position.set(position[0], position[1], position[2]);
+          meshvis.setRotationFromEuler(new THREE.Euler(orientation[0], orientation[1], orientation[2]));
+          meshvis_array.push(meshvis);
         }
-        position = App.el2array(_.has(this.attributes.visual, "origin") && this.attributes.visual.origin.xyz, "0 0 0");
-        orientation = App.el2array(_.has(this.attributes.visual, "origin") && this.attributes.visual.origin.rpy, "0 0 0");
-        this.meshvis.position.set(position[0], position[1], position[2]);
-        this.meshvis.setRotationFromEuler(new THREE.Euler(orientation[0], orientation[1], orientation[2]));
-        return this;
       } else {
         console.log("there are no visual attributes");
-        this.makeempty();
-        return this;
+        meshvis = this.makeempty();
+        meshvis_array = [meshvis];
       }
+      this.meshvis_array = meshvis_array;
+      return this;
     };
 
-    RobotLink.prototype.makecylinder = function(length, radius) {
-      var meshvis;
-      meshvis = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 500, 1), this.robotBaseMaterial);
+    RobotLink.prototype.makecylinder = function(length, radius, material) {
+      var meshvis, meshvis_parent;
+      meshvis = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 500, 1), material);
       meshvis.setRotationFromEuler(new THREE.Euler(Math.PI / 2, 0.0, 0.0, 'XYZ'));
-      this.meshvis = new THREE.Mesh();
-      return this.meshvis.add(meshvis);
+      meshvis_parent = new THREE.Mesh();
+      meshvis_parent.add(meshvis);
+      return meshvis_parent;
     };
 
-    RobotLink.prototype.makebox = function(boxsize) {
-      return this.meshvis = new THREE.Mesh(new THREE.CubeGeometry(boxsize[0] * 1, boxsize[1] * 1, boxsize[2] * 1), this.robotBaseMaterial);
+    RobotLink.prototype.makebox = function(boxsize, material) {
+      var meshvis;
+      meshvis = new THREE.Mesh(new THREE.CubeGeometry(boxsize[0] * 1, boxsize[1] * 1, boxsize[2] * 1), material);
+      return meshvis;
     };
 
-    RobotLink.prototype.makesphere = function(radius) {
-      return this.meshvis = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 20), this.robotBaseMaterial);
+    RobotLink.prototype.makesphere = function(radius, material) {
+      var meshvis;
+      meshvis = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 20), material);
+      return meshvis;
     };
 
     RobotLink.prototype.makeempty = function() {
-      return this.meshvis = new THREE.Mesh();
+      var meshvis;
+      meshvis = new THREE.Mesh();
+      return meshvis;
     };
 
     RobotLink.prototype.clearthislink = function() {
