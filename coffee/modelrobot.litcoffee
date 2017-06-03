@@ -198,76 +198,82 @@ Not adding points that are very near
                 initialize: ->
                         @robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 10 } );
                         @id=@get("name");
+                        @meshvis_array=[]
                         @makeobject3d(); #adds link attribute, consisting of created mesh
                         link=new THREE.Object3D();
                         link.name=@get("name")
-                        link.add(@meshvis)
-                
+                        #link.add(@meshvis)
+                        link.add mesh for mesh in @meshvis_array
                         @set("link",link)
                         @
                 makeobject3d: ->
                         if(_.has(@attributes,"visual"))
                                 if(!Array.isArray(@attributes.visual)) #we make sure that visual is an array
                                       @attributes.visual=[@attributes.visual]
-                                
-                                for visual_element in @attributes.visual
+                                meshvis_array=[]
+                                for visual_element,vis_no in @attributes.visual
+                                  robotBaseMaterial=@robotBaseMaterial
                                   
                                   if(_.has(visual_element,"material"))
-
-                                          color=@get("materialcollection").get(visual_element.material.name).get("color");#||new THREE.Color(0x6E23BB);
-                                          @robotBaseMaterial.color=color;
-                                          @robotBaseMaterial.specular=color;
-                                          @robotBaseMaterial.color=color;
-
+                                          
+                                          color=@get("materialcollection").get(visual_element.material.name).get("color");#||new THREE.Color(0x6E23BB);                    
+                                          robotBaseMaterial.color=color;
+                                          robotBaseMaterial.specular=color;
+                                          #@robotBaseMaterial.color=color;
+                                  
 
                                   if(_.has(visual_element.geometry,"box"))
                                           boxsize=App.el2array(visual_element.geometry.box.size,"0 0 0");
                                           #boxsize=boxsize.split(' ')||[0,0,0];
                                   
                           
-                                          @makebox(boxsize);
+                                          meshvis=@makebox(boxsize,robotBaseMaterial);
                                   else if(_.has(visual_element.geometry,"cylinder"))
                                           length=visual_element.geometry.cylinder.length||0;
                                           radius=visual_element.geometry.cylinder.radius||0;
-                                          @makecylinder(length,radius);
+                                          meshvis=@makecylinder(length,radius,robotBaseMaterial);
                                   else if(_.has(visual_element.geometry,"sphere"))
                                           radius=visual_element.geometry.sphere.radius||0;
-                                          @makesphere(radius);
+                                          meshvis=@makesphere(radius,robotBaseMaterial);
                                   else
-                                          @makeempty();
+                                          meshvis=@makeempty();
                           
                                   position=App.el2array(_.has(visual_element,"origin")&&visual_element.origin.xyz,"0 0 0")
                           
                                   orientation=App.el2array(_.has(visual_element,"origin")&&visual_element.origin.rpy,"0 0 0")
-                                  @meshvis.position.set(position[0], position[1],position[2]);
+                                  meshvis.position.set(position[0], position[1],position[2]);
                         
-                                  @meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2]));
+                                  meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2]));
                                   #console.log(@meshvis.rotation)
-                                  @
+                                  meshvis_array.push(meshvis)
                         
                         else
                                 console.log("there are no visual attributes");
-                                @makeempty();
-                                @
-                makecylinder: (length,radius) ->
+                                meshvis=@makeempty();
+                                meshvis_array=[meshvis]
+                        @meshvis_array=meshvis_array
+                        @
+                        
+                makecylinder: (length,radius,material) ->
                         meshvis = new THREE.Mesh( 
-                                        new THREE.CylinderGeometry( radius,radius, length,500,1 ), @robotBaseMaterial );
+                                        new THREE.CylinderGeometry( radius,radius, length,500,1 ), material );
                         
                         meshvis.setRotationFromEuler(new THREE.Euler(Math.PI/2,0.0,0.0,'XYZ'))
                         #console.log(meshvis.rotation);
-                        @meshvis=new THREE.Mesh()
-                        @meshvis.add(meshvis)
-                makebox: (boxsize) ->
-                        @meshvis = new THREE.Mesh( 
-                                        new THREE.CubeGeometry( boxsize[0]*1,boxsize[1]*1, boxsize[2]*1 ), @robotBaseMaterial );
-                                
-                makesphere: (radius) ->
-                        @meshvis = new THREE.Mesh( 
-                                        new THREE.SphereGeometry( radius,20,20 ), @robotBaseMaterial );
-                
+                        meshvis_parent=new THREE.Mesh()
+                        meshvis_parent.add(meshvis)
+                        return meshvis_parent
+                makebox: (boxsize,material) ->
+                        meshvis = new THREE.Mesh( 
+                                        new THREE.CubeGeometry( boxsize[0]*1,boxsize[1]*1, boxsize[2]*1 ), material );
+                        return meshvis        
+                makesphere: (radius,material) ->
+                        meshvis = new THREE.Mesh( 
+                                        new THREE.SphereGeometry( radius,20,20 ), material );
+                        return meshvis
                 makeempty: ->
-                        @meshvis = new THREE.Mesh();
-                
+                        meshvis = new THREE.Mesh();
+                        return meshvis
                 clearthislink: => 
                         @destroy()
                 

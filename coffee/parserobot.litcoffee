@@ -68,7 +68,7 @@ Steps to do that:
                 $(xmelon).find("link").each( (index) ->
                           
                           tjson=$.xml2json(this); #1
-                          tjson["materialcollection"]=window.robotmaterialcollection; #2, tODO, seems like a hack
+                          tjson["materialcollection"]=window.robotmaterialcollection; #2, TODO, seems like a hack
                           robotlink=new App.RobotLink(tjson); #3
                           
                           window.robotlinkcollection.add(robotlink); #4
