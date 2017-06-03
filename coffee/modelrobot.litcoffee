@@ -147,7 +147,7 @@ RobotTrajectory is a class to  that remembers how some particular link of robot 
                     return true
                 add_to_trajectory: =>    
                     try
-                        matrix=window.robotlinkcollection.get(@link_name).get("link").matrixWorld.elements  #TODO maybie only once? 
+                        matrix=window.robotlinkcollection.get(@link_name).get("link").matrixWorld.elements  #TODO maybe only once? 
                         #console.log(matrix)     
                         newpoint=new THREE.Vector3(matrix[12],matrix[13],matrix[14])
                         
@@ -207,38 +207,43 @@ Not adding points that are very near
                         @
                 makeobject3d: ->
                         if(_.has(@attributes,"visual"))
-                                if(_.has(@attributes.visual,"material"))
-
-                                        color=@get("materialcollection").get(@attributes.visual.material.name).get("color");#||new THREE.Color(0x6E23BB);
-                                        @robotBaseMaterial.color=color;
-                                        @robotBaseMaterial.specular=color;
-                                        @robotBaseMaterial.color=color;
-
-
-                                if(_.has(@attributes.visual.geometry,"box"))
-                                        boxsize=App.el2array(@attributes.visual.geometry.box.size,"0 0 0");
-                                        #boxsize=boxsize.split(' ')||[0,0,0];
+                                if(!Array.isArray(@attributes.visual)) #we make sure that visual is an array
+                                      @attributes.visual=[@attributes.visual]
                                 
+                                for visual_element in @attributes.visual
+                                  
+                                  if(_.has(visual_element,"material"))
+
+                                          color=@get("materialcollection").get(visual_element.material.name).get("color");#||new THREE.Color(0x6E23BB);
+                                          @robotBaseMaterial.color=color;
+                                          @robotBaseMaterial.specular=color;
+                                          @robotBaseMaterial.color=color;
+
+
+                                  if(_.has(visual_element.geometry,"box"))
+                                          boxsize=App.el2array(visual_element.geometry.box.size,"0 0 0");
+                                          #boxsize=boxsize.split(' ')||[0,0,0];
+                                  
+                          
+                                          @makebox(boxsize);
+                                  else if(_.has(visual_element.geometry,"cylinder"))
+                                          length=visual_element.geometry.cylinder.length||0;
+                                          radius=visual_element.geometry.cylinder.radius||0;
+                                          @makecylinder(length,radius);
+                                  else if(_.has(visual_element.geometry,"sphere"))
+                                          radius=visual_element.geometry.sphere.radius||0;
+                                          @makesphere(radius);
+                                  else
+                                          @makeempty();
+                          
+                                  position=App.el2array(_.has(visual_element,"origin")&&visual_element.origin.xyz,"0 0 0")
+                          
+                                  orientation=App.el2array(_.has(visual_element,"origin")&&visual_element.origin.rpy,"0 0 0")
+                                  @meshvis.position.set(position[0], position[1],position[2]);
                         
-                                        @makebox(boxsize);
-                                else if(_.has(@attributes.visual.geometry,"cylinder"))
-                                        length=@attributes.visual.geometry.cylinder.length||0;
-                                        radius=@attributes.visual.geometry.cylinder.radius||0;
-                                        @makecylinder(length,radius);
-                                else if(_.has(@attributes.visual.geometry,"sphere"))
-                                        radius=@attributes.visual.geometry.sphere.radius||0;
-                                        @makesphere(radius);
-                                else
-                                        @makeempty();
-                        
-                                position=App.el2array(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.xyz,"0 0 0")
-                        
-                                orientation=App.el2array(_.has(@attributes.visual,"origin")&&@attributes.visual.origin.rpy,"0 0 0")
-                                @meshvis.position.set(position[0], position[1],position[2]);
-                      
-                                @meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2]));
-                                #console.log(@meshvis.rotation)
-                                @
+                                  @meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2]));
+                                  #console.log(@meshvis.rotation)
+                                  @
                         
                         else
                                 console.log("there are no visual attributes");
