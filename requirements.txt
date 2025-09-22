@@ -1,0 +1,4 @@
+Jinja2>=3.1,<4.0
+google-cloud-ndb>=2.2.2
+gunicorn>=21.2.0
+webapp2==3.0.0b1
