@@ -100,5 +100,39 @@
 <script src="./scripts/scene.js"></script>
 <script src="./scripts/animate.js"></script>
 
+<!-- Standalone mode: Override server fetch and load default robot from local file -->
+<script>
+// Override the Backbone sync to prevent server calls in standalone mode
+var originalSync = Backbone.sync;
+Backbone.sync = function(method, model, options) {
+  if (method === 'read' || method === 'create' || method === 'update' || method === 'delete') {
+    // In standalone mode, we don't sync with server
+    console.log('Standalone mode: Skipping server sync for', method);
+    if (options.success) {
+      options.success({urdf: '', visible: true, id: window.robot_id});
+    }
+    return;
+  }
+  return originalSync.call(this, method, model, options);
+};
+
+$(document).ready(function() {
+  // Wait for app to initialize, then load default robot
+  setTimeout(function() {
+    $.get("./testowe/pi_robot_urdf.xml", function(data) {
+      // Set the URDF in the model
+      if (App.currentrobot && App.forumula) {
+        var urdfText = typeof data === 'string' ? data : new XMLSerializer().serializeToString(data);
+        App.forumula.myCodeMirror.setValue(urdfText);
+        App.forumula.myCodeMirror.save();
+        App.currentrobot.set({urdf: urdfText});
+      }
+    }).fail(function() {
+      console.log("Could not load default robot. You can still load a robot manually.");
+    });
+  }, 500);
+});
+</script>
+
 </body>
 </html>
