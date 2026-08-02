@@ -452,16 +452,25 @@
     RobotForm.prototype.frontView = function() {
       console.log(App.camera.position);
       App.camera.position.set(5.12, 0, 0);
+      App.camera.lookAt(new THREE.Vector3(0, 0, 0));
+      App.cameraControls.target.set(0, 0, 0);
+      App.cameraControls.update();
       return App.camera;
     };
 
     RobotForm.prototype.topView = function() {
       App.camera.position.set(0, 0, 5.12);
+      App.camera.lookAt(new THREE.Vector3(0, 0, 0));
+      App.cameraControls.target.set(0, 0, 0);
+      App.cameraControls.update();
       return App.camera;
     };
 
     RobotForm.prototype.sideView = function() {
       App.camera.position.set(0, 5.12, 0);
+      App.camera.lookAt(new THREE.Vector3(0, 0, 0));
+      App.cameraControls.target.set(0, 0, 0);
+      App.cameraControls.update();
       return App.camera;
     };
 
