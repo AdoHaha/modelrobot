@@ -21,10 +21,14 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   const page=await context.newPage();
   page.setDefaultTimeout(10000);
   const errors=[]; page.on('pageerror', e=>errors.push(e.message));
+  const requests=[]; page.on('request', request=>requests.push(request.url()));
   await page.goto(url);
   await page.waitForFunction(()=>window.robotlinkcollection?.length>0);
   await settled(page);
   assert.equal(await page.evaluate(()=>THREE.REVISION),'187');
+  assert.equal(await page.evaluate(()=>robot.name),'robot');
+  assert.ok(await page.evaluate(()=>App.currentrobot.get('urdf').includes('name="pi_robot"')),'Pi robot loads automatically');
+  assert.ok(!requests.some(url=>new URL(url).pathname.startsWith('/robots/')),'Standalone startup does not call the backend');
   await page.locator('#local-files').setInputFiles([upload('part.stl',stl),upload('mesh.urdf',Buffer.from(xml('Mesh robot')))]);
   await page.waitForFunction(()=>App.currentrobot.get('urdf').includes('Mesh robot'));
   await settled(page);
