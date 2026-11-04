@@ -13,9 +13,11 @@ handlers:
 - url: /
   static_files: standalone.html
   upload: standalone.html
+  expiration: "0s"
 - url: /standalone.html
   static_files: standalone.html
   upload: standalone.html
+  expiration: "0s"
 - url: /css
   static_dir: css
 - url: /lib
