@@ -45,7 +45,7 @@ Model of robot joint, it is responsible of moving links: connecting them togethe
 
                         @axis=new THREE.Vector3(axis[0],axis[1],axis[2])
                         rotation=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.rpy,"0 0 0")
-                        @basicrotation=new THREE.Euler(rotation[0],rotation[1],rotation[2])
+                        @basicrotation=new THREE.Euler(rotation[0],rotation[1],rotation[2],'ZYX')
                         position=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.xyz,"0 0 0")
                         @basicposition=new THREE.Vector3(position[0],position[1],position[2])
 
@@ -207,7 +207,7 @@ RobotTrajectory is a class to  that remembers how some particular link of robot 
                                   orientation=App.el2array(_.has(visual_element,"origin")&&visual_element.origin.rpy,"0 0 0")
                                   meshvis.position.set(position[0], position[1],position[2]);
 
-                                  meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2]));
+                                  meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2],'ZYX'));
                                   #console.log(@meshvis.rotation)
                                   meshvis_array.push(meshvis)
 
@@ -424,9 +424,9 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     $(".robotlink").on("click", @changeURDF);
                     this.listenTo(this.model, "change", this.newRobot);
                     this.myCodeMirror = CodeMirror.fromTextArea($("#robottext")[0], {
-                          mode: "text/html",
+                          mode: "application/xml",
                           lineNumbers: true,
-                          theme: "ambiance"
+                          theme: "default"
                           });
                     App.localRobots.init(@)
 
@@ -717,6 +717,7 @@ AnimationForm class will control robot animation, from the form submission, in d
                         #console.log(formcsv)
                         @prepareArraysfromCSV(formcsv)
                         @textform.val(formcsv+"\n")
+                        App.localRobots.saveAnimation()
                         @
                 prettify: ()=>
                         @textform.scrollTop(@lh*(@curframe+1))

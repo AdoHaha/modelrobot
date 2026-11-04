@@ -5,7 +5,7 @@ const { chromium } = require('@playwright/test');
 let server, browser;
 const url = process.env.MODELROBOT_TEST_URL || 'http://127.0.0.1:8766';
 const stl = Buffer.from('solid triangle\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid triangle');
-const xml = name => `<robot name="${name}"><link name="base"><visual><origin xyz="0 0 0.2" rpy="0 0 0.5"/><geometry><mesh filename="package://demo/meshes/part.stl" scale="0.1 0.2 0.3"/></geometry><material name="red"><color rgba="1 0 0 1"/></material></visual></link><link name="tip"><visual><geometry><box size="0.1 0.1 0.1"/></geometry></visual></link><joint name="hinge" type="revolute"><parent link="base"/><child link="tip"/><axis xyz="0 0 1"/><limit lower="-1" upper="1"/></joint></robot>`;
+const xml = name => `<robot name="${name}"><link name="base"><visual><origin xyz="0 0 0.2" rpy="0.2 0.3 0.5"/><geometry><mesh filename="package://demo/meshes/part.stl" scale="0.1 0.2 0.3"/></geometry><material name="red"><color rgba="1 0 0 1"/></material></visual></link><link name="tip"><visual><geometry><box size="0.1 0.1 0.1"/></geometry></visual></link><joint name="hinge" type="revolute"><parent link="base"/><child link="tip"/><axis xyz="0 0 1"/><limit lower="-1" upper="1"/></joint></robot>`;
 const upload = (name, buffer) => ({name, mimeType:'application/octet-stream', buffer});
 async function settled(page) {
   await page.evaluate(() => App.localRobots.pendingSave);
@@ -36,6 +36,11 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
     const mesh=robotlinkcollection.get('base').meshvis_array[0];
     return {count:mesh.geometry.attributes.position.count,scale:mesh.scale.toArray(),position:mesh.position.toArray(),red:mesh.material.color.r};
   }),{count:3,scale:[0.1,0.2,0.3],position:[0,0,0.2],red:1});
+  assert.ok(await page.evaluate(()=>{
+    const expected=new THREE.Matrix4().makeRotationZ(0.5).multiply(new THREE.Matrix4().makeRotationY(0.3)).multiply(new THREE.Matrix4().makeRotationX(0.2));
+    const actual=new THREE.Matrix4().makeRotationFromEuler(robotlinkcollection.get('base').meshvis_array[0].rotation);
+    return expected.elements.every((value,i)=>Math.abs(value-actual.elements[i])<1e-10);
+  }),'Visual RPY uses URDF rotation order');
   await page.evaluate(()=>{
     robotjointcollection.findWhere({name:'hinge'}).movejoint(0.7);
     scene.updateMatrixWorld(true);
@@ -44,6 +49,18 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   });
   assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'hinge'}).theta),0.7);
   assert.equal(await page.evaluate(()=>App.trajectoryview.robot_trajectory.allpoints.drawRange.count),1);
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.CodeMirror')).backgroundColor),'rgb(255, 255, 255)');
+  for (const [view,direction] of Object.entries({front:[1,0,0],back:[-1,0,0],left:[0,1,0],right:[0,-1,0],top:[0,0,1],bottom:[0,0,-1]})) {
+    await page.locator('#view-cube .view-cube-presets [data-view='+view+']').click();
+    const actual=await page.evaluate(()=>App.camera.position.clone().sub(App.cameraControls.target).normalize().toArray());
+    actual.forEach((value,i)=>assert.ok(Math.abs(value-direction[i])<0.001,view+' camera direction'));
+  }
+  await page.locator('#view-cube .view-cube-heading [data-view=iso]').click();
+  const csv='time,hinge\n0,0\n1,0.5\n';
+  await page.locator('#robotcsv').fill(csv);
+  await page.waitForFunction(csv=>App.localRobots.records.some(r=>r.name==='Mesh robot' && r.csv===csv),csv);
+  await page.locator('#loadcsv').click();
+  await settled(page);
   const savedId=await page.locator('#local-library').inputValue();
   await page.reload();
   await page.waitForFunction(()=>window.robotlinkcollection?.length>0);
@@ -53,12 +70,17 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   await page.waitForFunction(()=>App.currentrobot.get('urdf').includes('Mesh robot'));
   await settled(page);
   assert.equal(await page.evaluate(()=>robotlinkcollection.get('base').meshvis_array[0].geometry.attributes.position.count),3);
+  assert.equal((await page.locator('#robotcsv').inputValue()).trim(),csv.trim());
+  assert.deepEqual(await page.evaluate(()=>App.animform.names),['hinge']);
+  await page.evaluate(()=>App.animform.settostaticframe(1));
+  assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'hinge'}).theta),0.5);
   // Load another URDF without assets, then attach binary STL separately.
   await page.evaluate(()=>App.localRobots.clearAssets());
   await page.locator('#local-files').setInputFiles(upload('other.urdf',Buffer.from(xml('Other robot'))));
   await page.waitForFunction(()=>App.currentrobot.get('urdf').includes('Other robot'));
   await settled(page);
   assert.match(await page.locator('#local-status').innerText(),/Missing or ambiguous STL/);
+  assert.equal(await page.locator('#robotcsv').inputValue(),'');
   const binary=Buffer.alloc(134); binary.write('solid binary header'); binary.writeUInt32LE(1,80);
   [0,0,1,0,0,0,1,0,0,0,1,0].forEach((n,i)=>binary.writeFloatLE(n,84+i*4));
   await page.locator('#local-files').setInputFiles(upload('part.stl',binary));

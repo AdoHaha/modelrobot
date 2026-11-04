@@ -59,7 +59,8 @@ meshes are listed in the viewer. URDF mesh scale, visual origin and material
 are applied; STL coordinates are not automatically converted from millimeters.
 
 Each loaded robot is saved automatically in IndexedDB with its referenced mesh
-bytes. Use **Saved robots → Open** to restore it, **Save in browser** to update
+bytes and CSV animation. CSV edits are saved automatically and restored when
+the robot is reopened. Use **Saved robots → Open** to restore it, **Save in browser** to update
 its name, and **Delete saved robot** to remove its saved copy. Storage belongs
 to this browser and site; clearing site data removes it. Local files are not
 uploaded to the server. Existing server saves contain URDF only.
@@ -75,6 +76,19 @@ npm ci
 npm run build
 npx playwright install chromium
 npm test
+```
+
+The light interface includes a view cube with six standard camera views and an
+isometric view. The canvas resizes with its pane, with a stacked layout and
+collapsible joint controls on phones.
+
+An opt-in integration check has been run against the NASA/JPL T12 model from
+[gkjohnson/urdf-loaders](https://github.com/gkjohnson/urdf-loaders/tree/c8c25c8cf6fcb84929b9a03ff866139a8a1e2a01/urdf/T12).
+It verifies all 37 STL visuals, 36 joints, URDF transforms, browser restoration,
+and CSV-driven joint motion. To rerun after downloading its T12.URDF and meshes:
+
+```sh
+node tests/check-external-robot.cjs /path/to/T12
 ```
 
 Deploy to Google App Engine with the personal account explicitly selected:

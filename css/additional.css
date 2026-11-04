@@ -56,3 +56,52 @@ textarea { width: 100%; resize: vertical; }
 @media (max-width: 759px) {
   #robottextbox .CodeMirror { height: 210px; }
 }
+#robottextbox .CodeMirror { background: #fff; color: #263345; border-color: #bdcbd8; box-shadow: none; }
+#robottextbox .CodeMirror-gutters { background: #f1f5f9; border-right: 1px solid #dde5ed; }
+#robottextbox .CodeMirror-linenumber { color: #8795a6; }
+#robottextbox .cm-tag { color: #15578b; }
+#robottextbox .cm-attribute { color: #88409a; }
+#robottextbox .cm-string { color: #1a7651; }
+#robottextbox .cm-comment { color: #75818e; }
+#view-cube { position: absolute; z-index: 2; right: 12px; bottom: 12px; width: 138px; padding: 8px; border: 1px solid #c6d3df; border-radius: 9px; background: rgba(248,251,255,.95); box-shadow: 0 3px 12px #203d5514; color: #35526e; }
+.view-cube-heading { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; }
+#view-cube button { font: inherit; cursor: pointer; color: #35526e; }
+.view-cube-heading button, .view-cube-presets button { border: 1px solid #cad7e3; background: white; border-radius: 4px; padding: 3px 4px; }
+#view-cube button:hover, #view-cube button[aria-pressed=true] { background: #d4e8fa; color: #134e80; }
+#view-cube button:focus-visible { outline: 2px solid #1673ca; outline-offset: 2px; }
+.cube-stage { height: 100px; display: grid; place-items: center; perspective: 500px; }
+.view-cube-object { width: 54px; height: 54px; position: relative; transform-style: preserve-3d; transform: rotateX(-22deg) rotateY(-35deg); }
+.cube-face { position: absolute; width: 54px; height: 54px; display: grid; place-items: center; border: 1px solid #7d9ab5; background: #e6f0fa; backface-visibility: hidden; font-size: 11px !important; font-weight: 600 !important; padding: 0; }
+.cube-front { transform: translateZ(27px); }
+.cube-back { transform: rotateY(180deg) translateZ(27px); }
+.cube-left { transform: rotateY(-90deg) translateZ(27px); }
+.cube-right { transform: rotateY(90deg) translateZ(27px); background: #c6daec; }
+.cube-top { transform: rotateX(90deg) translateZ(27px); background: #fff; }
+.cube-bottom { transform: rotateX(-90deg) translateZ(27px); }
+.view-cube-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 11px; }
+@media (max-width: 759px) {
+  #view-cube { width: 112px; padding: 6px; right: 8px; bottom: 8px; }
+  .cube-stage { height: 80px; }
+  .view-cube-object { scale: .8; }
+  .view-cube-presets { gap: 2px; font-size: 10px; }
+  .view-cube-presets button { padding: 2px; }
+}
+#joint-controls { border: 1px solid #c6d3df; box-shadow: 0 3px 12px #203d5514; }
+#joint-controls .dg { color: #35526e; text-shadow: none; font-family: system-ui, sans-serif; }
+#joint-controls .dg li:not(.folder) { background: #f8fbff; border-bottom-color: #e0e8f0; }
+#joint-controls .dg li.title { background: #e7eff7; color: #35526e; border-bottom: 1px solid #cbd8e5; }
+#joint-controls .dg li.title::before { content: '▾'; display: inline-block; width: 12px; color: #51748f; }
+#joint-controls .dg .closed li.title::before { content: '▸'; }
+#joint-controls .dg .cr.number { border-left-color: #3184c5; }
+#joint-controls .dg .c input[type=text] { background: #fff; border: 1px solid #cbd8e5; border-radius: 3px; color: #245980; }
+#joint-controls .dg .c input[type=text]:hover { background: #edf4fb; }
+#joint-controls .dg .c input[type=text]:focus { background: #fff; outline: 1px solid #3184c5; }
+#joint-controls .dg .c .slider { background: #dce7f1; border-radius: 3px; }
+#joint-controls .dg .c .slider:hover { background: #cfdeeb; }
+#joint-controls .dg .c .slider-fg { background: #3184c5; border-radius: 3px; }
+#joint-controls .dg .c .slider:hover .slider-fg { background: #2475b5; }
+#joint-controls .dg .close-button { background: #edf3f9; color: #35526e; border-top: 1px solid #cbd8e5; text-shadow: none; }
+#joint-controls .dg .close-button:hover { background: #dce9f5; }
+
+#joint-controls { max-height: min(55%, 440px); }
+#joint-controls .dg.main .close-button { position: sticky; bottom: 0; }

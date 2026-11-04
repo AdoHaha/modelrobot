@@ -124,6 +124,16 @@ setting CONTROLS params
                         App.gui.close() if isMobile and App.gui?
                         App.fitRobot() if window.robot?
                         wasMobile=isMobile
+                document.getElementById('view-cube').addEventListener 'click', (event) ->
+                    button=event.target.closest('[data-view]')
+                    return unless button?
+                    name=button.getAttribute('data-view')
+                    directions={front:[1,0,0],back:[-1,0,0],left:[0,1,0],right:[0,-1,0],top:[0,0,1],bottom:[0,0,-1],iso:[1,-1,1]}
+                    direction=new THREE.Vector3(...directions[name]).normalize()
+                    up=if name in ['top','bottom'] then new THREE.Vector3(1,0,0) else new THREE.Vector3(0,0,1)
+                    App.viewDirection(direction,up)
+                    for item in document.querySelectorAll('#view-cube [data-view]')
+                        item.setAttribute('aria-pressed',String(item.getAttribute('data-view') is name))
                 App.viewerResizeObserver=new ResizeObserver(resizeViewer)
                 App.viewerResizeObserver.observe(container)
                 window.addEventListener('resize',resizeViewer)

@@ -128,6 +128,33 @@
         return wasMobile = isMobile;
       }
     };
+    document.getElementById('view-cube').addEventListener('click', function(event) {
+      var button, direction, directions, i, item, len, name, ref, results, up;
+      button = event.target.closest('[data-view]');
+      if (button == null) {
+        return;
+      }
+      name = button.getAttribute('data-view');
+      directions = {
+        front: [1, 0, 0],
+        back: [-1, 0, 0],
+        left: [0, 1, 0],
+        right: [0, -1, 0],
+        top: [0, 0, 1],
+        bottom: [0, 0, -1],
+        iso: [1, -1, 1]
+      };
+      direction = new THREE.Vector3(...directions[name]).normalize();
+      up = name === 'top' || name === 'bottom' ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
+      App.viewDirection(direction, up);
+      ref = document.querySelectorAll('#view-cube [data-view]');
+      results = [];
+      for (i = 0, len = ref.length; i < len; i++) {
+        item = ref[i];
+        results.push(item.setAttribute('aria-pressed', String(item.getAttribute('data-view') === name)));
+      }
+      return results;
+    });
     App.viewerResizeObserver = new ResizeObserver(resizeViewer);
     App.viewerResizeObserver.observe(container);
     window.addEventListener('resize', resizeViewer);

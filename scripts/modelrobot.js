@@ -63,7 +63,7 @@
       axis = App.el2array(_.has(this.attributes, "axis") && this.attributes.axis.xyz, "1 0 0");
       this.axis = new THREE.Vector3(axis[0], axis[1], axis[2]);
       rotation = App.el2array(_.has(this.attributes, "origin") && this.attributes.origin.rpy, "0 0 0");
-      this.basicrotation = new THREE.Euler(rotation[0], rotation[1], rotation[2]);
+      this.basicrotation = new THREE.Euler(rotation[0], rotation[1], rotation[2], 'ZYX');
       position = App.el2array(_.has(this.attributes, "origin") && this.attributes.origin.xyz, "0 0 0");
       this.basicposition = new THREE.Vector3(position[0], position[1], position[2]);
       this.lower = (_.has(this.attributes, "limit") && this.attributes.limit.lower) || -Math.PI; // could be -Infinity
@@ -272,7 +272,7 @@
           position = App.el2array(_.has(visual_element, "origin") && visual_element.origin.xyz, "0 0 0");
           orientation = App.el2array(_.has(visual_element, "origin") && visual_element.origin.rpy, "0 0 0");
           meshvis.position.set(position[0], position[1], position[2]);
-          meshvis.setRotationFromEuler(new THREE.Euler(orientation[0], orientation[1], orientation[2]));
+          meshvis.setRotationFromEuler(new THREE.Euler(orientation[0], orientation[1], orientation[2], 'ZYX'));
           meshvis_array.push(meshvis);
         }
       } else {
@@ -546,9 +546,9 @@
         $(".robotlink").on("click", this.changeURDF);
         this.listenTo(this.model, "change", this.newRobot);
         this.myCodeMirror = CodeMirror.fromTextArea($("#robottext")[0], {
-          mode: "text/html",
+          mode: "application/xml",
           lineNumbers: true,
-          theme: "ambiance"
+          theme: "default"
         });
         return App.localRobots.init(this);
       }
@@ -961,6 +961,7 @@
         //console.log(formcsv)
         this.prepareArraysfromCSV(formcsv);
         this.textform.val(formcsv + "\n");
+        App.localRobots.saveAnimation();
         return this;
       }
 

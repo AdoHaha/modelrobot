@@ -84,6 +84,11 @@ export class LocalRobots {
     // Attach a rejection handler immediately, even before the first save.
     this.db.catch(() => {});
     const on = (id, event, fn) => document.getElementById(id).addEventListener(event, () => Promise.resolve().then(fn).catch(error => this.status(error.message, true)));
+    let csvTimer;
+    on('robotcsv', 'input', () => {
+      clearTimeout(csvTimer);
+      csvTimer = setTimeout(() => this.saveAnimation(), 250);
+    });
     on('local-files', 'change', () => this.importFiles(document.getElementById('local-files')));
     on('local-folder', 'change', () => this.importFiles(document.getElementById('local-folder')));
     on('local-save', 'click', () => { form.resetNload(); });
@@ -95,7 +100,11 @@ export class LocalRobots {
       this.clearAssets();
       record.assets.forEach(asset => this.assets.set(asset.name, asset.bytes));
       document.getElementById('local-name').value = record.name;
+      this.currentXml = record.urdf;
+      App.animform.stop();
+      document.getElementById('robotcsv').value = record.csv || '';
       this.showURDF(record.urdf);
+      App.animform.loadCSVfromForm();
     });
     on('local-delete', 'click', async () => {
       await this.pendingSave;
@@ -150,7 +159,17 @@ export class LocalRobots {
     if (doc.querySelector('parsererror') || doc.documentElement.tagName !== 'robot') throw new Error('Enter a valid URDF with a <robot> root.');
     return doc;
   }
+  saveAnimation() {
+    if (this.currentXml) this.loaded(this.currentXml);
+  }
   loaded(xml) {
+    if (this.currentXml !== xml) {
+      this.currentXml = xml;
+      document.getElementById('robotcsv').value = '';
+      App.animform.stop();
+      App.animform.prepareArraysfromCSV('');
+    }
+    const csv = document.getElementById('robotcsv').value;
     const warnings = [...new Set(this.messages)];
     const nameInput = document.getElementById('local-name');
     const doc = this.validate(xml);
@@ -161,7 +180,7 @@ export class LocalRobots {
       const old = this.records.find(record => record.urdf === xml);
       const retained = new Map((old?.assets || []).map(asset => [asset.name, asset]));
       assets.forEach(asset => retained.set(asset.name, asset));
-      const record = { id: old ? old.id : crypto.randomUUID(), name, urdf: xml, assets: [...retained.values()], updated: Date.now() };
+      const record = { id: old ? old.id : crypto.randomUUID(), name, urdf: xml, csv, assets: [...retained.values()], updated: Date.now() };
       await this.transaction('readwrite', store => store.put(record));
       await this.refresh(record.id);
       this.status(warnings.length ? warnings.join(' ') + ' Robot saved; add missing files to complete it.' : 'Saved “' + name + '” in this browser.');

@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MyModelRobot - Standalone URDF Viewer</title>
-  
+
   <script src="./scripts/qrcode.js"></script>
-  
+
   <script>
   // Standalone version - no server backend required
   window.start_with_default = true;
@@ -21,8 +21,8 @@
 
   <!-- Custom styles for this template -->
   <link rel="stylesheet" href="lib/codemirror.css">
-  <link href="./css/ambiance_mod.css" rel="stylesheet">
-  <link href="./css/additional.css?v=stl-gui-20261104" rel="stylesheet">
+
+  <link href="./css/additional.css?v=views-20261104" rel="stylesheet">
 </head>
 
 <body>
@@ -55,7 +55,7 @@
   <button type="button" id="sideview">Side view</button>
 <button type="button" id="fitview">Fit robot</button>
   <br>
-  
+
   <fieldset id="local-robots">
 <legend>Robot library</legend>
 <details class="file-import" open><summary>Import URDF &amp; STL files</summary><label>URDF and STL files <input type="file" id="local-files" accept=".urdf,.xml,.stl" multiple></label>
@@ -70,8 +70,8 @@
 <small>Loaded robots are saved automatically on this device, including their meshes. Clearing site data removes them.</small>
 </fieldset>
 Example robots:
-  <a href="./testowe/pi_robot_urdf.xml" target="_blank" class="robotlink">Pi Robot</a> 
-  <a href="./testowe/r2d2.xml" target="_blank" class="robotlink">R2D2</a> 
+  <a href="./testowe/pi_robot_urdf.xml" target="_blank" class="robotlink">Pi Robot</a>
+  <a href="./testowe/r2d2.xml" target="_blank" class="robotlink">R2D2</a>
 </div>
 
 <div id="animdiv">
@@ -99,12 +99,28 @@ Example robots:
 
 </div>
 <div id="container"><div id="joint-controls" aria-label="Joint controls"></div>
+<nav id="view-cube" aria-label="Standard camera views">
+  <div class="view-cube-heading"><span>View</span><button type="button" data-view="iso" title="Isometric view">Iso</button></div>
+  <div class="cube-stage"><div class="view-cube-object">
+    <button type="button" class="cube-face cube-front" data-view="front" aria-label="Front view">Front</button>
+    <button type="button" class="cube-face cube-back" data-view="back" aria-label="Back view">Back</button>
+    <button type="button" class="cube-face cube-left" data-view="left" aria-label="Left view">Left</button>
+    <button type="button" class="cube-face cube-right" data-view="right" aria-label="Right view">Right</button>
+    <button type="button" class="cube-face cube-top" data-view="top" aria-label="Top view">Top</button>
+    <button type="button" class="cube-face cube-bottom" data-view="bottom" aria-label="Bottom view">Bottom</button>
+  </div></div>
+  <div class="view-cube-presets">
+    <button type="button" data-view="front">Front</button><button type="button" data-view="back">Back</button>
+    <button type="button" data-view="left">Left</button><button type="button" data-view="right">Right</button>
+    <button type="button" data-view="top">Top</button><button type="button" data-view="bottom">Bottom</button>
+  </div>
+</nav>
 </div>
 
 <!-- JavaScript libraries -->
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=stl-gui-20261104"></script>
+<script src="./scripts/runtime.bundle.js?v=views-20261104"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -114,10 +130,10 @@ Example robots:
 <script src="./scripts/underscore.js"></script>
 <script src="./scripts/backbone.js"></script>
 <script src="./lib/dat.gui.min.js"></script>
-<script src="./scripts/modelrobot.js?v=stl-gui-20261104"></script>
-<script src="./scripts/parserobot.js?v=stl-gui-20261104"></script>
+<script src="./scripts/modelrobot.js?v=views-20261104"></script>
+<script src="./scripts/parserobot.js?v=views-20261104"></script>
 <script src="./lib/CSVToArray.js"></script>
-<script src="./scripts/scene.js?v=stl-gui-20261104"></script>
+<script src="./scripts/scene.js?v=views-20261104"></script>
 <script src="./scripts/animate.js"></script>
 
 </body>
