@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MyModelRobot - Standalone URDF Viewer</title>
+  
+  <script src="./scripts/qrcode.js"></script>
+  
+  <script>
+  // Standalone version - no server backend required
+  window.start_with_default = true;
+  // Default robot ID (used by the application for backward compatibility with server version)
+  window.robot_id = 5629499534213120;
+  </script>
+
+  <!-- Bootstrap core CSS -->
+  <link href="./css/bootstrap.min.css" rel="stylesheet">
+  <link href="./css/additional.css" rel="stylesheet">
+
+  <!-- Custom styles for this template -->
+  <link rel="stylesheet" href="lib/codemirror.css">
+  <link href="./css/ambiance_mod.css" rel="stylesheet">
+</head>
+
+<body>
+
+<div id="controldiv">
+<span id="screenshottext"></span><div id="screenshotplace"></div>
+<div id="robodiv">
+
+<form id="robotform">
+  <div><b>Robot's URDF</b>
+  <span style="float:right">
+    <a href="https://github.com/AdoHaha/modelrobot">MyModelRobot on GitHub</a>
+  </span>
+  </div>
+  <div id="robottextbox">
+    <textarea id="robottext" name="robottext" rows="15" id="robottext" placeholder="Place robot's URDF here"></textarea>
+  </div>
+  <br>
+  <button type="button" id="loadbutton">Load robot URDF</button>
+  <button type="button" id="armode">AR Mode</button>
+  <span id="qrcode" style="z-index:2"></span>
+  <br>
+  <button type="button" id="screenshot">Make screenshot</button>
+
+  <b>Camera controls:</b>
+  <button type="button" id="frontview">Front view</button>
+  <button type="button" id="topview">Top view</button>
+  <button type="button" id="sideview">Side view</button>
+  <br>
+  
+  Example robots:
+  <a href="./testowe/pi_robot_urdf.xml" target="_blank" class="robotlink">Pi Robot</a> 
+  <a href="./testowe/r2d2.xml" target="_blank" class="robotlink">R2D2</a> 
+</div>
+
+<div id="animdiv">
+  <div><b>Robot's poses CSV</b></div>
+  <div id="jointnames"> .</div>
+  <textarea name="animcsv" rows="2" id="robotcsv" placeholder="Place your CSV (comma separated values) of robot's poses here"></textarea>
+  <br>
+  <button type="button" id="loadcsv">Load CSV</button>
+  <button type="button" id="playbutton">Play</button>
+  <button type="button" id="pausebutton">Pause</button>
+  <button type="button" id="stopbutton">Stop</button>
+  <button type="button" id="prevbutton"><</button>
+  <button type="button" id="nextbutton">></button>
+  <button type="button" id="addposition">Add current position</button>
+  <br>
+  <div id="trajectory">
+    Trace trajectory of:
+    <select id="all_links"></select>
+    <button type="button" id="tracebutton" class="btn-success">Trace</button>
+    <button type="button" id="clear_trajectory" class="btn-alert">Clear trajectory</button>
+    <br>
+  </div>
+</form>
+</div>
+
+</div>
+<div id="container" style="float:left;width:50%">
+</div>
+
+<!-- JavaScript libraries -->
+<script src="lib/codemirror.js"></script>
+<script src="lib/mode/xml/xml.js"></script>
+<script src="./scripts/three.min.js"></script>
+<script src="./scripts/jquery-3.7.1.min.js"></script>
+<script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
+<script src="./lib/bootstrap.min.js"></script>
+<script src="./lib/Detector.js"></script>
+<script src="./lib/Coordinates.js"></script>
+<script src="./lib/TrackballControls.js"></script>
+<script src="./scripts/underscore.js"></script>
+<script src="./scripts/backbone.js"></script>
+<script src="./lib/dat.gui.min.js"></script>
+<script src="./scripts/modelrobot.js"></script>
+<script src="./scripts/parserobot.js"></script>
+<script src="./lib/CSVToArray.js"></script>
+<script src="./scripts/scene.js"></script>
+<script src="./scripts/animate.js"></script>
+
+<!-- Standalone mode: Override server fetch and load default robot from local file -->
+<script>
+// Override the Backbone sync to prevent server calls in standalone mode
+var originalSync = Backbone.sync;
+Backbone.sync = function(method, model, options) {
+  if (method === 'read' || method === 'create' || method === 'update' || method === 'delete') {
+    // In standalone mode, we don't sync with server
+    console.log('Standalone mode: Skipping server sync for', method);
+    if (options.success) {
+      options.success({urdf: '', visible: true, id: window.robot_id});
+    }
+    return;
+  }
+  return originalSync.call(this, method, model, options);
+};
+
+$(document).ready(function() {
+  // Wait for app to initialize, then load default robot
+  setTimeout(function() {
+    $.get("./testowe/pi_robot_urdf.xml", function(data) {
+      // Set the URDF in the model
+      if (App.currentrobot && App.forumula) {
+        var urdfText = typeof data === 'string' ? data : new XMLSerializer().serializeToString(data);
+        App.forumula.myCodeMirror.setValue(urdfText);
+        App.forumula.myCodeMirror.save();
+        App.currentrobot.set({urdf: urdfText});
+      }
+    }).fail(function() {
+      console.log("Could not load default robot. You can still load a robot manually.");
+    });
+  }, 500);
+});
+</script>
+
+</body>
+</html>
