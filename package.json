@@ -1,0 +1,16 @@
+{
+  "name": "mymodelrobot",
+  "private": true,
+  "scripts": {
+    "build": "coffee --compile --output scripts coffee/modelrobot.litcoffee coffee/parserobot.litcoffee coffee/scene.litcoffee && esbuild frontend/runtime.js --bundle --minify --format=iife --outfile=scripts/runtime.bundle.js",
+    "test": "node --test tests/*.test.cjs"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "coffeescript": "2.7.1",
+    "esbuild": "0.28.2"
+  }
+}

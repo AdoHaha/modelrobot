@@ -17,7 +17,7 @@ there are also Coordinates and dat (??)
         App.ground = false
 
 
-        App.clock = new THREE.Clock();
+        App.clock = new THREE.Timer();
 
 
 
@@ -48,17 +48,26 @@ Static scene filling
                 scene.add(ambientLight)
                 scene.add(light)
                 scene.add(dirLight);
+                if App.sceneHelpers?
+                        scene.remove(App.sceneHelpers)
+                        App.sceneHelpers.traverse (object) ->
+                            object.geometry?.dispose()
+                            object.material?.dispose()
+                App.sceneHelpers=new THREE.Group()
+                scene.add(App.sceneHelpers)
                 if App.ground
-                        Coordinates.drawGround({size:10000})
+                        App.sceneHelpers.add(new THREE.GridHelper(100,100))
 
                 if App.gridX
-                        Coordinates.drawGrid({size:10000,scale:0.01});
+                        App.sceneHelpers.add(new THREE.GridHelper(100,100))
 
                 if App.gridZ
-                        Coordinates.drawGrid({size:10000,scale:0.01, orientation:"z"});
+                        grid=new THREE.GridHelper(100,100)
+                        grid.rotation.x=Math.PI/2
+                        App.sceneHelpers.add(grid)
 
                 if App.axes
-                        Coordinates.drawAllAxes({axisLength:2,axisRadius:0.01,axisTess:50});
+                        App.sceneHelpers.add(new THREE.AxesHelper(2))
 
                 window.robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 20 } );
                 window.robotForearmMaterial = new THREE.MeshPhongMaterial( { color: 0xF4C154, specular: 0xF4C154, shininess: 100 } );
@@ -88,10 +97,9 @@ Seting initial parameters
 
                 canvasHeight= window.innerHeight
                 canvasRatio = canvasWidth / canvasHeight
-                window.renderer = new THREE.WebGLRenderer { antialias: true}
+                window.renderer = new THREE.WebGLRenderer { antialias: true, preserveDrawingBuffer: true}
 
-                window.renderer.gammaInput = true
-                window.renderer.gammaOutput = true
+                window.renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
                 window.renderer.setSize(canvasWidth, canvasHeight);
                 #window.renderer.setClearColorHex();
                 window.renderer.setClearColor(new THREE.Color(0xAAAAAA), 1.0 );
@@ -114,6 +122,13 @@ setting CONTROLS params
 
                 #cameraControls.object.lookAt
                 App.fillScene();
+                window.addEventListener 'resize', ->
+                    width=Math.max(300,document.body.clientWidth-document.getElementById('controldiv').offsetWidth-21)
+                    height=window.innerHeight
+                    renderer.setSize(width,height)
+                    App.camera.aspect=width/height
+                    App.camera.updateProjectionMatrix()
+                    App.cameraControls.handleResize()
                 true
 
 Controlling scene, using dat gui
@@ -175,6 +190,7 @@ Function to animate our scene
                 true
 
         App.render = ->
+                App.clock.update()
                 delta = App.clock.getDelta()
                 App.cameraControls.update(delta)
 
@@ -215,7 +231,9 @@ Starting it all
                 #console.log(window.robot_id)
                 App.currentrobot.id=window.robot_id
                 Backbone.history.start({pushState:true})
-                App.currentrobot.fetch()
+                App.currentrobot.fetch({error: ->
+                    App.localRobots.status('Load a local URDF and STL files, or open a robot saved in this browser.')
+                })
 
 
                 #if window.start_with_default

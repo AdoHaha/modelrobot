@@ -49,6 +49,19 @@ window.robot_id=5629499534213120;
 <div id="robottextbox">
 <textarea id="robottext" name="robottext" rows="15" id="robottext" placeholder="Place robot's URDF here"></textarea>
 </div>
+<fieldset id="local-robots">
+<legend>Robots on this device</legend>
+<label>URDF and STL files <input type="file" id="local-files" accept=".urdf,.xml,.stl" multiple></label>
+<label>Or choose a folder <input type="file" id="local-folder" webkitdirectory multiple></label>
+<p>Select one URDF and its STL files together, or add STL files separately. Files stay in your browser. Mesh scale comes from the URDF.</p>
+<label>Robot name <input type="text" id="local-name" placeholder="Name from URDF"></label>
+<button type="button" id="local-save">Save in browser</button><br>
+<label for="local-library">Saved robots</label> <select id="local-library"></select>
+<button type="button" id="local-open">Open</button>
+<button type="button" id="local-delete">Delete saved robot</button>
+<p id="local-status" role="status" aria-live="polite"></p>
+<small>Loaded robots are saved automatically on this device, including their meshes. Clearing site data removes them.</small>
+</fieldset>
 <br>
 <button type="button" id="loadbutton">Load robot URDF</button>
 {% if user %}
@@ -93,14 +106,14 @@ Trace trajectory of:<select id="all_links"></select><button type="button" id="tr
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/three.min.js"></script>
+<script src="./scripts/runtime.bundle.js"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
 	<script src="./lib/Detector.js"></script>
-		<script src="./lib/Coordinates.js"></script>
+
 <!--		<script src="./lib/OrbitAndPanControls.js"></script>-->
-		<script src="./lib/TrackballControls.js"></script> -->
+
 <script src="./scripts/underscore.js"></script>
 	<script src="./scripts/backbone.js"></script>
 	<script src="./lib/dat.gui.min.js"></script>

@@ -6,3 +6,11 @@ width:500px
 textarea
 {
 width:100%;
+}
+
+#local-robots { margin: 12px 0; padding: 10px; border: 1px solid #bbb; }
+#local-robots legend { font-size: 16px; margin-bottom: 8px; width: auto; }
+#local-robots label { display: block; }
+#local-robots input[type=file] { max-width: 100%; }
+#local-robots p { margin: 8px 0; }
+#local-library { max-width: 240px; }

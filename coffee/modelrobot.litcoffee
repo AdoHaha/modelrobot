@@ -123,75 +123,36 @@ RobotTrajectory is a class to  that remembers how some particular link of robot 
 
 
         class App.RobotTrajectory extends Backbone.Model
-                initialize: (name)->
-                    @trajectory=new THREE.Shape()
+                initialize: ->
                     @link_name=@attributes.name
-                    @allpoints= new THREE.Geometry(); #this has all point vertices
                     @N=1000
-                    for i in [0..@N] by 1
-                        @allpoints.vertices.push(new THREE.Vector3(0.0,0.0,1.0))
-                    @n=0
-
-                    #@allvertices=[]
-                    @throttled_add_to_trajectory=_.throttle(@add_to_trajectory,20) #will add min 50ms aside
-                    material = new THREE.LineBasicMaterial({color: 0xff0000,linewidth:3});
-                    @line= new THREE.Line(@allpoints,material)
-                    #allpoints=[]
+                    @points=[]
+                    @allpoints=new THREE.BufferGeometry()
+                    @allpoints.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(@N*3),3))
+                    @allpoints.setDrawRange(0,0)
+                    @line=new THREE.Line(@allpoints,new THREE.LineBasicMaterial({color:0xff0000}))
+                    @line.frustumCulled=false
                     window.scene.add(@line)
-                    return true
-
+                    @throttled_add_to_trajectory=_.throttle(@add_to_trajectory,20)
                 new_name: (name)=>
-                    @attributes.name=name
                     @link_name=name
                     @clear_trajectory()
-                    return true
                 add_to_trajectory: =>
-                    try
-                        matrix=window.robotlinkcollection.get(@link_name).get("link").matrixWorld.elements  #TODO maybe only once?
-                        #console.log(matrix)
-                        newpoint=new THREE.Vector3(matrix[12],matrix[13],matrix[14])
-
-
-Not adding points that are very near
-
-                        len=1000
-                        #if(@allvertices.length>0)
-
-                        lastvector=@allpoints.vertices[true_mod(@n-1,@N)]
-                        diff=new THREE.Vector3()
-                        diff.subVectors(newpoint,lastvector)
-                        len=diff.length()
-
-                        if len>0.0001 #when SI this would mean one thenth of mm
-
-                                #@allpoints=new THREE.Geometry()
-                                #number=true_mod(@n,@N)
-                                if(@n<@N)
-                                    @allpoints.vertices[@n]=newpoint
-                                    for numbers in [@n..@N] by 1 #this will run only in first N iterations ;)
-                                        @allpoints.vertices[numbers]=newpoint
-                                else
-                                    @allpoints.vertices.shift() #deleting first element
-                                    @allpoints.vertices.push(newpoint)
-                                @allpoints.verticesNeedUpdate = true;
-                                @allpoints.elementsNeedUpdate = true;
-                                @n++
-
-                         else
-                                return false
-
-                     catch error
-                        console.log("couldn't find link:"+name)
-                        console.log(error)
-
-                     return false
-
+                    link=window.robotlinkcollection.get(@link_name)
+                    return false unless link?
+                    point=link.get('link').getWorldPosition(new THREE.Vector3())
+                    return false if @points.length and point.distanceTo(@points[@points.length-1])<0.0001
+                    @points.push(point)
+                    @points.shift() if @points.length>@N
+                    position=@allpoints.getAttribute('position')
+                    for item,i in @points
+                        position.setXYZ(i,item.x,item.y,item.z)
+                    position.needsUpdate=true
+                    @allpoints.setDrawRange(0,@points.length)
+                    true
                 clear_trajectory: =>
-                    for i in [0..@N] by 1
-                        @allpoints.vertices[i].set(0,0,0);
-                    @allpoints.verticesNeedUpdate = true;
-                    @allpoints.elementsNeedUpdate = true;
-                    @n=0
+                    @points=[]
+                    @allpoints.setDrawRange(0,0)
 
         class App.RobotLink extends Backbone.Model
 
@@ -212,11 +173,12 @@ Not adding points that are very near
                                       @attributes.visual=[@attributes.visual]
                                 meshvis_array=[]
                                 for visual_element,vis_no in @attributes.visual
-                                  robotBaseMaterial=@robotBaseMaterial
+                                  robotBaseMaterial=@robotBaseMaterial.clone()
 
                                   if(_.has(visual_element,"material"))
 
-                                          color=@get("materialcollection").get(visual_element.material.name).get("color");#||new THREE.Color(0x6E23BB);
+                                          namedMaterial=@get("materialcollection").get(visual_element.material.name)
+                                          color=namedMaterial?.get("color") or robotBaseMaterial.color
                                           robotBaseMaterial.color=color;
                                           robotBaseMaterial.specular=color;
                                           #@robotBaseMaterial.color=color;
@@ -235,6 +197,8 @@ Not adding points that are very near
                                   else if(_.has(visual_element.geometry,"sphere"))
                                           radius=visual_element.geometry.sphere.radius||0;
                                           meshvis=@makesphere(radius,robotBaseMaterial);
+                                  else if(_.has(visual_element.geometry,"mesh"))
+                                          meshvis=App.localRobots.mesh(visual_element.geometry.mesh,robotBaseMaterial)
                                   else
                                           meshvis=@makeempty();
 
@@ -260,19 +224,19 @@ Not adding points that are very near
 
                         meshvis.setRotationFromEuler(new THREE.Euler(Math.PI/2,0.0,0.0,'XYZ'))
                         #console.log(meshvis.rotation);
-                        meshvis_parent=new THREE.Mesh()
+                        meshvis_parent=new THREE.Object3D()
                         meshvis_parent.add(meshvis)
                         return meshvis_parent
                 makebox: (boxsize,material) ->
                         meshvis = new THREE.Mesh(
-                                        new THREE.CubeGeometry( boxsize[0]*1,boxsize[1]*1, boxsize[2]*1 ), material );
+                                        new THREE.BoxGeometry( boxsize[0]*1,boxsize[1]*1, boxsize[2]*1 ), material );
                         return meshvis
                 makesphere: (radius,material) ->
                         meshvis = new THREE.Mesh(
                                         new THREE.SphereGeometry( radius,20,20 ), material );
                         return meshvis
                 makeempty: ->
-                        meshvis = new THREE.Mesh();
+                        meshvis = new THREE.Object3D();
                         return meshvis
                 clearthislink: =>
                         @destroy()
@@ -426,6 +390,10 @@ It does not change params of scene. TODO: soft reset, that is draw robot from ne
 
         window.clearall = (scene,robot,jointcollection,modelcollection) ->
                         scene.remove(robot)
+                        robot?.traverse (object) ->
+                            object.geometry?.dispose()
+                            if object.material?
+                                object.material.dispose()
                         #jointcollection.each( (joint) -> joint.destroy())
                         jointcollection.reset()
                         #modelcollection.each( (link) -> link.destroy())
@@ -459,30 +427,17 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                           lineNumbers: true,
                           theme: "ambiance"
                           });
+                    App.localRobots.init(@)
 
                 URDFfiledrag: (evt)=>
                         evt.stopPropagation();
                         evt.preventDefault();
                         evt.originalEvent.dataTransfer.dropEffect = 'copy'; # Explicitly show this is a copy.
                 URDFfiledrop: (evt)=>
-                        #window.evt=evt
-                        #console.log(evt)
-                        evt.stopPropagation();
-                        evt.preventDefault();
-                        files = evt.originalEvent.dataTransfer.files; # FileList object.
-
-                        #// files is a FileList of File objects. List some properties.
-                        output = [];
-                        reader = new FileReader();
-
-
-                        reader.onload= (event) =>
-                                            @myCodeMirror.setValue(event.target.result)
-                                            @myCodeMirror.save()
-                                            #$("#robottext").val(event.target.result)
-                                            this.resetNload()
-                        for f in files
-                            reader.readAsText(f);
+                        evt.stopPropagation()
+                        evt.preventDefault()
+                        App.localRobots.importFiles({files:evt.originalEvent.dataTransfer.files,value:''}).catch (error) ->
+                            App.localRobots.status(error.message,true)
                 visible: ->
                     @model.set({"visible":$('#visible').prop('checked')})
                 saveRobot: ->
@@ -501,24 +456,35 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                                 });
                     window.open("https://mymodelrobot.appspot.com/ar/"+pageid,"_blank");
                 newRobot: ->
-                    #console.log("robot changed")
+                    try
+                        App.localRobots.validate(@model.attributes.urdf)
+                    catch error
+                        App.localRobots.status(error.message,true)
+                        return false
+                    App.localRobots.messages=[]
                     if window.robotlinkcollection?
                         window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
 
                     if window.parseRobot(@model.attributes.urdf)
 
                         App.setupGui();
-                        App.animate();
+                        unless App.animationStarted
+                            App.animationStarted=true
+                            App.animate()
                         #$("#robottext").val(@model.attributes.urdf)
                         @myCodeMirror.setValue(@model.attributes.urdf)
                         @myCodeMirror.save()
                         $('#visible').prop('checked', @model.attributes.visible);
+                        App.localRobots.loaded(@model.attributes.urdf)
                     else
                         window.alert("there was something wrong with your URDF");
                 resetNload: ->
                         @myCodeMirror.save() #this pushes the codemirror code to textarea (robottext)
                         urdffromform=$(@el).find("#robottext").val()
-                        @model.set({urdf:urdffromform})
+                        if @model.get('urdf') is urdffromform
+                            @newRobot()
+                        else
+                            @model.set({urdf:urdffromform})
 
 
                 changeURDF: (event)->
@@ -573,23 +539,36 @@ Simple camera views, for fast setting
 
 Helper clock, I have just added zerotime - to be able to have
 
-        class App.Clock extends THREE.Clock #just adding zerotime - we can manipulate thing that was called oldtime so that get elapsedTime can be non zero at the beginning
-                constructor: (autostart, zeroTime)->
-                        super autostart
-                        @zeroTime = if zeroTime? then zeroTime else 0
-                start: (zerotime)->
-                        super() #XXX it is running but we still play with it ?
-                        @zeroTime =zerotime ? @zeroTime
-                        this.oldTime=@oldTime-@zeroTime
+        class App.Clock
+                constructor: (@autoStart=true, zeroTime=0) ->
+                        @timer=new THREE.Timer()
+                        @elapsedTime=zeroTime
+                        @running=false
+                start: (zeroTime) ->
+                        @elapsedTime=zeroTime if zeroTime?
+                        @timer.reset()
+                        @running=true
                         @
-                stop: () -> #I like chaining , btw stop is essentially a pause?
-                        super()
+                getDelta: ->
+                        @start() if @autoStart and not @running
+                        @timer.update()
+                        delta=if @running then @timer.getDelta() else 0
+                        @elapsedTime+=delta
+                        delta
+                getElapsedTime: ->
+                        @getDelta()
+                        @elapsedTime
+                stop: ->
+                        @getElapsedTime()
+                        @running=false
+                        @autoStart=false
                         @
-                reset: () -> #because stop just pauses
-                        @stop().elapsedTime=0
+                reset: ->
+                        @stop()
+                        @elapsedTime=0
                         @
-                set: (timeinsec) -> #"sets the clock" -
-                        @zerotime=timeinsec
+                set: (timeinsec) ->
+                        @stop()
                         @elapsedTime=timeinsec
                         @
 
