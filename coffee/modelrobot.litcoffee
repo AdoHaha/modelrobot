@@ -415,6 +415,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         "click #frontview":"frontView"
                         "click #topview":"topView"
                         "click #sideview":"sideView"
+                        "click #fitview": "fitView"
                         "click #saverobot": "saveRobot"
                         "click #armode": "arMode"
                         "change #visible": "visible"
@@ -468,6 +469,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     if window.parseRobot(@model.attributes.urdf)
 
                         App.setupGui();
+                        App.fitRobot()
                         unless App.animationStarted
                             App.animationStarted=true
                             App.animate()
@@ -516,25 +518,11 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
 
 Simple camera views, for fast setting
 
-                frontView: =>
+                fitView: -> App.fitRobot()
 
-                        App.camera.position.set( 5, 0, 0 );
-
-                        App.camera.lookAt(0,0,0);
-                        App.camera.up=new THREE.Vector3(0,0,1)
-                        #App.camera.setRotationFromEuler(new THREE.Euler(0,0.0,0.0,'XYZ'))
-                        return App.camera
-                topView: =>
-                        App.camera.position.set(0,0,5);
-                        App.camera.lookAt(0,0,0);
-                        App.camera.up=new THREE.Vector3(1,0,0)
-                        return App.camera
-
-                sideView: =>
-                        App.camera.position.set(0,5,0);
-                        App.camera.lookAt(0,0,0);
-                        App.camera.up=new THREE.Vector3(0,0,1)
-                        return App.camera
+                frontView: => App.viewDirection(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,1))
+                topView: => App.viewDirection(new THREE.Vector3(0,0,1),new THREE.Vector3(1,0,0))
+                sideView: => App.viewDirection(new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,1))
 
 
 Helper clock, I have just added zerotime - to be able to have

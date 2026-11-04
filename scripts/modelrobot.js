@@ -536,7 +536,6 @@
         this.URDFfiledrop = this.URDFfiledrop.bind(this);
         this.changeURDFval = this.changeURDFval.bind(this);
         this.closeScreenshot = this.closeScreenshot.bind(this);
-        // Simple camera views, for fast setting
         this.frontView = this.frontView.bind(this);
         this.topView = this.topView.bind(this);
         this.sideView = this.sideView.bind(this);
@@ -613,6 +612,7 @@
         }
         if (window.parseRobot(this.model.attributes.urdf)) {
           App.setupGui();
+          App.fitRobot();
           if (!App.animationStarted) {
             App.animationStarted = true;
             App.animate();
@@ -672,29 +672,24 @@
         return $("#screenshottext").text("");
       }
 
+      // Simple camera views, for fast setting
+      fitView() {
+        return App.fitRobot();
+      }
+
       frontView() {
         boundMethodCheck(this, ref3);
-        App.camera.position.set(5, 0, 0);
-        App.camera.lookAt(0, 0, 0);
-        App.camera.up = new THREE.Vector3(0, 0, 1);
-        //App.camera.setRotationFromEuler(new THREE.Euler(0,0.0,0.0,'XYZ'))
-        return App.camera;
+        return App.viewDirection(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 1));
       }
 
       topView() {
         boundMethodCheck(this, ref3);
-        App.camera.position.set(0, 0, 5);
-        App.camera.lookAt(0, 0, 0);
-        App.camera.up = new THREE.Vector3(1, 0, 0);
-        return App.camera;
+        return App.viewDirection(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0));
       }
 
       sideView() {
         boundMethodCheck(this, ref3);
-        App.camera.position.set(0, 5, 0);
-        App.camera.lookAt(0, 0, 0);
-        App.camera.up = new THREE.Vector3(0, 0, 1);
-        return App.camera;
+        return App.viewDirection(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1));
       }
 
     };
@@ -710,6 +705,7 @@
       "click #frontview": "frontView",
       "click #topview": "topView",
       "click #sideview": "sideView",
+      "click #fitview": "fitView",
       "click #saverobot": "saveRobot",
       "click #armode": "arMode",
       "change #visible": "visible"

@@ -70,6 +70,21 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   assert.match(await page.locator('#local-status').innerText(),/broken.stl/);
   await page.locator('#local-delete').click();
   await page.waitForFunction(()=>!App.localRobots.records.some(r=>r.name==='Other robot'));
+  // The canvas follows its pane through desktop, mobile and orientation changes.
+  for (const [width,height] of [[1440,900],[1024,768],[390,844],[844,390],[320,568]]) {
+    await page.setViewportSize({width,height});
+    await page.waitForFunction(()=>{
+      const host=document.getElementById('container');
+      const canvas=renderer.domElement;
+      return Math.abs(canvas.clientWidth-host.clientWidth)<2 && Math.abs(canvas.clientHeight-host.clientHeight)<2 && Math.abs(App.camera.aspect-host.clientWidth/host.clientHeight)<0.01;
+    });
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'No horizontal overflow');
+    assert.equal(await page.locator('#container canvas').count(),1);
+    if (width<760) {
+      assert.ok(await page.evaluate(()=>App.gui.closed));
+      assert.ok(await page.locator('#joint-controls .close-button').isVisible());
+    }
+  }
   assert.deepEqual(errors,[]);
   await context.close();
 });

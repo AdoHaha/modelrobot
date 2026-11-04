@@ -85,18 +85,10 @@
   // Seting initial parameters
   // -------------------------
   App.init = function() {
-    var camera, canvasHeight, canvasRatio, canvasWidth, container, documentWidth, offsetHeight, offsetWidth;
-    documentWidth = $("body").width() - 20;
-    offsetHeight = document.getElementById('controldiv').offsetHeight;
-    offsetWidth = document.getElementById('controldiv').offsetWidth;
-    canvasWidth = documentWidth - offsetWidth - 1;
-    if (canvasWidth < 300) {
-      canvasWidth = documentWidth;
-    }
-    $("#container").width(canvasWidth + 1);
-    //else
-    //    canvasWidth = window.innerWidth
-    canvasHeight = window.innerHeight;
+    var camera, canvasHeight, canvasRatio, canvasWidth, container, resizeViewer, wasMobile;
+    container = document.getElementById('container');
+    canvasWidth = container.clientWidth;
+    canvasHeight = container.clientHeight;
     canvasRatio = canvasWidth / canvasHeight;
     window.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -104,7 +96,7 @@
     });
     window.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     window.renderer.setSize(canvasWidth, canvasHeight);
-    window.renderer.setClearColor(new THREE.Color(0xAAAAAA), 1.0);
+    window.renderer.setClearColor(new THREE.Color(0xdfe7ef), 1.0);
     container = document.getElementById('container');
     container.appendChild(window.renderer.domElement);
     camera = new THREE.PerspectiveCamera(30, canvasRatio, 1, 10000);
@@ -115,20 +107,69 @@
     App.cameraControls.rotateSpeed = 4;
     App.cameraControls.target.set(0, 0, 0);
     App.fillScene();
-    window.addEventListener('resize', function() {
-      var height, width;
-      width = Math.max(300, document.body.clientWidth - document.getElementById('controldiv').offsetWidth - 21);
-      height = window.innerHeight;
+    wasMobile = window.innerWidth < 760;
+    resizeViewer = function() {
+      var height, isMobile, width;
+      width = Math.max(1, container.clientWidth);
+      height = Math.max(1, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(width, height);
       App.camera.aspect = width / height;
       App.camera.updateProjectionMatrix();
-      return App.cameraControls.handleResize();
-    });
+      App.cameraControls.handleResize();
+      isMobile = window.innerWidth < 760;
+      if (isMobile !== wasMobile) {
+        if (isMobile && (App.gui != null)) {
+          App.gui.close();
+        }
+        if (window.robot != null) {
+          App.fitRobot();
+        }
+        return wasMobile = isMobile;
+      }
+    };
+    App.viewerResizeObserver = new ResizeObserver(resizeViewer);
+    App.viewerResizeObserver.observe(container);
+    window.addEventListener('resize', resizeViewer);
     return true;
   };
 
   // Controlling scene, using dat gui
   // ----------------
+  App.viewDirection = function(direction, up) {
+    var distance;
+    distance = App.camera.position.distanceTo(App.cameraControls.target);
+    App.camera.up.copy(up);
+    App.camera.position.copy(App.cameraControls.target).addScaledVector(direction, distance);
+    App.camera.lookAt(App.cameraControls.target);
+    return App.cameraControls.update();
+  };
+
+  App.fitRobot = function() {
+    var bounds, center, direction, distance, size, span;
+    if (window.robot == null) {
+      return;
+    }
+    bounds = new THREE.Box3().setFromObject(window.robot);
+    if (bounds.isEmpty()) {
+      return;
+    }
+    size = bounds.getSize(new THREE.Vector3());
+    center = bounds.getCenter(new THREE.Vector3());
+    span = Math.max(size.x, size.y, size.z, 0.01);
+    distance = span / (2 * Math.tan(App.camera.fov * Math.PI / 360)) * 1.4 / Math.min(App.camera.aspect, 1);
+    direction = App.camera.position.clone().sub(App.cameraControls.target).normalize();
+    if (direction.lengthSq() < 0.01) {
+      direction.set(1, 1, 1).normalize();
+    }
+    App.cameraControls.target.copy(center);
+    App.camera.position.copy(center).addScaledVector(direction, distance);
+    App.camera.near = Math.max(distance / 1000, 0.0001);
+    App.camera.far = Math.max(distance * 100, 100);
+    App.camera.updateProjectionMatrix();
+    return App.cameraControls.update();
+  };
+
   App.setupGui = function() {
     window.effectController = {
       newGridX: App.gridX,
@@ -147,7 +188,15 @@
     if (_.has(App, "gui")) {
       App.gui.destroy();
     }
-    App.gui = new dat.GUI();
+    App.gui = new dat.GUI({
+      autoPlace: false,
+      width: 230
+    });
+    document.getElementById('joint-controls').replaceChildren(App.gui.domElement);
+    if (window.innerWidth < 760) {
+      App.gui.close();
+    }
+    // Creating gui for robot
     App.robotjointmanipall = new App.RobotJointManipAll({
       gui: App.gui,
       joints: window.robotjointcollection

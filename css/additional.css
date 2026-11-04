@@ -1,16 +1,58 @@
-#controldiv
-{
-float:left;
-width:500px
+:root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; min-height: 100%; }
+body {
+  height: 100vh; height: 100dvh;
+  display: grid; grid-template-columns: minmax(340px, 390px) minmax(0, 1fr);
+  grid-template-rows: 56px minmax(0, 1fr);
+  overflow: hidden; background: #e9eef3; color: #263345; font-size: 14px;
 }
-textarea
-{
-width:100%;
+#app-header { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 0 20px; background: #14283f; color: #c7d6e6; border-bottom: 1px solid #253c56; }
+#app-header strong { font-size: 20px; color: white; letter-spacing: -.5px; }
+#app-header .privacy-note { margin-left: auto; font-size: 12px; color: #b7e2d1; }
+#controldiv { grid-column: 1; grid-row: 2; min-width: 0; overflow: auto; padding: 16px; background: #f8fafc; border-right: 1px solid #cbd5e1; scrollbar-width: thin; line-height: 1.6; }
+#container { grid-column: 2; grid-row: 2; position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+#container > canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+#joint-controls { position: absolute; z-index: 2; top: 12px; right: 12px; max-height: calc(100% - 24px); overflow: auto; scrollbar-width: thin; border-radius: 6px; }
+#joint-controls .dg.main { margin: 0; }
+#controldiv button { margin: 4px 2px 4px 0; padding: 5px 9px; border: 1px solid #bccbd9; border-radius: 5px; background: #fff; color: #21394f; font: inherit; cursor: pointer; line-height: 1.4; }
+#controldiv button:hover { background: #e8f0f8; border-color: #7c9ab4; }
+#controldiv button:focus-visible, #controldiv input:focus-visible, #controldiv select:focus-visible { outline: 2px solid #1673ca; outline-offset: 2px; }
+#controldiv #loadbutton, #controldiv #local-save { background: #1766a7; border-color: #1766a7; color: white; }
+#controldiv input:not([type=checkbox]), #controldiv select, #controldiv textarea { max-width: 100%; padding: 5px 7px; border: 1px solid #bdcbd8; border-radius: 4px; background: white; color: #263345; font: inherit; }
+#controldiv input[type=file] { width: 100%; padding: 4px; font-size: 12px; }
+#controldiv input[type=file]::file-selector-button { border: 0; padding: 5px 8px; border-radius: 3px; background: #e4edf6; color: #21476c; cursor: pointer; }
+textarea { width: 100%; resize: vertical; }
+#robottextbox { margin-top: 8px; }
+.CodeMirror { text-align: left; border: 1px solid #293d52; border-radius: 6px; line-height: 1.4; }
+#robottextbox .CodeMirror-scroll { height: 220px; }
+#local-robots { margin: 8px 0; padding: 10px 12px; border: 1px solid #d1dce7; border-radius: 7px; background: #edf3f9; min-width: 0; }
+#local-robots legend { font-size: 14px; font-weight: 600; margin: 0; padding: 0 5px; width: auto; color: #35526d; border: 0; }
+#local-robots label { display: block; font-weight: 500; margin-bottom: 5px; }
+#local-robots p { margin: 6px 0; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+#local-robots small { display: block; font-size: 11px; line-height: 1.4; color: #5e6f80; }
+#local-name { width: 100%; }
+#local-library { width: 100%; }
+.file-import summary { cursor: pointer; font-weight: 600; color: #1b5f97; padding: 3px 0; }
+.file-import { margin-bottom: 8px; }
+#animdiv { border-top: 1px solid #d1dce7; margin-top: 16px; padding-top: 12px; }
+#screenshotplace img { max-width: 100%; }
+#local-status { color: #27634b; }
+#local-status.text-danger { color: #b52f37; }
+@media (max-width: 759px) {
+  body { height: auto; min-height: 100vh; overflow: auto; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 52px 45vh auto; }
+  #app-header { padding: 0 12px; gap: 10px; }
+  #app-header strong { font-size: 18px; }
+  #app-header > span { font-size: 12px; }
+  #app-header .privacy-note { display: none; }
+  #container { grid-column: 1; grid-row: 2; height: 45vh; min-height: 240px; }
+  #controldiv { grid-column: 1; grid-row: 3; overflow: visible; padding: 14px; border: 0; }
+  #joint-controls { top: 8px; right: 8px; }
+  #robottextbox .CodeMirror-scroll { height: 190px; }
 }
-
-#local-robots { margin: 12px 0; padding: 10px; border: 1px solid #bbb; }
-#local-robots legend { font-size: 16px; margin-bottom: 8px; width: auto; }
-#local-robots label { display: block; }
-#local-robots input[type=file] { max-width: 100%; }
-#local-robots p { margin: 8px 0; }
-#local-library { max-width: 240px; }
+#joint-controls .dg.main .close-button { position: static; display: block; width: 100% !important; }
+#robottextbox .CodeMirror { height: 240px; }
+#robottextbox .CodeMirror-scroll { height: 100%; }
+@media (max-width: 759px) {
+  #robottextbox .CodeMirror { height: 210px; }
+}
