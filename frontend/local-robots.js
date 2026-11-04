@@ -84,11 +84,7 @@ export class LocalRobots {
     // Attach a rejection handler immediately, even before the first save.
     this.db.catch(() => {});
     const on = (id, event, fn) => document.getElementById(id).addEventListener(event, () => Promise.resolve().then(fn).catch(error => this.status(error.message, true)));
-    let csvTimer;
-    on('robotcsv', 'input', () => {
-      clearTimeout(csvTimer);
-      csvTimer = setTimeout(() => this.saveAnimation(), 250);
-    });
+    on('robotcsv', 'input', () => this.saveAnimation());
     on('local-files', 'change', () => this.importFiles(document.getElementById('local-files')));
     on('local-folder', 'change', () => this.importFiles(document.getElementById('local-folder')));
     on('local-save', 'click', () => { form.resetNload(); });
@@ -163,7 +159,8 @@ export class LocalRobots {
     if (this.currentXml) this.loaded(this.currentXml);
   }
   loaded(xml) {
-    if (this.currentXml !== xml) {
+    const changedRobot = this.currentXml !== xml;
+    if (changedRobot) {
       this.currentXml = xml;
       document.getElementById('robotcsv').value = '';
       App.animform.stop();
@@ -177,10 +174,16 @@ export class LocalRobots {
     const references = [...doc.querySelectorAll('mesh')].map(mesh => this.resolve(mesh.getAttribute('filename') || '')).filter(Boolean);
     const assets = [...new Set(references)].map(key => ({ name: key, bytes: this.assets.get(key) }));
     this.pendingSave = this.pendingSave.catch(() => {}).then(async () => {
-      const old = this.records.find(record => record.urdf === xml);
+      const records = await this.transaction('readonly', store => store.getAll());
+      const old = records.find(record => record.urdf === xml);
+      const savedCsv = changedRobot && old ? (old.csv || csv) : csv;
+      if (changedRobot && savedCsv && this.currentXml === xml && document.getElementById('robotcsv').value === csv) {
+        document.getElementById('robotcsv').value = savedCsv;
+        App.animform.prepareArraysfromCSV(savedCsv);
+      }
       const retained = new Map((old?.assets || []).map(asset => [asset.name, asset]));
       assets.forEach(asset => retained.set(asset.name, asset));
-      const record = { id: old ? old.id : crypto.randomUUID(), name, urdf: xml, csv, assets: [...retained.values()], updated: Date.now() };
+      const record = { id: old ? old.id : crypto.randomUUID(), name, urdf: xml, csv: savedCsv, assets: [...retained.values()], updated: Date.now() };
       await this.transaction('readwrite', store => store.put(record));
       await this.refresh(record.id);
       this.status(warnings.length ? warnings.join(' ') + ' Robot saved; add missing files to complete it.' : 'Saved “' + name + '” in this browser.');

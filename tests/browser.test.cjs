@@ -29,6 +29,10 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   assert.equal(await page.evaluate(()=>robot.name),'robot');
   assert.ok(await page.evaluate(()=>App.currentrobot.get('urdf').includes('name="pi_robot"')),'Pi robot loads automatically');
   assert.ok(!requests.some(url=>new URL(url).pathname.startsWith('/robots/')),'Standalone startup does not call the backend');
+  const defaultCsv='time,torso_joint\n0,0\n1,0.1\n';
+  await page.locator('#robotcsv').fill(defaultCsv);
+  await page.locator('#loadcsv').click();
+  await settled(page);
   await page.locator('#local-files').setInputFiles([upload('part.stl',stl),upload('mesh.urdf',Buffer.from(xml('Mesh robot')))]);
   await page.waitForFunction(()=>App.currentrobot.get('urdf').includes('Mesh robot'));
   await settled(page);
@@ -65,6 +69,7 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   await page.reload();
   await page.waitForFunction(()=>window.robotlinkcollection?.length>0);
   await settled(page);
+  await page.waitForFunction(csv=>document.getElementById('robotcsv').value.trim()===csv.trim(),defaultCsv);
   await page.locator('#local-library').selectOption(savedId);
   await page.locator('#local-open').click();
   await page.waitForFunction(()=>App.currentrobot.get('urdf').includes('Mesh robot'));
