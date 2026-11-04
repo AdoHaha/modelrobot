@@ -4,6 +4,19 @@
 
 MyModelRobot is a web-based application for designing and viewing robots described in URDF (Unified Robot Description Format) used in ROS (Robot Operating System). This standalone version requires no server setup and works directly in your web browser.
 
+## Local STL files and saved robots
+
+The standalone viewer now uses Three.js 0.187.0 and supports ASCII and binary
+STL files. Select a URDF and its STL files together, choose a folder, or add
+meshes separately. Loaded robots and mesh bytes are saved in this browser's
+IndexedDB. Open and delete them with the saved robot library controls.
+
+Use a local static web server (for example `python3 -m http.server 8000`) for
+reliable loading of the bundled examples and a stable browser storage origin.
+This does not require the Python application, Google Cloud or a database.
+Files selected in the viewer are processed locally and never uploaded.
+Camera-based AR continues to use the separate legacy online runtime.
+
 ## Features
 
 - **URDF Visualization**: Load and visualize robot models described in URDF format

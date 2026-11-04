@@ -450,7 +450,9 @@
     }
 
     change_address() {
-      return App.router.navigate("/" + this.id);
+      if (!window.standalone) {
+        return App.router.navigate("/" + this.id);
+      }
     }
 
   };

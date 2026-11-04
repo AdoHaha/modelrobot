@@ -331,7 +331,7 @@ There can be only one such model on scene ###TODO this seems fundamentaly wrong
                 @on("change",@change_address)
                 return true
             change_address:->
-                App.router.navigate("/"+@id)
+                App.router.navigate("/"+@id) unless window.standalone
 
 
 

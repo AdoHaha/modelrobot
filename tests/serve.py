@@ -5,7 +5,9 @@ import json
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
-        if self.path == '/' or self.path.strip('/').isdigit():
+        if self.path == '/':
+            body = Path('standalone.html').read_bytes()
+        elif self.path.strip('/').isdigit():
             body = Environment(loader=FileSystemLoader('html')).get_template('index.html').render(linki=[], user=None).encode()
         elif self.path.startswith('/robots/'):
             body = json.dumps({'id':5629499534213120, 'urdf': Path('testowe/r2d2.xml').read_text()}).encode()

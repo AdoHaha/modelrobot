@@ -217,15 +217,23 @@
     });
     App.usersrobots.add(App.currentrobot);
     //console.log(window.robot_id)
-    App.currentrobot.id = window.robot_id;
-    Backbone.history.start({
-      pushState: true
-    });
-    return App.currentrobot.fetch({
-      error: function() {
-        return App.localRobots.status('Load a local URDF and STL files, or open a robot saved in this browser.');
-      }
-    });
+    if (!window.standalone) {
+      App.currentrobot.id = window.robot_id;
+      Backbone.history.start({
+        pushState: true
+      });
+      return App.currentrobot.fetch({
+        error: function() {
+          return App.localRobots.status('Load a local URDF and STL files, or open a robot saved in this browser.');
+        }
+      });
+    } else {
+      return $.get('./testowe/pi_robot_urdf.xml', function(data) {
+        var xml;
+        xml = typeof data === 'string' ? data : new XMLSerializer().serializeToString(data);
+        return App.localRobots.showURDF(xml);
+      });
+    }
   });
 
   //if window.start_with_default

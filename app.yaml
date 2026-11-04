@@ -10,6 +10,12 @@ env_variables:
   AUTH_DOMAIN: gmail.com
 
 handlers:
+- url: /
+  static_files: standalone.html
+  upload: standalone.html
+- url: /standalone.html
+  static_files: standalone.html
+  upload: standalone.html
 - url: /css
   static_dir: css
 - url: /lib

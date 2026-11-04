@@ -47,6 +47,10 @@ See repository for license information.
 Browser robot library and STL meshes
 -----------------------------------
 
+The hosted homepage now serves the standalone viewer directly as static files.
+Robot loading and browser storage require no application server. Existing
+server robot URLs remain available through the legacy backend.
+
 Use **URDF and STL files** to select a URDF/XML file and its ASCII or binary
 STL meshes, or choose a folder to preserve mesh paths. STL files can also be
 added before or after loading the URDF. Mesh references resolve by path and,

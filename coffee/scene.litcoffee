@@ -229,11 +229,17 @@ Starting it all
                 App.forumula = new App.RobotForm({model:App.currentrobot});
                 App.usersrobots.add(App.currentrobot)
                 #console.log(window.robot_id)
-                App.currentrobot.id=window.robot_id
-                Backbone.history.start({pushState:true})
-                App.currentrobot.fetch({error: ->
-                    App.localRobots.status('Load a local URDF and STL files, or open a robot saved in this browser.')
-                })
+                unless window.standalone
+                    App.currentrobot.id=window.robot_id
+                    Backbone.history.start({pushState:true})
+                    App.currentrobot.fetch({error: ->
+                        App.localRobots.status('Load a local URDF and STL files, or open a robot saved in this browser.')
+                    })
+                else
+                    $.get './testowe/pi_robot_urdf.xml', (data) ->
+                        xml=if typeof data is 'string' then data else new XMLSerializer().serializeToString(data)
+                        App.localRobots.showURDF(xml)
+
 
 
                 #if window.start_with_default
