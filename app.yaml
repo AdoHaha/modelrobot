@@ -1,0 +1,23 @@
+runtime: python312
+instance_class: F1
+automatic_scaling:
+  min_instances: 0
+  max_instances: 1
+  target_cpu_utilization: 0.6
+  max_concurrent_requests: 10
+env_variables:
+  AUTH_DOMAIN: gmail.com
+
+handlers:
+- url: /css
+  static_dir: css
+- url: /lib
+  static_dir: lib
+- url: /data
+  static_dir: data
+- url: /scripts
+  static_dir: scripts
+- url: /testowe
+  static_dir: testowe
+- url: /.*
+  script: auto
