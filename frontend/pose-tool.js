@@ -1,10 +1,10 @@
-import { Box3, Box3Helper, BufferGeometry, Float32BufferAttribute, Group, Line, LineBasicMaterial, Mesh, MeshBasicMaterial, Plane, Raycaster, SphereGeometry, Vector2, Vector3 } from 'three';
+import { Box3, Box3Helper, BufferGeometry, Float32BufferAttribute, Group, Line, LineBasicMaterial, Matrix4, Mesh, MeshBasicMaterial, Plane, Raycaster, SphereGeometry, Vector2, Vector3 } from 'three';
 import { IKSolver, limbChain } from './ik.js';
 
 export class PoseTool {
   constructor(app) {
     this.app = app; this.enabled = false; this.active = null;
-    this.raycaster = new Raycaster(); this.pointer = new Vector2(); this.normal = new Vector3(); this.plane = new Plane();
+    this.raycaster = new Raycaster(); this.pointer = new Vector2(); this.normal = new Vector3(); this.plane = new Plane(); this.dragPoint = new Vector3();
   }
   init(canvas) {
     this.canvas = canvas;
@@ -102,9 +102,21 @@ export class PoseTool {
     window.scene.updateMatrixWorld(true);
     const bounds = new Box3().setFromObject(window.robot);
     const scale = Math.max(bounds.getSize(new Vector3()).length(), .001);
-    const localPoint = hit.object.worldToLocal(hit.point.clone());
+    // Translate the segment's visual centre, retaining the original cursor
+    // offset. Chasing a tiny off-axis point on an elbow casing otherwise spins
+    // the elbow (and its entire distal subtree) to gain a few millimetres.
+    const meshes = [...hit.owners].filter(([, owner]) => owner === hit.object).map(([mesh]) => mesh);
+    const localBounds = new Box3(), inverse = hit.object.matrixWorld.clone().invert(), transform = new Matrix4();
+    for (const mesh of meshes) {
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      transform.multiplyMatrices(inverse, mesh.matrixWorld);
+      localBounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(transform));
+    }
+    const localPoint = localBounds.getCenter(new Vector3());
+    const target = localPoint.clone().applyMatrix4(hit.object.matrixWorld);
+    const grabOffset = target.clone().sub(hit.point);
     const solver = new IKSolver({ chain, object: hit.object, localPoint, root: window.robot, scale });
-    this.active = { solver, object: hit.object, target: hit.point.clone(), start: solver.values(), scale, meshes: [...hit.owners].filter(([, owner]) => owner === hit.object).map(([mesh]) => mesh) };
+    this.active = { solver, object: hit.object, target, grabOffset, start: solver.values(), scale, meshes };
     this.app.camera.getWorldDirection(this.normal);
     this.plane.setFromNormalAndCoplanarPoint(this.normal, hit.point);
     this.app.cameraControls.enabled = false;
@@ -123,26 +135,27 @@ export class PoseTool {
   }
   follow(event) {
     this.pointerAt(event);
-    this.raycaster.ray.intersectPlane(this.plane, this.active.target);
+    if (this.raycaster.ray.intersectPlane(this.plane, this.dragPoint)) this.active.target.copy(this.dragPoint).add(this.active.grabOffset);
   }
   depth(direction) {
     if (!this.active || !direction) return;
-    const camera = this.app.camera, current = this.active.target.clone().sub(camera.position).dot(this.normal);
+    const camera = this.app.camera, cursor = this.active.target.clone().sub(this.active.grabOffset);
+    const current = cursor.clone().sub(camera.position).dot(this.normal);
     const next = Math.max(camera.near * 2, Math.min(camera.far * .8, current + direction * this.active.scale * .04));
-    const shifted = this.active.target.clone().addScaledVector(this.normal, next - current);
+    const shifted = cursor.addScaledVector(this.normal, next - current);
     this.plane.setFromNormalAndCoplanarPoint(this.normal, shifted);
     this.raycaster.setFromCamera(this.pointer, camera);
-    this.raycaster.ray.intersectPlane(this.plane, this.active.target);
+    if (this.raycaster.ray.intersectPlane(this.plane, this.dragPoint)) this.active.target.copy(this.dragPoint).add(this.active.grabOffset);
     this.update();
   }
   update() {
     if (!this.active) return;
-    const { solver, target, meshes, object } = this.active;
+    const { solver, target, grabOffset, meshes, object } = this.active;
     const result = solver.step(target);
     this.app.robotjointmanipall.jointsval();
-    const point = solver.position();
-    this.marker.position.copy(target);
-    const positions = this.line.geometry.getAttribute('position'); positions.setXYZ(0, point.x, point.y, point.z); positions.setXYZ(1, target.x, target.y, target.z); positions.needsUpdate = true;
+    const point = solver.position().clone().sub(grabOffset);
+    this.marker.position.copy(target).sub(grabOffset);
+    const positions = this.line.geometry.getAttribute('position'); positions.setXYZ(0, point.x, point.y, point.z); positions.setXYZ(1, this.marker.position.x, this.marker.position.y, this.marker.position.z); positions.needsUpdate = true;
     this.outline.box.makeEmpty(); for (const mesh of meshes) this.outline.box.union(new Box3().setFromObject(mesh));
     this.report(object.name + ' · ' + (result.reached ? 'Target reached' : (result.stalled ? 'Best pose' : 'Solving')) + ' · ' + (result.error * 1000).toFixed(1) + ' mm from target');
   }

@@ -63,6 +63,18 @@ export class IKSolver {
     joint.movejoint(joint.type === 'continuous' ? wrap(value) : clamp(value, joint.lower, joint.upper));
     this.root.updateMatrixWorld(true);
   }
+  jointVectors(joint) {
+    this.frame.multiplyMatrices(joint.parentobject3d.matrixWorld, joint.basicMatrix);
+    this.origin.setFromMatrixPosition(this.frame);
+    this.axis.copy(joint.axis).transformDirection(this.frame);
+    this.toPoint.copy(this.position()).sub(this.origin);
+    this.toPoint.addScaledVector(this.axis, -this.toPoint.dot(this.axis));
+  }
+  influencesPosition(joint) {
+    if (joint.type === 'prismatic') return true;
+    this.jointVectors(joint);
+    return this.toPoint.lengthSq() > this.scale * this.scale * 1e-16;
+  }
   sweep(target, angularStep = .25) {
     for (const joint of this.chain) {
       this.frame.multiplyMatrices(joint.parentobject3d.matrixWorld, joint.basicMatrix);
@@ -77,7 +89,7 @@ export class IKSolver {
       } else {
         this.toPoint.addScaledVector(this.axis, -this.toPoint.dot(this.axis));
         this.toTarget.addScaledVector(this.axis, -this.toTarget.dot(this.axis));
-        if (this.toPoint.lengthSq() < 1e-20 || this.toTarget.lengthSq() < 1e-20) continue;
+        if (this.toPoint.lengthSq() <= this.scale * this.scale * 1e-16 || this.toTarget.lengthSq() < 1e-20) continue;
         delta = Math.atan2(this.cross.crossVectors(this.toPoint, this.toTarget).dot(this.axis), this.toPoint.dot(this.toTarget));
         delta = clamp(delta, -angularStep, angularStep);
       }
@@ -112,8 +124,9 @@ export class IKSolver {
         const round = Math.floor(this.seed / (this.chain.length * 2));
         const offset = joint.type === 'prismatic' ? this.scale * [.03, .1, .3][round] : [.12, .5, 1][round];
         this.seed++;
-        this.set(joint, joint.theta + direction * offset);
-        for (let i = 0; i < 4; i++) {
+        const influences = this.influencesPosition(joint);
+        if (influences) this.set(joint, joint.theta + direction * offset);
+        for (let i = 0; influences && i < 4; i++) {
           this.sweep(target, Math.PI);
           error = this.position().distanceTo(target);
           if (error < bestError) { bestError = error; best = this.values(); }

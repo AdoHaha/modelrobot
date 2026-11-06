@@ -95,8 +95,8 @@ The user chose the following interaction before implementation:
 | Screen-facing plane plus depth control | A 2D pointer cannot uniquely specify a 3D point | The picked point follows the cursor; wheel or Nearer/Farther changes depth |
 | Selected limb | Moving a hand should not unexpectedly rotate the torso or recruit the other arm | Solve ancestors only as far as the nearest branching rigid assembly |
 
-**Interaction:** The exact picked surface point is the positional target, rather
-than an arbitrary link origin. A cyan target marker, segment outline and connecting
+**Initial interaction:** The exact picked surface point was the positional target,
+rather than an arbitrary link origin. A cyan target marker, segment outline and connecting
 line expose the selection and residual error without replacing collision colors.
 Click again or choose Place to keep the pose. Cancel or Escape restores the joint
 values at selection time; Escape again exits the tool. On touch screens, enable
@@ -128,6 +128,10 @@ can capture the resulting joint values.
 Unsupported joint types or segments without movable ancestors give a message.
 Unreachable targets retain a best local result with a distance readout; the
 search does not guarantee a globally optimal solution or avoid collisions.
+
+The [7 November follow-up](ik-follow-up-2026-11-07.md) changes the target to the
+segment's visual centre with a retained grab offset, avoiding elbow-casing twists
+and explicitly checking downstream bend preservation and prismatic movement.
 
 On small screens, camera-view overlays hide while Pose mode is enabled, and
 camera buttons are replaced by the active posing actions while a segment moves.

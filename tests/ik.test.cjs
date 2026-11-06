@@ -49,3 +49,23 @@ test('continuous joints choose equivalent angles and unsupported chains fail cle
   const f=fixture([{parent:'base',child:'tip',type:'continuous'}]);const s=solverFor(f,'tip');assert.ok(solve(s,[-1,-.01,0]).reached);assert.ok(Math.abs(f.joints[0].theta)<=Math.PI);
   const g=fixture([{parent:'base',child:'tip',type:'planar'}]);assert.throws(()=>limbChain(g.joints,'tip'),/does not support planar/);
 });
+
+test('moving a middle link keeps its axial rotation and the distal bend configuration',()=>{
+  const f=fixture([{parent:'base',child:'upper'},{parent:'upper',child:'elbow',xyz:[1,0,0]}, {parent:'elbow',child:'wrist',xyz:[1,0,0]}, {parent:'wrist',child:'hand',type:'fixed',xyz:[1,0,0]}]);
+  f.joints[1].movejoint(.4);f.joints[2].movejoint(-.6);f.root.updateMatrixWorld(true);
+  const elbow=f.objects.get('elbow'),hand=f.objects.get('hand');
+  const relative=()=>elbow.matrixWorld.clone().invert().multiply(hand.matrixWorld).elements;
+  const original=relative();const s=solverFor(f,'elbow',[0,0,0]);
+  for(const target of [[.7,.5,0],[0,1,0],[-.7,.5,0],[.2,.2,.3]]){
+    solve(s,target);
+    assert.equal(f.joints[1].theta,.4,'A joint through the translation handle must not spin its casing');
+    assert.equal(f.joints[2].theta,-.6,'Downstream wrist angle stays fixed');
+    relative().forEach((n,i)=>assert.ok(Math.abs(n-original[i])<1e-12,'Hand configuration relative to the selected elbow stays fixed'));
+  }
+});
+
+test('a prismatic joint through a middle-link handle still translates and preserves downstream joints',()=>{
+  const f=fixture([{parent:'base',child:'slide',type:'prismatic',axis:[1,0,0],lower:0,upper:2},{parent:'slide',child:'wrist',xyz:[0,0,1]}]);
+  f.joints[1].movejoint(.7);const s=solverFor(f,'slide',[0,0,0]);assert.ok(solve(s,[1.2,0,0]).reached);
+  assert.ok(Math.abs(f.joints[0].theta-1.2)<.002);assert.equal(f.joints[1].theta,.7);
+});

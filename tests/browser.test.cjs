@@ -421,6 +421,11 @@ test('IK picks STL and primitive links, follows the cursor, changes depth, prese
   const again=await page.evaluate(()=>{const v=new THREE.Vector3(.75,-.04,.075).applyMatrix4(robotlinkcollection.get('tip').get('link').matrixWorld).project(App.camera),r=renderer.domElement.getBoundingClientRect();return {x:r.left+(v.x+1)*r.width/2,y:r.top+(1-v.y)*r.height/2};});
   await page.mouse.dblclick(again.x,again.y);await page.waitForFunction(()=>App.poseTool.active?.object.name==='tip');
   await page.locator('#pose-cancel').click();
+  // A carriage handle on its joint axis must still translate along that axis.
+  const carriage=await projectIK(page,[0,-.5,.05]);await page.mouse.click(carriage.x,carriage.y);await page.waitForFunction(()=>App.poseTool.active?.object.name==='other');
+  const shifted=await projectIK(page,[.35,-.5,.05]);await page.mouse.move(shifted.x,shifted.y,{steps:5});
+  await page.waitForFunction(()=>Math.abs(robotjointcollection.findWhere({name:'other'}).theta-.35)<.005);
+  await page.locator('#pose-place').click();assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'torso'}).theta),0);
   await page.locator('#pose-toggle').click();assert.equal(await page.locator('#pose-toggle').getAttribute('aria-pressed'),'false');
   assert.deepEqual(errors,[]);await context.close();
 });
@@ -464,4 +469,32 @@ test('touch IK drags a segment and commits on release while keeping the camera s
   (await page.evaluate(()=>App.camera.position.toArray())).forEach((n,i)=>assert.ok(Math.abs(n-camera[i])<1e-8));
   assert.ok(await page.evaluate(()=>robotjointcollection.findWhere({name:'shoulder'}).theta>.01));
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);await context.close();
+});
+
+test('moving a Pi elbow preserves forearm and hand configuration without spinning the elbow casing',async()=>{
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);
+  await page.evaluate(()=>{
+    App.robotjointmanipall.changejointval('left_elbow_joint',.45);
+    App.robotjointmanipall.changejointval('left_wrist_joint',-.55);
+    scene.updateMatrixWorld(true);
+    const object=robotlinkcollection.get('left_elbow_link').get('link'),hand=robotlinkcollection.get('left_hand_link').get('link');
+    window.middleOriginal={angles:robotjointcollection.map(j=>j.theta),relative:object.matrixWorld.clone().invert().multiply(hand.matrixWorld).elements.slice()};
+    // Off-centre point on the casing: the previous surface-point solver used
+    // this small lever to twist the elbow dramatically for a small translation.
+    const point=new THREE.Vector3(.0175,.008,.008).applyMatrix4(object.matrixWorld);
+    App.poseTool.setEnabled(true);App.poseTool.begin({object,point,owners:App.poseTool.meshes()});
+    App.poseTool.active.target.add(new THREE.Vector3(0,.03,0));
+  });
+  await page.waitForFunction(()=>App.poseTool.active.solver.stalled);
+  const checked=await page.evaluate(()=>{
+    const tool=App.poseTool,object=robotlinkcollection.get('left_elbow_link').get('link'),hand=robotlinkcollection.get('left_hand_link').get('link');
+    const relative=object.matrixWorld.clone().invert().multiply(hand.matrixWorld).elements;
+    return {chain:tool.active.solver.chain.map(j=>j.name),elbow:robotjointcollection.findWhere({name:'left_elbow_joint'}).theta,wrist:robotjointcollection.findWhere({name:'left_wrist_joint'}).theta,relativeError:Math.max(...relative.map((n,i)=>Math.abs(n-middleOriginal.relative[i]))),changed:robotjointcollection.filter((j,i)=>Math.abs(j.theta-middleOriginal.angles[i])>1e-10).map(j=>j.name)};
+  });
+  assert.equal(checked.elbow,.45);assert.equal(checked.wrist,-.55);assert.ok(checked.relativeError<1e-10);
+  assert.ok(checked.changed.length>0);assert.ok(checked.changed.every(name=>['left_shoulder_forward_joint','left_shoulder_up_joint'].includes(name)));
+  await page.locator('#pose-cancel').click();assert.ok(await page.evaluate(()=>robotjointcollection.every((j,i)=>j.theta===middleOriginal.angles[i])));
+  assert.deepEqual(errors,[]);await context.close();
 });
