@@ -85,7 +85,7 @@
   // Seting initial parameters
   // -------------------------
   App.init = function() {
-    var camera, canvasHeight, canvasRatio, canvasWidth, container, resizeViewer, wasMobile;
+    var camera, canvasHeight, canvasRatio, canvasWidth, container, resizeViewer;
     container = document.getElementById('container');
     canvasWidth = container.clientWidth;
     canvasHeight = container.clientHeight;
@@ -103,58 +103,31 @@
     camera.position.set(2.5, 2, 4);
     camera.up = new THREE.Vector3(0, 0, 1);
     App.camera = camera;
-    App.cameraControls = new THREE.TrackballControls(camera, renderer.domElement);
-    App.cameraControls.rotateSpeed = 4;
+    App.cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+    App.cameraControls.rotateSpeed = 0.65;
+    App.cameraControls.zoomSpeed = 0.8;
+    App.cameraControls.panSpeed = 0.8;
+    App.cameraControls.enableDamping = false;
     App.cameraControls.target.set(0, 0, 0);
+    App.cameraControls.addEventListener('start', function() {
+      return document.getElementById('standard-view').value = '';
+    });
+    //cameraControls.object.lookAt
     App.fillScene();
-    wasMobile = window.innerWidth < 760;
     resizeViewer = function() {
-      var height, isMobile, width;
+      var aspect, height, offset, ratio, width;
       width = Math.max(1, container.clientWidth);
       height = Math.max(1, container.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(width, height);
-      App.camera.aspect = width / height;
+      aspect = width / height;
+      ratio = Math.min(App.camera.aspect, 1) / Math.min(aspect, 1);
+      offset = App.camera.position.clone().sub(App.cameraControls.target).multiplyScalar(ratio);
+      App.camera.position.copy(App.cameraControls.target).add(offset);
+      App.camera.aspect = aspect;
       App.camera.updateProjectionMatrix();
-      App.cameraControls.handleResize();
-      isMobile = window.innerWidth < 760;
-      if (isMobile !== wasMobile) {
-        if (isMobile && (App.gui != null)) {
-          App.gui.close();
-        }
-        if (window.robot != null) {
-          App.fitRobot();
-        }
-        return wasMobile = isMobile;
-      }
+      return App.cameraControls.update();
     };
-    document.getElementById('view-cube').addEventListener('click', function(event) {
-      var button, direction, directions, i, item, len, name, ref, results, up;
-      button = event.target.closest('[data-view]');
-      if (button == null) {
-        return;
-      }
-      name = button.getAttribute('data-view');
-      directions = {
-        front: [1, 0, 0],
-        back: [-1, 0, 0],
-        left: [0, 1, 0],
-        right: [0, -1, 0],
-        top: [0, 0, 1],
-        bottom: [0, 0, -1],
-        iso: [1, -1, 1]
-      };
-      direction = new THREE.Vector3(...directions[name]).normalize();
-      up = name === 'top' || name === 'bottom' ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
-      App.viewDirection(direction, up);
-      ref = document.querySelectorAll('#view-cube [data-view]');
-      results = [];
-      for (i = 0, len = ref.length; i < len; i++) {
-        item = ref[i];
-        results.push(item.setAttribute('aria-pressed', String(item.getAttribute('data-view') === name)));
-      }
-      return results;
-    });
     App.viewerResizeObserver = new ResizeObserver(resizeViewer);
     App.viewerResizeObserver.observe(container);
     window.addEventListener('resize', resizeViewer);
@@ -163,10 +136,25 @@
 
   // Controlling scene, using dat gui
   // ----------------
+  App.setStandardView = function(name) {
+    var directions;
+    directions = {
+      front: [1, 0, 0],
+      back: [-1, 0, 0],
+      left: [0, 1, 0],
+      right: [0, -1, 0],
+      top: [0.000001, 0, 1],
+      bottom: [0.000001, 0, -1],
+      iso: [1, -1, 1]
+    };
+    App.viewDirection(new THREE.Vector3(...directions[name]).normalize());
+    return document.getElementById('standard-view').value = name;
+  };
+
   App.viewDirection = function(direction, up) {
     var distance;
     distance = App.camera.position.distanceTo(App.cameraControls.target);
-    App.camera.up.copy(up);
+    App.camera.up.set(0, 0, 1);
     App.camera.position.copy(App.cameraControls.target).addScaledVector(direction, distance);
     App.camera.lookAt(App.cameraControls.target);
     return App.cameraControls.update();
@@ -193,6 +181,8 @@
     App.camera.position.copy(center).addScaledVector(direction, distance);
     App.camera.near = Math.max(distance / 1000, 0.0001);
     App.camera.far = Math.max(distance * 100, 100);
+    App.cameraControls.minDistance = distance * 0.025;
+    App.cameraControls.maxDistance = distance * 50;
     App.camera.updateProjectionMatrix();
     return App.cameraControls.update();
   };
@@ -220,9 +210,6 @@
       width: 230
     });
     document.getElementById('joint-controls').replaceChildren(App.gui.domElement);
-    if (window.innerWidth < 760) {
-      App.gui.close();
-    }
     // Creating gui for robot
     App.robotjointmanipall = new App.RobotJointManipAll({
       gui: App.gui,

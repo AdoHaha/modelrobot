@@ -34,100 +34,60 @@ window.robot_id=5629499534213120;
     <!-- Custom styles for this template -->
     <link rel="stylesheet" href="lib/codemirror.css">
 
-  <link href="./css/additional.css?v=views-csv-20261104" rel="stylesheet">
+  <link href="./css/additional.css?v=workspace-20261106" rel="stylesheet">
 <body>
-<header id="app-header"><strong>MyModelRobot</strong><span>URDF + STL viewer</span><span class="privacy-note">Files stay on this device</span></header>
-
-<div id="controldiv">
-<span id="screenshottext"></span><div id="screenshotplace"></div>
-<div id="robodiv">
-
-<form id="robotform"><div><b>Robot's URDF</b>
-{% if url_linktext is defined %}
-<span style="float:right">
-<a href="{{url}}">{{url_linktext}}</a>
-</span>
-{% endif%}
-</div>
-<div id="robottextbox">
-<textarea id="robottext" name="robottext" rows="15" id="robottext" placeholder="Place robot's URDF here"></textarea>
-</div>
-
-<br>
-<button type="button" id="loadbutton">Load robot URDF</button>
-{% if user %}
-<button type="button" id="saverobot">Save robot</button> <input type="checkbox" name="visible" id="visible">Visible</input>
-{% endif %}
-<button type="button" id="armode">AR Mode</button>
-<span id="qrcode" style="z-index:2"></span>
-<br>
-<button type="button" id="screenshot">Make screenshot</button>
-
-<b>Camera controls:</b><button type="button" id="frontview">Front view</button>
-<button type="button" id="topview">Top view</button>
-<button type="button" id="sideview">Side view</button>
-<button type="button" id="fitview">Fit robot</button>
-<br>
-<!--</form>-->
-<fieldset id="local-robots">
-<legend>Robot library</legend>
-<details class="file-import" open><summary>Import URDF &amp; STL files</summary><label>URDF and STL files <input type="file" id="local-files" accept=".urdf,.xml,.stl" multiple></label>
-<label>Or choose a folder <input type="file" id="local-folder" webkitdirectory multiple></label>
-<p>Select one URDF and its STL files together, or add STL files separately. Files stay in your browser. Mesh scale comes from the URDF.</p></details>
-<label>Robot name <input type="text" id="local-name" placeholder="Name from URDF"></label>
-<button type="button" id="local-save">Save in browser</button><br>
-<label for="local-library">Saved robots</label> <select id="local-library"></select>
-<button type="button" id="local-open">Open</button>
-<button type="button" id="local-delete">Delete saved robot</button>
-<p id="local-status" role="status" aria-live="polite"></p>
-<small>Loaded robots are saved automatically on this device, including their meshes. Clearing site data removes them.</small>
-</fieldset>
-Example robots:
-{% for item in linki %}
-        <a href="../testowe/{{ item[1] }}" target="_blank" class="robotlink">{{ item[0] }}</a>
-    {% endfor %}
-</div>
-<div id="animdiv"><!--<form id="animform">--><div><b>Robot's poses CSV</b></div><div id="jointnames"> .</div><textarea name="animcsv" rows="2" id="robotcsv" placeholder="Place your CSV(comma seperated values) of robot's poses here"></textarea><br>
-<button type="button" id="loadcsv">Load CSV</button>
-<button type="button" id="playbutton">Play</button>
-<button type="button" id="pausebutton">Pause</button>
-<button type="button" id="stopbutton">Stop</button>
-<button type="button" id="prevbutton"><</button>
-<button type="button" id="nextbutton">></button>
-<button type="button" id="addposition">Add current position</button>
-<br>
-<div id="trajectory">
-Trace trajectory of:<select id="all_links"></select><button type="button" id="tracebutton" class="btn-success">Trace</button>
-<button type="button" id="clear_trajectory" class="btn-alert">Clear trajectory</button><br>
-
-
-</div>
-
-</form></div>
-
-</div>
-<div id="container"><div id="joint-controls" aria-label="Joint controls"></div>
-<nav id="view-cube" aria-label="Standard camera views">
-  <div class="view-cube-heading"><span>View</span><button type="button" data-view="iso" title="Isometric view">Iso</button></div>
-  <div class="cube-stage"><div class="view-cube-object">
-    <button type="button" class="cube-face cube-front" data-view="front" aria-label="Front view">Front</button>
-    <button type="button" class="cube-face cube-back" data-view="back" aria-label="Back view">Back</button>
-    <button type="button" class="cube-face cube-left" data-view="left" aria-label="Left view">Left</button>
-    <button type="button" class="cube-face cube-right" data-view="right" aria-label="Right view">Right</button>
-    <button type="button" class="cube-face cube-top" data-view="top" aria-label="Top view">Top</button>
-    <button type="button" class="cube-face cube-bottom" data-view="bottom" aria-label="Bottom view">Bottom</button>
-  </div></div>
-  <div class="view-cube-presets">
-    <button type="button" data-view="front">Front</button><button type="button" data-view="back">Back</button>
-    <button type="button" data-view="left">Left</button><button type="button" data-view="right">Right</button>
-    <button type="button" data-view="top">Top</button><button type="button" data-view="bottom">Bottom</button>
-  </div>
-</nav>
-		</div>
+<header id="app-header"><strong>MyModelRobot</strong><span>Robot workspace</span><button type="button" id="open-files">Open / import</button><span class="privacy-note">Saved on this device</span></header>
+<aside id="controldiv" aria-label="Robot workspace">
+  <nav class="workspace-tabs" role="tablist" aria-label="Workspace tools">
+    <button type="button" role="tab" id="tab-urdf" data-panel="urdf" aria-controls="panel-urdf" aria-selected="true">URDF</button>
+    <button type="button" role="tab" id="tab-files" data-panel="files" aria-controls="panel-files" aria-selected="false" tabindex="-1">Files <span id="mesh-badge" hidden>!</span></button>
+    <button type="button" role="tab" id="tab-joints" data-panel="joints" aria-controls="panel-joints" aria-selected="false" tabindex="-1">Joints</button>
+    <button type="button" role="tab" id="tab-animation" data-panel="animation" aria-controls="panel-animation" aria-selected="false" tabindex="-1">Animation <span id="animation-badge" hidden aria-label="CSV needs attention">!</span></button>
+  </nav>
+  <section id="panel-urdf" class="workspace-panel editor-panel" role="tabpanel" aria-labelledby="tab-urdf">
+    <div class="panel-heading"><div><h1>URDF editor</h1><p>Edit the definition, then apply to the preview.</p></div><button type="button" id="editor-expand" aria-pressed="false">More space</button></div>
+    <div class="editor-options"><label><input type="checkbox" id="wrap-lines" checked> Wrap lines</label><span id="draft-status" role="status">Preview up to date</span></div>
+    <div id="robottextbox"><textarea id="robottext" aria-label="Robot URDF source" spellcheck="false"></textarea></div>
+    <div class="editor-actions"><button type="button" id="loadbutton" class="primary">Apply changes</button><span>Ctrl / ⌘ + Enter</span></div>
+  </section>
+  <section id="panel-files" class="workspace-panel" role="tabpanel" aria-labelledby="tab-files" hidden>
+    <div class="panel-heading"><div><h1>Files &amp; saved robots</h1><p>URDF, STL meshes and CSV stay in this browser.</p></div></div>
+    <fieldset id="local-robots"><legend>Open local files</legend>
+      <label>URDF and STL files<input type="file" id="local-files" accept=".urdf,.xml,.stl" multiple></label>
+      <label>Or choose a folder<input type="file" id="local-folder" webkitdirectory multiple></label>
+      <p>Select one URDF with its meshes, or add missing STL files separately.</p>
+    </fieldset>
+    <div class="form-section"><label for="local-name">Robot name</label><input type="text" id="local-name" placeholder="Name from URDF"><div class="button-row"><button type="button" id="local-save">Save name</button><button type="button" id="local-copy">Save a copy</button></div>
+      <label for="local-library">Saved robots</label><select id="local-library"></select><div class="button-row"><button type="button" id="local-open" class="primary">Open robot</button><button type="button" id="local-delete">Delete saved copy</button></div>
+      <small>Applied changes update the current robot automatically. Clearing site data removes saved robots.</small></div>
+    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml">Pi robot</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
+    {% if user %}<div class="form-section"><button type="button" id="saverobot">Save to server</button><label><input type="checkbox" id="visible"> Public</label><button type="button" id="armode">AR mode</button><span id="qrcode"></span></div>{% endif %}
+  </section>
+  <section id="panel-joints" class="workspace-panel" role="tabpanel" aria-labelledby="tab-joints" hidden>
+    <div class="panel-heading"><div><h1>Joint positions</h1><p>Drag a slider or type a value. Revolute: radians; prismatic: metres.</p></div></div><div id="joint-controls"></div>
+  </section>
+  <section id="panel-animation" class="workspace-panel" role="tabpanel" aria-labelledby="tab-animation" hidden>
+    <div id="animdiv"><div class="panel-heading"><div><h1>CSV animation</h1><p>Use joint names as columns, with an optional time column in seconds.</p></div></div>
+      <button type="button" id="csv-template">Insert current pose as CSV</button><label for="robotcsv" class="sr-only">Robot poses CSV</label><textarea id="robotcsv" rows="8" spellcheck="false" placeholder="time,joint_name&#10;0,0&#10;1,0.5"></textarea>
+      <p id="animation-status" role="status">Paste CSV or insert a pose to begin.</p><div id="jointnames"></div>
+      <div class="button-row"><button type="button" id="loadcsv" class="primary">Apply CSV</button><button type="button" id="playbutton">Play</button><button type="button" id="pausebutton">Pause</button><button type="button" id="stopbutton">Stop</button></div>
+      <div class="button-row"><button type="button" id="prevbutton" aria-label="Previous frame">Previous frame</button><button type="button" id="nextbutton">Next frame</button><button type="button" id="addposition">Add current pose</button></div>
+      <div id="trajectory" class="form-section"><label for="all_links">Trace a link</label><select id="all_links"></select><div class="button-row"><button type="button" id="tracebutton">Trace</button><button type="button" id="clear_trajectory">Clear trace</button></div></div>
+    </div>
+  </section>
+  <div id="workspace-status"><p id="local-status" role="status" aria-live="polite"></p></div>
+</aside>
+<div id="workspace-divider" role="separator" aria-label="Resize editor and preview" aria-orientation="vertical" aria-valuemin="25" aria-valuemax="75" aria-valuenow="44" tabindex="0"></div>
+<main id="container" aria-label="Robot preview">
+  <div id="viewer-toolbar" aria-label="Camera controls"><strong id="preview-name">Robot preview</strong><button type="button" data-camera="fit" title="Fit robot (F when preview is focused)">Fit robot</button><button type="button" data-camera="home">Home</button><button type="button" data-camera="in" aria-label="Zoom in">+</button><button type="button" data-camera="out" aria-label="Zoom out">−</button><button type="button" id="screenshot">Screenshot</button></div>
+  <nav id="view-cube" aria-label="Standard camera views"><label for="standard-view">View</label><select id="standard-view"><option value="">Custom</option><option value="iso">Isometric</option><option value="front">Front</option><option value="back">Back</option><option value="left">Left</option><option value="right">Right</option><option value="top">Top</option><option value="bottom">Bottom</option></select></nav>
+  <p id="camera-help"><span class="mouse-help">Drag to orbit · Shift / right-drag to pan · Scroll to zoom</span><span class="touch-help">One finger: orbit · Two fingers: pan / zoom</span></p>
+  <span id="screenshottext"></span><div id="screenshotplace"></div>
+</main>
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=views-csv-20261104"></script>
+<script src="./scripts/runtime.bundle.js?v=workspace-20261106"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -138,12 +98,12 @@ Trace trajectory of:<select id="all_links"></select><button type="button" id="tr
 <script src="./scripts/underscore.js"></script>
 	<script src="./scripts/backbone.js"></script>
 	<script src="./lib/dat.gui.min.js"></script>
-	<script src="./scripts/modelrobot.js?v=views-csv-20261104"></script>
-<script src="./scripts/parserobot.js?v=views-csv-20261104"></script>
+	<script src="./scripts/modelrobot.js?v=workspace-20261106"></script>
+<script src="./scripts/parserobot.js?v=workspace-20261106"></script>
 <script src="./lib/CSVToArray.js"></script>
 
 <!--<script src="./scripts/unit4-robot_arm_demo.js"></script>-->
-<script src="./scripts/scene.js?v=views-csv-20261104"></script>
+<script src="./scripts/scene.js?v=workspace-20261106"></script>
 <script src="./scripts/animate.js"></script>
 </body>
 </html>

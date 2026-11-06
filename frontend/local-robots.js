@@ -7,6 +7,8 @@ export class LocalRobots {
     this.records = [];
     this.messages = [];
     this.pendingSave = Promise.resolve();
+    this.document = { id: null };
+    this.openingDocument = true;
   }
   normalize(path) {
     try { path = decodeURIComponent(path); } catch (_) { /* Literal filenames are valid. */ }
@@ -52,6 +54,9 @@ export class LocalRobots {
     const el = document.getElementById('local-status');
     el.textContent = message;
     el.classList.toggle('text-danger', error);
+    const badge = document.getElementById('mesh-badge');
+    badge.hidden = !this.messages.length;
+    badge.title = this.messages.join(' ');
   }
   openDB() {
     return new Promise((resolve, reject) => {
@@ -87,12 +92,23 @@ export class LocalRobots {
     on('robotcsv', 'input', () => this.saveAnimation());
     on('local-files', 'change', () => this.importFiles(document.getElementById('local-files')));
     on('local-folder', 'change', () => this.importFiles(document.getElementById('local-folder')));
-    on('local-save', 'click', () => { form.resetNload(); });
+    on('local-save', 'click', () => { if (this.currentXml) this.loaded(this.currentXml); });
+    on('local-copy', 'click', async () => {
+      await this.pendingSave;
+      if (!this.currentXml) return;
+      this.document = { id: crypto.randomUUID() };
+      const name = document.getElementById('local-name');
+      name.value = (name.value || this.validate(this.currentXml).documentElement.getAttribute('name') || 'Robot') + ' copy';
+      this.loaded(this.currentXml);
+    });
     on('local-open', 'click', async () => {
+      if (!App.workspace.canReplaceDraft()) return;
       await this.pendingSave;
       const id = document.getElementById('local-library').value;
       const record = await this.transaction('readonly', store => store.get(id));
       if (!record) return;
+      this.document = { id: record.id };
+      this.openingDocument = true;
       this.clearAssets();
       record.assets.forEach(asset => this.assets.set(asset.name, asset.bytes));
       document.getElementById('local-name').value = record.name;
@@ -117,6 +133,15 @@ export class LocalRobots {
       this.status('Browser saving unavailable: ' + error.message + ' You can still load local files.', true);
     }
   }
+  startDocument() {
+    this.openingDocument = true;
+    this.document = { id: null };
+    this.currentXml = null;
+    App.animform.stop();
+    App.animform.prepareArraysfromCSV('');
+    document.getElementById('robotcsv').value = '';
+    document.getElementById('local-name').value = '';
+  }
   clearAssets() {
     this.assets.clear();
     // Geometry disposal is handled when the current scene is replaced.
@@ -125,6 +150,7 @@ export class LocalRobots {
   showURDF(urdf) {
     this.form.myCodeMirror.setValue(urdf);
     this.form.resetNload();
+    App.workspace.select('urdf');
   }
   async importFiles(input) {
     const files = [...input.files];
@@ -141,7 +167,8 @@ export class LocalRobots {
     const xml = urdfs.length ? await urdfs[0].text() : this.form.myCodeMirror.getValue();
     if (urdfs.length) {
       this.validate(xml);
-      document.getElementById('local-name').value = '';
+      if (!App.workspace.canReplaceDraft()) return;
+      this.startDocument();
     }
     for (const [name, bytes] of incoming) {
       this.assets.set(name, bytes);
@@ -153,19 +180,33 @@ export class LocalRobots {
   validate(xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.querySelector('parsererror') || doc.documentElement.tagName !== 'robot') throw new Error('Enter a valid URDF with a <robot> root.');
+    const links = new Set([...doc.querySelectorAll('robot > link')].map(link => link.getAttribute('name')));
+    for (const joint of doc.querySelectorAll('robot > joint')) {
+      if (!links.has(joint.querySelector('parent')?.getAttribute('link')) || !links.has(joint.querySelector('child')?.getAttribute('link'))) throw new Error('Joint ' + joint.getAttribute('name') + ' must reference existing parent and child links.');
+    }
+    for (const origin of doc.querySelectorAll('origin')) {
+      for (const attribute of ['xyz', 'rpy']) {
+        if (!origin.hasAttribute(attribute)) continue;
+        const values = origin.getAttribute(attribute).trim().split(/\s+/).map(Number);
+        if (values.length !== 3 || !values.every(Number.isFinite)) throw new Error('Origin ' + attribute + ' needs three numbers.');
+      }
+    }
+    for (const mesh of doc.querySelectorAll('mesh[scale]')) {
+      const scale = mesh.getAttribute('scale').trim().split(/\s+/).map(Number);
+      if (scale.length !== 3 || !scale.every(Number.isFinite)) throw new Error('Mesh scale needs three numbers.');
+    }
     return doc;
   }
   saveAnimation() {
     if (this.currentXml) this.loaded(this.currentXml);
   }
   loaded(xml) {
-    const changedRobot = this.currentXml !== xml;
-    if (changedRobot) {
-      this.currentXml = xml;
-      document.getElementById('robotcsv').value = '';
-      App.animform.stop();
-      App.animform.prepareArraysfromCSV('');
-    }
+    const changedRobot = this.currentXml == null;
+    const documentState = this.document;
+    this.currentXml = xml;
+    App.workspace.draftStatus();
+    App.workspace.animationStatus();
+    document.getElementById('preview-name').textContent = this.validate(xml).documentElement.getAttribute('name') || 'Robot preview';
     const csv = document.getElementById('robotcsv').value;
     const warnings = [...new Set(this.messages)];
     const nameInput = document.getElementById('local-name');
@@ -175,17 +216,21 @@ export class LocalRobots {
     const assets = [...new Set(references)].map(key => ({ name: key, bytes: this.assets.get(key) }));
     this.pendingSave = this.pendingSave.catch(() => {}).then(async () => {
       const records = await this.transaction('readonly', store => store.getAll());
-      const old = records.find(record => record.urdf === xml);
+      const old = documentState.id ? records.find(record => record.id === documentState.id) : records.find(record => record.urdf === xml);
       const savedCsv = changedRobot && old ? (old.csv || csv) : csv;
       if (changedRobot && savedCsv && this.currentXml === xml && document.getElementById('robotcsv').value === csv) {
         document.getElementById('robotcsv').value = savedCsv;
         App.animform.prepareArraysfromCSV(savedCsv);
+        App.workspace.animationStatus();
       }
       const retained = new Map((old?.assets || []).map(asset => [asset.name, asset]));
       assets.forEach(asset => retained.set(asset.name, asset));
-      const record = { id: old ? old.id : crypto.randomUUID(), name, urdf: xml, csv: savedCsv, assets: [...retained.values()], updated: Date.now() };
+      const id = documentState.id || old?.id || crypto.randomUUID();
+      documentState.id = id;
+      const record = { id, name, urdf: xml, csv: savedCsv, assets: [...retained.values()], updated: Date.now() };
       await this.transaction('readwrite', store => store.put(record));
-      await this.refresh(record.id);
+      await this.refresh(this.document.id);
+      if (this.document !== documentState) return;
       this.status(warnings.length ? warnings.join(' ') + ' Robot saved; add missing files to complete it.' : 'Saved “' + name + '” in this browser.');
     }).catch(error => this.status('Robot loaded, but browser saving failed: ' + error.message, true));
   }

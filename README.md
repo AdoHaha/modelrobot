@@ -65,7 +65,7 @@ its name, and **Delete saved robot** to remove its saved copy. Storage belongs
 to this browser and site; clearing site data removes it. Local files are not
 uploaded to the server. Existing server saves contain URDF only.
 
-The main viewer bundles Three.js 0.187.0, its TrackballControls and STLLoader
+The main viewer bundles Three.js 0.187.0, its OrbitControls and STLLoader
 locally. The camera-based AR page retains its legacy runtime for compatibility
 with the existing AR library; local mesh robots are supported in the main viewer.
 
@@ -78,9 +78,12 @@ npx playwright install chromium
 npm test
 ```
 
-The light interface includes a view cube with six standard camera views and an
-isometric view. The canvas resizes with its pane, with a stacked layout and
-collapsible joint controls on phones.
+The workspace has URDF, Files, Joints and Animation tabs, a tall resizable editor,
+and a camera toolbar with six standard views and an isometric view. Upright
+orbit controls provide pan and zoom with visible gesture hints. Applied edits
+preserve the current document, CSV, joint pose and camera view.
+
+See [the usability review](docs/usability-review-2026-11-06.md) for findings and validation.
 
 An opt-in integration check has been run against the NASA/JPL T12 model from
 [gkjohnson/urdf-loaders](https://github.com/gkjohnson/urdf-loaders/tree/c8c25c8cf6fcb84929b9a03ff866139a8a1e2a01/urdf/T12).

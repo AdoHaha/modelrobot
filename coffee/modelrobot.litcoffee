@@ -13,7 +13,7 @@ we can have additional info stating whether el value is correct as a third argum
 
         App.el2array= (el,def="0 0 0",check=true,delim=" ")-> #returns array of numbers or default array from string
                 el2array=(check&&el)||def
-                arrayw=el2array.split(delim)
+                arrayw=if delim is " " then el2array.trim().split(/\s+/) else el2array.split(delim)
                 arrayw=_.map(arrayw,(num)-> num*1)
                 return arrayw
 
@@ -270,12 +270,14 @@ Controller/view for joints. It also manages the views. To init it has to have an
                         #console.log(@options.gui)
                         @gui=@options.gui|| new dat.GUI();
                         @joints=@options.joints
+                        @jointsdict={}
 
                         @anglesfolder=@gui.addFolder("Joint values");
                         @add2gui = @add2gui.bind(@)
                         @joints.each((joint) => @add2gui(joint))
 
                 add2gui: (joint) ->
+                        return if joint.type is "fixed"
                         @jointsdict[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
 
 The idea behind changepose is: you provide two arrays, and it iterates through using names
@@ -377,7 +379,7 @@ Checks about validity of movement are made inside @joint, we just check whether 
 
                 jointval: () ->
                         jointv=@joint.jointval()
-                        if(@dummy["val"]=!jointv)
+                        if @dummy["val"] isnt jointv
                                 @dummy["val"]=jointv
                                 @controller.updateDisplay()
                         #@controller.updateDisplay()
@@ -426,8 +428,12 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     this.myCodeMirror = CodeMirror.fromTextArea($("#robottext")[0], {
                           mode: "application/xml",
                           lineNumbers: true,
+                          lineWrapping: true,
+                          indentUnit: 2,
+                          extraKeys: {"Ctrl-Enter": (=> @resetNload()), "Cmd-Enter": (=> @resetNload())},
                           theme: "default"
                           });
+                    App.workspace.init(@)
                     App.localRobots.init(@)
 
                 URDFfiledrag: (evt)=>
@@ -462,6 +468,13 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     catch error
                         App.localRobots.status(error.message,true)
                         return false
+                    opening=App.localRobots.openingDocument or not window.robot?
+                    poses={}
+                    unless opening
+                        window.robotjointcollection.each (joint) -> poses[joint.name]=joint.theta
+                    editorCursor=@myCodeMirror.getCursor()
+                    editorScroll=@myCodeMirror.getScrollInfo()
+                    App.animform.stop()
                     App.localRobots.messages=[]
                     if window.robotlinkcollection?
                         window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
@@ -469,15 +482,26 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     if window.parseRobot(@model.attributes.urdf)
 
                         App.setupGui();
-                        App.fitRobot()
+                        if opening
+                            App.fitRobot()
+                        else
+                            window.robotjointcollection.each (joint) -> joint.movejoint(poses[joint.name]) if poses[joint.name]?
+                            App.robotjointmanipall.jointsval()
+                        App.localRobots.openingDocument=false
                         unless App.animationStarted
                             App.animationStarted=true
                             App.animate()
                         #$("#robottext").val(@model.attributes.urdf)
-                        @myCodeMirror.setValue(@model.attributes.urdf)
+                        if @myCodeMirror.getValue() isnt @model.attributes.urdf
+                            @myCodeMirror.setValue(@model.attributes.urdf)
+                        unless opening
+                            @myCodeMirror.setCursor(editorCursor)
+                            @myCodeMirror.scrollTo(editorScroll.left,editorScroll.top)
                         @myCodeMirror.save()
                         $('#visible').prop('checked', @model.attributes.visible);
                         App.localRobots.loaded(@model.attributes.urdf)
+                        if App.workspace.animationStatus()
+                            App.animform.prepareArraysfromCSV($('#robotcsv').val())
                     else
                         window.alert("there was something wrong with your URDF");
                 resetNload: ->
@@ -689,6 +713,8 @@ AnimationForm class will control robot animation, from the form submission, in d
                                 #@textform.append("\n"+currentstate[0])
                         @loadCSVfromForm()
                 playbutton:->
+                        return unless App.workspace.animationStatus()
+                        @prepareArraysfromCSV(@textform.val())
                         if @state=="finished"
                                 @stop() #rewind
 
@@ -698,7 +724,7 @@ AnimationForm class will control robot animation, from the form submission, in d
                 stopbutton:->
                         @state="stopped"
                         @stop()
-                        @robotcontroller.changepose(@poses[0],@names) #full rewind
+                        @robotcontroller.changepose(@poses[0],@names) if @poses.length #full rewind
 
                 pausebutton:->
                         @state="paused"
@@ -711,6 +737,10 @@ AnimationForm class will control robot animation, from the form submission, in d
                         @
 
                 loadCSVfromForm: ()=>
+                        @stop()
+                        unless App.workspace.animationStatus()
+                            App.localRobots.saveAnimation()
+                            return @
                         console.log("loading csv")
                         formcsv=@textform.val()
                         formcsv=$.trim(formcsv)
@@ -718,13 +748,11 @@ AnimationForm class will control robot animation, from the form submission, in d
                         @prepareArraysfromCSV(formcsv)
                         @textform.val(formcsv+"\n")
                         App.localRobots.saveAnimation()
+                        App.workspace.animationStatus()
                         @
                 prettify: ()=>
                         @textform.scrollTop(@lh*(@curframe+1))
-                        if(@curframe>0)
-                                $("#jointnames").text(@names+"")
-                        else
-                                $("#jointnames").text(".")
+                        $("#jointnames").text("Frame "+(@curframe+1)+" / "+@poses.length) if @poses.length
                         @
 
 

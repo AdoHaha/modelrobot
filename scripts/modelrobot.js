@@ -13,7 +13,7 @@
   App.el2array = function(el, def = "0 0 0", check = true, delim = " ") { //returns array of numbers or default array from string
     var arrayw, el2array;
     el2array = (check && el) || def;
-    arrayw = el2array.split(delim);
+    arrayw = delim === " " ? el2array.trim().split(/\s+/) : el2array.split(delim);
     arrayw = _.map(arrayw, function(num) {
       return num * 1;
     });
@@ -367,6 +367,7 @@
         //console.log(@options.gui)
         this.gui = this.options.gui || new dat.GUI();
         this.joints = this.options.joints;
+        this.jointsdict = {};
         this.anglesfolder = this.gui.addFolder("Joint values");
         this.add2gui = this.add2gui.bind(this);
         return this.joints.each((joint) => {
@@ -375,6 +376,9 @@
       }
 
       add2gui(joint) {
+        if (joint.type === "fixed") {
+          return;
+        }
         return this.jointsdict[joint.get("name")] = new App.RobotJointManipSingle({
           joint: joint,
           gui: this.anglesfolder
@@ -494,7 +498,7 @@
     jointval() {
       var jointv;
       jointv = this.joint.jointval();
-      if ((this.dummy["val"] = !jointv)) {
+      if (this.dummy["val"] !== jointv) {
         this.dummy["val"] = jointv;
         this.controller.updateDisplay();
       }
@@ -548,8 +552,19 @@
         this.myCodeMirror = CodeMirror.fromTextArea($("#robottext")[0], {
           mode: "application/xml",
           lineNumbers: true,
+          lineWrapping: true,
+          indentUnit: 2,
+          extraKeys: {
+            "Ctrl-Enter": (() => {
+              return this.resetNload();
+            }),
+            "Cmd-Enter": (() => {
+              return this.resetNload();
+            })
+          },
           theme: "default"
         });
+        App.workspace.init(this);
         return App.localRobots.init(this);
       }
 
@@ -598,7 +613,7 @@
       }
 
       newRobot() {
-        var error;
+        var editorCursor, editorScroll, error, opening, poses;
         try {
           App.localRobots.validate(this.model.attributes.urdf);
         } catch (error1) {
@@ -606,22 +621,51 @@
           App.localRobots.status(error.message, true);
           return false;
         }
+        opening = App.localRobots.openingDocument || (window.robot == null);
+        poses = {};
+        if (!opening) {
+          window.robotjointcollection.each(function(joint) {
+            return poses[joint.name] = joint.theta;
+          });
+        }
+        editorCursor = this.myCodeMirror.getCursor();
+        editorScroll = this.myCodeMirror.getScrollInfo();
+        App.animform.stop();
         App.localRobots.messages = [];
         if (window.robotlinkcollection != null) {
           window.clearall(window.scene, window.robot, window.robotjointcollection, window.robotlinkcollection);
         }
         if (window.parseRobot(this.model.attributes.urdf)) {
           App.setupGui();
-          App.fitRobot();
+          if (opening) {
+            App.fitRobot();
+          } else {
+            window.robotjointcollection.each(function(joint) {
+              if (poses[joint.name] != null) {
+                return joint.movejoint(poses[joint.name]);
+              }
+            });
+            App.robotjointmanipall.jointsval();
+          }
+          App.localRobots.openingDocument = false;
           if (!App.animationStarted) {
             App.animationStarted = true;
             App.animate();
           }
           //$("#robottext").val(@model.attributes.urdf)
-          this.myCodeMirror.setValue(this.model.attributes.urdf);
+          if (this.myCodeMirror.getValue() !== this.model.attributes.urdf) {
+            this.myCodeMirror.setValue(this.model.attributes.urdf);
+          }
+          if (!opening) {
+            this.myCodeMirror.setCursor(editorCursor);
+            this.myCodeMirror.scrollTo(editorScroll.left, editorScroll.top);
+          }
           this.myCodeMirror.save();
           $('#visible').prop('checked', this.model.attributes.visible);
-          return App.localRobots.loaded(this.model.attributes.urdf);
+          App.localRobots.loaded(this.model.attributes.urdf);
+          if (App.workspace.animationStatus()) {
+            return App.animform.prepareArraysfromCSV($('#robotcsv').val());
+          }
         } else {
           return window.alert("there was something wrong with your URDF");
         }
@@ -927,6 +971,10 @@
       }
 
       playbutton() {
+        if (!App.workspace.animationStatus()) {
+          return;
+        }
+        this.prepareArraysfromCSV(this.textform.val());
         if (this.state === "finished") {
           this.stop(); //rewind
         }
@@ -938,7 +986,9 @@
       stopbutton() {
         this.state = "stopped";
         this.stop();
-        return this.robotcontroller.changepose(this.poses[0], this.names); //full rewind
+        if (this.poses.length) { //full rewind
+          return this.robotcontroller.changepose(this.poses[0], this.names);
+        }
       }
 
       pausebutton() {
@@ -955,6 +1005,11 @@
       loadCSVfromForm() {
         var formcsv;
         boundMethodCheck(this, ref4);
+        this.stop();
+        if (!App.workspace.animationStatus()) {
+          App.localRobots.saveAnimation();
+          return this;
+        }
         console.log("loading csv");
         formcsv = this.textform.val();
         formcsv = $.trim(formcsv);
@@ -962,16 +1017,15 @@
         this.prepareArraysfromCSV(formcsv);
         this.textform.val(formcsv + "\n");
         App.localRobots.saveAnimation();
+        App.workspace.animationStatus();
         return this;
       }
 
       prettify() {
         boundMethodCheck(this, ref4);
         this.textform.scrollTop(this.lh * (this.curframe + 1));
-        if (this.curframe > 0) {
-          $("#jointnames").text(this.names + "");
-        } else {
-          $("#jointnames").text(".");
+        if (this.poses.length) {
+          $("#jointnames").text("Frame " + (this.curframe + 1) + " / " + this.poses.length);
         }
         return this;
       }

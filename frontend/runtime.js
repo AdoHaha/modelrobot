@@ -1,8 +1,10 @@
 import * as THREE from 'three';
-import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
-window.THREE = { ...THREE, TrackballControls };
+window.THREE = { ...THREE, OrbitControls };
 window.App = window.App || {};
 window.App.stlLoader = new STLLoader();
+import { Workspace } from './workspace.js';
+window.App.workspace = new Workspace();
 import { LocalRobots } from './local-robots.js';
 window.App.localRobots = new LocalRobots(window.App.stlLoader);

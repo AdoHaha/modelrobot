@@ -104,36 +104,29 @@ seting CAMERA params
 setting CONTROLS params
 
                 App.camera=camera
-                App.cameraControls = new THREE.TrackballControls(camera, renderer.domElement);
-                App.cameraControls.rotateSpeed=4
+                App.cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+                App.cameraControls.rotateSpeed=0.65
+                App.cameraControls.zoomSpeed=0.8
+                App.cameraControls.panSpeed=0.8
+                App.cameraControls.enableDamping=false
                 App.cameraControls.target.set(0,0,0);
+                App.cameraControls.addEventListener 'start', ->
+                    document.getElementById('standard-view').value=''
 
                 #cameraControls.object.lookAt
                 App.fillScene();
-                wasMobile=window.innerWidth<760
                 resizeViewer = ->
                     width=Math.max(1,container.clientWidth)
                     height=Math.max(1,container.clientHeight)
                     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
                     renderer.setSize(width,height)
-                    App.camera.aspect=width/height
+                    aspect=width/height
+                    ratio=Math.min(App.camera.aspect,1)/Math.min(aspect,1)
+                    offset=App.camera.position.clone().sub(App.cameraControls.target).multiplyScalar(ratio)
+                    App.camera.position.copy(App.cameraControls.target).add(offset)
+                    App.camera.aspect=aspect
                     App.camera.updateProjectionMatrix()
-                    App.cameraControls.handleResize()
-                    isMobile=window.innerWidth<760
-                    if isMobile isnt wasMobile
-                        App.gui.close() if isMobile and App.gui?
-                        App.fitRobot() if window.robot?
-                        wasMobile=isMobile
-                document.getElementById('view-cube').addEventListener 'click', (event) ->
-                    button=event.target.closest('[data-view]')
-                    return unless button?
-                    name=button.getAttribute('data-view')
-                    directions={front:[1,0,0],back:[-1,0,0],left:[0,1,0],right:[0,-1,0],top:[0,0,1],bottom:[0,0,-1],iso:[1,-1,1]}
-                    direction=new THREE.Vector3(...directions[name]).normalize()
-                    up=if name in ['top','bottom'] then new THREE.Vector3(1,0,0) else new THREE.Vector3(0,0,1)
-                    App.viewDirection(direction,up)
-                    for item in document.querySelectorAll('#view-cube [data-view]')
-                        item.setAttribute('aria-pressed',String(item.getAttribute('data-view') is name))
+                    App.cameraControls.update()
                 App.viewerResizeObserver=new ResizeObserver(resizeViewer)
                 App.viewerResizeObserver.observe(container)
                 window.addEventListener('resize',resizeViewer)
@@ -142,9 +135,14 @@ setting CONTROLS params
 Controlling scene, using dat gui
 ----------------
 
+        App.setStandardView = (name) ->
+                directions={front:[1,0,0],back:[-1,0,0],left:[0,1,0],right:[0,-1,0],top:[0.000001,0,1],bottom:[0.000001,0,-1],iso:[1,-1,1]}
+                App.viewDirection(new THREE.Vector3(...directions[name]).normalize())
+                document.getElementById('standard-view').value=name
+
         App.viewDirection = (direction, up) ->
                 distance=App.camera.position.distanceTo(App.cameraControls.target)
-                App.camera.up.copy(up)
+                App.camera.up.set(0,0,1)
                 App.camera.position.copy(App.cameraControls.target).addScaledVector(direction,distance)
                 App.camera.lookAt(App.cameraControls.target)
                 App.cameraControls.update()
@@ -163,6 +161,8 @@ Controlling scene, using dat gui
                 App.camera.position.copy(center).addScaledVector(direction,distance)
                 App.camera.near=Math.max(distance/1000,0.0001)
                 App.camera.far=Math.max(distance*100,100)
+                App.cameraControls.minDistance=distance*0.025
+                App.cameraControls.maxDistance=distance*50
                 App.camera.updateProjectionMatrix()
                 App.cameraControls.update()
 
@@ -188,7 +188,7 @@ Controlling scene, using dat gui
 
                 App.gui = new dat.GUI({autoPlace:false,width:230})
                 document.getElementById('joint-controls').replaceChildren(App.gui.domElement)
-                App.gui.close() if window.innerWidth<760
+
 
 
 Creating gui for robot
