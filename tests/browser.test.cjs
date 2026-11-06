@@ -30,6 +30,9 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   assert.equal(await page.evaluate(()=>robot.name),'robot');
   assert.ok(await page.evaluate(()=>App.currentrobot.get('urdf').includes('name="pi_robot"')),'Pi robot loads automatically');
   assert.ok(!requests.some(url=>new URL(url).pathname.startsWith('/robots/')),'Standalone startup does not call the backend');
+  await panel('files');
+  await page.locator('#local-name').fill('Teaching Pi');
+  await page.locator('#local-save').click(); await settled(page);
   const defaultCsv='time,torso_joint\n0,0\n1,0.1\n';
   await panel('animation');
   await page.locator('#robotcsv').fill(defaultCsv);
@@ -73,6 +76,7 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   await page.waitForFunction(()=>window.robotlinkcollection?.length>0);
   await settled(page);
   await page.waitForFunction(csv=>document.getElementById('robotcsv').value.trim()===csv.trim(),defaultCsv);
+  assert.equal(await page.locator('#local-name').inputValue(),'Teaching Pi');
   await panel('files');
   await page.locator('#local-library').selectOption(savedId);
   await page.locator('#local-open').click();

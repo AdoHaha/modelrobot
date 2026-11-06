@@ -218,6 +218,8 @@ export class LocalRobots {
       const records = await this.transaction('readonly', store => store.getAll());
       const old = documentState.id ? records.find(record => record.id === documentState.id) : records.find(record => record.urdf === xml);
       const savedCsv = changedRobot && old ? (old.csv || csv) : csv;
+      const savedName = changedRobot && old ? (old.name || name) : name;
+      if (changedRobot && this.document === documentState && !nameInput.value.trim()) nameInput.value = savedName;
       if (changedRobot && savedCsv && this.currentXml === xml && document.getElementById('robotcsv').value === csv) {
         document.getElementById('robotcsv').value = savedCsv;
         App.animform.prepareArraysfromCSV(savedCsv);
@@ -227,11 +229,11 @@ export class LocalRobots {
       assets.forEach(asset => retained.set(asset.name, asset));
       const id = documentState.id || old?.id || crypto.randomUUID();
       documentState.id = id;
-      const record = { id, name, urdf: xml, csv: savedCsv, assets: [...retained.values()], updated: Date.now() };
+      const record = { id, name: savedName, urdf: xml, csv: savedCsv, assets: [...retained.values()], updated: Date.now() };
       await this.transaction('readwrite', store => store.put(record));
       await this.refresh(this.document.id);
       if (this.document !== documentState) return;
-      this.status(warnings.length ? warnings.join(' ') + ' Robot saved; add missing files to complete it.' : 'Saved “' + name + '” in this browser.');
+      this.status(warnings.length ? warnings.join(' ') + ' Robot saved; add missing files to complete it.' : 'Saved “' + record.name + '” in this browser.');
     }).catch(error => this.status('Robot loaded, but browser saving failed: ' + error.message, true));
   }
 }
