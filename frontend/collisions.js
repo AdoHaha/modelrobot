@@ -172,7 +172,7 @@ export class CollisionChecker {
     this.highlighted.clear();
   }
   report() {
-    let text = !this.enabled ? 'Collision check off' : !this.shapes.length ? (this.issues.length ? 'No collision shapes could be checked' : 'No collision shapes in this URDF') : this.pairs.length ? this.pairs.length + ' possible collision' + (this.pairs.length === 1 ? '' : 's') + ': ' + this.pairs.map(pair => pair.join(' ↔ ')).join('; ') : 'No overlaps · ' + this.shapes.length + ' collision shapes';
+    let text = !this.enabled ? 'Collision check off' : !this.shapes.length ? (this.issues.length ? 'No collision shapes could be checked' : 'No collision shapes in this URDF') : this.pairs.length ? this.pairs.length + ' possible collision' + (this.pairs.length === 1 ? '' : 's') + ': ' + this.pairs.map(pair => pair.join(' ↔ ')).join('; ') : 'No overlaps in tagged shapes · ' + this.shapes.length + ' collision shapes';
     if (this.enabled && this.issues.length) text += ' · Incomplete: ' + this.issues.length + ' skipped';
     this.onStatus({ text, pairs: this.pairs, issues: this.issues, enabled: this.enabled, shapes: this.shapes.length });
   }

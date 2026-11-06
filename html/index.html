@@ -34,7 +34,7 @@ window.robot_id=5629499534213120;
     <!-- Custom styles for this template -->
     <link rel="stylesheet" href="lib/codemirror.css">
 
-  <link href="./css/additional.css?v=collisions-20261106" rel="stylesheet">
+  <link href="./css/additional.css?v=arm-collisions-20261106" rel="stylesheet">
 <body>
 <header id="app-header"><strong>MyModelRobot</strong><span>Robot workspace</span><button type="button" id="open-files">Open / import</button><span class="privacy-note">Saved on this device</span><button type="button" id="help-button" aria-label="Help and controls" aria-haspopup="dialog" aria-controls="help-dialog" title="Help and controls">?</button></header>
 <aside id="controldiv" aria-label="Robot workspace">
@@ -60,7 +60,7 @@ window.robot_id=5629499534213120;
     <div class="form-section"><label for="local-name">Robot name</label><input type="text" id="local-name" placeholder="Name from URDF"><div class="button-row"><button type="button" id="local-save">Save name</button><button type="button" id="local-copy">Save a copy</button></div>
       <label for="local-library">Saved robots</label><select id="local-library"></select><div class="button-row"><button type="button" id="local-open" class="primary">Open robot</button><button type="button" id="local-delete">Delete saved copy</button></div>
       <small>Applied changes update the current robot automatically. Clearing site data removes saved robots.</small></div>
-    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
+    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=arm-collisions-20261106">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=arm-collisions-20261106" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
     {% if user %}<div class="form-section"><button type="button" id="saverobot">Save to server</button><label><input type="checkbox" id="visible"> Public</label><button type="button" id="armode">AR mode</button><span id="qrcode"></span></div>{% endif %}
   </section>
   <section id="panel-joints" class="workspace-panel" role="tabpanel" aria-labelledby="tab-joints" hidden>
@@ -76,6 +76,7 @@ window.robot_id=5629499534213120;
     </div>
   </section>
   <div id="workspace-status"><p id="local-status" role="status" aria-live="polite"></p></div>
+  <footer id="project-credit">Made by <a href="https://gentle.pl/" target="_blank" rel="noopener noreferrer">Igor Zubrycki</a> <span aria-hidden="true">·</span> <a href="https://github.com/AdoHaha/modelrobot" target="_blank" rel="noopener noreferrer">GitHub</a></footer>
 </aside>
 <div id="workspace-divider" role="separator" aria-label="Resize editor and preview" aria-orientation="vertical" aria-valuemin="25" aria-valuemax="75" aria-valuenow="44" tabindex="0"></div>
 <main id="container" aria-label="Robot preview">
@@ -101,7 +102,7 @@ window.robot_id=5629499534213120;
   <dt>Animation</dt><dd>Paste CSV with joint names as column headers, optionally starting with <code>time</code> in seconds. Insert the current pose for a template. Play, step between poses, add poses, or trace a link. CSV edits save automatically; invalid CSV disables playback.</dd></dl>
   <h2>Collision warnings</h2>
   <p>Enable <b>Collisions</b> above the preview to check shapes explicitly tagged with <code>&lt;collision&gt;</code>. Red links indicate possible overlap, and the status names the pairs. The fast check uses rotated bounding boxes, so curved and irregular shapes can give conservative warnings. Connected neighbors and fixed assemblies are ignored. Motion is never blocked.</p>
-  <p>Choose <b>Files → Pi collision demo</b> to fold a hand into the torso. <b>Pi robot (safe pose)</b> restores the neutral pose. Missing collision meshes produce an incomplete-check warning; visual shapes are never used as a fallback.</p>
+  <p>Choose <b>Files → Pi collision demo</b> to fold an arm into the torso. The Pi model includes collision shapes for its torso and complete arms. <b>Pi robot (safe pose)</b> restores the neutral pose. Missing collision meshes produce an incomplete-check warning; visual shapes are never used as a fallback.</p>
   <h2>Camera and layout</h2>
   <ul><li><b>Mouse:</b> drag to orbit, Shift-drag or right-drag to pan, scroll to zoom.</li>
   <li><b>Touch:</b> one finger orbits; two fingers pan and zoom.</li>
@@ -113,7 +114,7 @@ window.robot_id=5629499534213120;
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=collisions-20261106"></script>
+<script src="./scripts/runtime.bundle.js?v=arm-collisions-20261106"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -124,12 +125,12 @@ window.robot_id=5629499534213120;
 <script src="./scripts/underscore.js"></script>
 	<script src="./scripts/backbone.js"></script>
 	<script src="./lib/dat.gui.min.js"></script>
-	<script src="./scripts/modelrobot.js?v=collisions-20261106"></script>
-<script src="./scripts/parserobot.js?v=collisions-20261106"></script>
+	<script src="./scripts/modelrobot.js?v=arm-collisions-20261106"></script>
+<script src="./scripts/parserobot.js?v=arm-collisions-20261106"></script>
 <script src="./lib/CSVToArray.js"></script>
 
 <!--<script src="./scripts/unit4-robot_arm_demo.js"></script>-->
-<script src="./scripts/scene.js?v=collisions-20261106"></script>
+<script src="./scripts/scene.js?v=arm-collisions-20261106"></script>
 <script src="./scripts/animate.js"></script>
 </body>
 </html>

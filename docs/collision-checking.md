@@ -7,7 +7,7 @@ Checking starts off and does not block joint motion or CSV playback.
 
 In **Files**, choose **Pi collision demo** for a folded left hand overlapping
 the torso, or **Pi robot (safe pose)** for a clear neutral pose. The Pi model has
-collision shapes on its torso and both hands, and its elbows bend about Y.
+collision shapes on its torso and every section of both arms, and its elbows bend about Y.
 
 ## Geometry and exclusions
 
@@ -39,7 +39,8 @@ No geometry is sent to a server for checking.
 
 `npm test` checks rotated-box separation, contact, containment, origin transforms,
 mirrored STL scales, exclusions, material restoration, CSV changes, saved assets,
-incomplete geometry and actual phone touch gestures. The optional real-model
+incomplete geometry and actual phone touch gestures. Shoulder-limit and crossed-arm
+regressions verify arm/torso warnings even when the hands remain clear. The optional real-model
 check also exercises the T12 model's 37 STL collision shapes:
 
 ```sh

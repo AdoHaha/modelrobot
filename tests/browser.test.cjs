@@ -293,7 +293,7 @@ test('phone touch drags move docked and compact detached sliders without moving 
   }
   await page.locator('#joints-dock').tap();assert.ok(await page.locator('#panel-joints #joint-controls').isVisible());
   await page.locator('#tab-files').tap();await page.locator('#pi-collision-demo').tap();
-  await page.waitForFunction(()=>App.collisions.pairs.length===1);
+  await page.waitForFunction(()=>App.collisions.pairs.length>0);
   assert.ok(await page.locator('#collision-enabled').isChecked());
   await page.locator('#tab-joints').tap();
   const elbow=page.getByRole('slider',{name:'left_elbow_joint',exact:true});await elbow.scrollIntoViewIfNeeded();
@@ -309,11 +309,27 @@ test('optional collision warnings, Pi demo poses, CSV motion and collision-only 
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);await settled(page);
   assert.ok(!(await page.locator('#collision-enabled').isChecked()));
-  assert.equal(await page.evaluate(()=>App.collisions.shapes.length),3);
+  assert.equal(await page.evaluate(()=>App.collisions.shapes.length),15);
   await page.locator('#collision-enabled').check();
   await page.waitForFunction(()=>!App.collisions.dirty);
   assert.deepEqual(await page.evaluate(()=>App.collisions.pairs),[]);
   assert.match(await page.locator('#collision-status').innerText(),/No overlaps/);
+  // Both inward shoulder limits must catch arm/torso contact before the hands touch.
+  await page.locator('#tab-joints').click();
+  for (const [side,key] of [['left','Home'],['right','End']]) {
+    const name=side+'_shoulder_forward_joint';
+    await page.getByRole('slider',{name,exact:true}).press(key);
+    await page.waitForFunction(side=>App.collisions.pairs.some(pair=>pair.includes(side+'_upper_arm_link')&&pair.includes('torso_link')),side);
+    assert.equal(await page.evaluate(side=>robotlinkcollection.get(side+'_upper_arm_link').meshvis_array[0].children[0].material.color.getHex(),side),0xff2424);
+    await page.evaluate(name=>App.robotjointmanipall.changejointval(name,0),name);
+    await page.waitForFunction(()=>App.collisions.pairs.length===0);
+  }
+  // Pose from the reported failure: both forearms cross the torso.
+  await page.evaluate(()=>{
+    const pose={left_shoulder_forward_joint:-1.57,right_shoulder_forward_joint:1.57,left_shoulder_up_joint:-.458,right_shoulder_up_joint:-.531,left_elbow_joint:-.828,right_elbow_joint:-.622};
+    for(const [name,value] of Object.entries(pose))App.robotjointmanipall.changejointval(name,value);
+  });
+  await page.waitForFunction(()=>['left','right'].every(side=>App.collisions.pairs.some(pair=>pair.includes(side+'_lower_arm_link')&&pair.includes('torso_link'))));
   await page.locator('#tab-files').click();await page.locator('#pi-collision-demo').click();
   await page.waitForFunction(()=>App.collisions.pairs.some(pair=>pair.includes('left_hand_link')&&pair.includes('torso_link')));
   assert.ok(await page.locator('#collision-enabled').isChecked());
@@ -335,7 +351,7 @@ test('optional collision warnings, Pi demo poses, CSV motion and collision-only 
   await page.locator('#tab-urdf').click();
   await page.evaluate(()=>App.forumula.myCodeMirror.setValue(App.forumula.myCodeMirror.getValue().replace('0.32 0.26 0.085','0.33 0.26 0.085')));
   await page.locator('#loadbutton').click();await settled(page);
-  assert.ok(await page.locator('#collision-enabled').isChecked());assert.equal(await page.evaluate(()=>App.collisions.shapes.length),3);
+  assert.ok(await page.locator('#collision-enabled').isChecked());assert.equal(await page.evaluate(()=>App.collisions.shapes.length),15);
   const meshRobot='<robot name="Collision mesh"><link name="base"><visual><geometry><box size="0.2 0.2 0.2"/></geometry></visual><collision><geometry><mesh filename="package://demo/part.stl" scale="-1 2 1"/></geometry></collision></link><link name="spacer"/><link name="hand"><visual><geometry><sphere radius="0.1"/></geometry></visual><collision><origin xyz="-0.25 0.25 0"/><geometry><box size="0.1 0.1 0.1"/></geometry></collision></link><joint name="root" type="revolute"><parent link="base"/><child link="spacer"/><origin xyz="2 0 0"/><axis xyz="0 0 1"/></joint><joint name="slide" type="prismatic"><parent link="spacer"/><child link="hand"/><axis xyz="1 0 0"/><limit lower="-3" upper="3"/></joint></robot>';
   await page.locator('#local-files').setInputFiles([upload('collision.urdf',Buffer.from(meshRobot)),upload('part.stl',stl)]);
   await page.waitForFunction(()=>App.localRobots.currentXml.includes('Collision mesh'));await settled(page);

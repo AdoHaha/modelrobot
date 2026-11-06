@@ -43,6 +43,9 @@ h2 { font-size: 15px; margin: 0 0 8px; font-weight: 650; }
 #workspace-status { flex: 0 0 auto; padding: 8px 16px; border-top: 1px solid #d8e2eb; background: #eef4f9; min-height: 36px; max-height: 100px; overflow: auto; }
 #local-status { margin: 0; font-size: 12px; color: #27634b; overflow-wrap: anywhere; }
 #local-status.text-danger { color: #b52f37; }
+#project-credit { flex: 0 0 auto; padding: 4px 10px; border-top: 1px solid #d8e2eb; background: #eef4f9; color: #65768a; font-size: 11px; text-align: center; }
+#project-credit a { color: #355c7d; text-decoration: underline; text-underline-offset: 2px; }
+#project-credit a:focus-visible { outline: 2px solid #1673ca; outline-offset: 2px; }
 .form-section, fieldset { border: 1px solid #d1dce7; border-radius: 6px; padding: 12px; margin: 0 0 16px; min-width: 0; }
 legend { font-size: 14px; font-weight: 600; width: auto; margin: 0; padding: 0 5px; border: 0; color: #35526d; }
 .form-section label, fieldset label { display: block; font-weight: 500; margin-bottom: 8px; }
