@@ -25,3 +25,6 @@ coffee/
 
 # Local reference material
 references/
+
+# Local agent notes
+/agent_notes/

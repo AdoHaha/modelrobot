@@ -27,3 +27,6 @@ local_app_server.sh
 
 /node_modules/
 /__pycache__/
+
+# Local agent notes
+/agent_notes/

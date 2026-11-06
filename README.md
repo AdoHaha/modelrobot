@@ -83,8 +83,6 @@ and a camera toolbar with six standard views and an isometric view. Upright
 orbit controls provide pan and zoom with visible gesture hints. Applied edits
 preserve the current document, CSV, joint pose and camera view.
 
-See [the usability review](docs/usability-review-2026-11-06.md) for findings and validation.
-
 An opt-in integration check has been run against the NASA/JPL T12 model from
 [gkjohnson/urdf-loaders](https://github.com/gkjohnson/urdf-loaders/tree/c8c25c8cf6fcb84929b9a03ff866139a8a1e2a01/urdf/T12).
 It verifies all 37 STL visuals, 36 joints, URDF transforms, browser restoration,
