@@ -49,13 +49,13 @@ export class LocalRobots {
     }
     return geometry;
   }
-  status(message, error = false) {
+  status(message, error = false, params = {}) {
     const el = document.getElementById('local-status');
-    el.textContent = message;
+    App.i18n.setText(el, message, params);
     el.classList.toggle('text-danger', error);
     const badge = document.getElementById('mesh-badge');
     badge.hidden = !this.messages.length;
-    badge.title = this.messages.join(' ');
+    App.i18n.setAttr(badge, 'title', '{warnings}', { warnings: this.messages.slice() });
   }
   openDB() {
     return new Promise((resolve, reject) => {
@@ -79,6 +79,7 @@ export class LocalRobots {
     this.records = await this.transaction('readonly', store => store.getAll());
     const select = document.getElementById('local-library');
     select.replaceChildren(new Option('Choose a saved robot', ''));
+    App.i18n.setText(select.options[0], 'Choose a saved robot');
     this.records.sort((a, b) => b.updated - a.updated).forEach(record => select.add(new Option(record.name, record.id)));
     select.value = selected || '';
   }
@@ -97,7 +98,7 @@ export class LocalRobots {
       if (!this.currentXml) return;
       this.document = { id: crypto.randomUUID() };
       const name = document.getElementById('local-name');
-      name.value = (name.value || this.validate(this.currentXml).documentElement.getAttribute('name') || 'Robot') + ' copy';
+      name.value = App.i18n.t('{name} copy', { name: name.value || this.validate(this.currentXml).documentElement.getAttribute('name') || 'Robot' });
       this.loaded(this.currentXml);
     });
     on('local-open', 'click', async () => {
@@ -232,7 +233,8 @@ export class LocalRobots {
       await this.transaction('readwrite', store => store.put(record));
       await this.refresh(this.document.id);
       if (this.document !== documentState) return;
-      this.status(warnings.length ? warnings.join(' ') + ' Robot saved; add missing files to complete it.' : 'Saved “' + record.name + '” in this browser.');
+      if (warnings.length) this.status('{warnings} Robot saved; add missing files to complete it.', false, { warnings });
+      else this.status('Saved “{name}” in this browser.', false, { name: record.name });
     }).catch(error => this.status('Robot loaded, but browser saving failed: ' + error.message, true));
   }
 }

@@ -29,6 +29,7 @@ You can also try the online demo at [http://mymodelrobot.appspot.com/](http://my
 
 - **URDF Visualization**: Load and display robot models in 3D
 - **Joint Controls**: Interactive sliders for moving robot joints
+- **Languages**: English and Polish interface with a language choice saved in the browser
 - **CSV Animation**: Animate robots with predefined joint trajectories
 - **Multiple Views**: Front, top, and side camera presets
 - **Augmented Reality**: View robots in AR mode

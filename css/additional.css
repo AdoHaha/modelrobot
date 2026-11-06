@@ -6,6 +6,8 @@ body { --workspace-width: clamp(360px,44vw,680px); display: grid; grid-template-
 #app-header { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 0 18px; background: #14283f; color: #c7d6e6; }
 #app-header strong { font-size: 20px; color: white; letter-spacing: -.5px; }
 #app-header .privacy-note { margin-left: auto; font-size: 12px; color: #b7e2d1; }
+#app-header #ui-language { width: 53px; padding: 4px; font-size: 12px; background: #23435f; color: #eef6ff; border-color: #49617c; flex: 0 0 auto; }
+.header-open-small { display: none; }
 button, input, select, textarea { font: inherit; }
 button, select { cursor: pointer; }
 button { padding: 6px 11px; border: 1px solid #bccbd9; border-radius: 5px; background: white; color: #25435e; line-height: 1.5; }
@@ -171,6 +173,14 @@ body.editor-focus { grid-template-columns: minmax(0,1fr) 8px 320px; }
   #joint-controls .dg .c input[type=text] { height: 28px; margin-top: 5px; }
 }
 button { touch-action: manipulation; }
+@media (max-width: 420px) {
+  #app-header { gap: 6px; padding: 0 8px; }
+  #app-header button { margin-left: 0; }
+  #app-header #open-files { margin-left: auto; padding: 5px 7px; }
+  #app-header #ui-language { width: 47px; }
+  .header-open-wide { display: none; }
+  .header-open-small { display: inline; }
+}
 #pose-toggle[aria-pressed=true] { background: #1766a7; color: white; border-color: #1766a7; }
 #container > canvas.pose-mode { cursor: crosshair; }
 #pose-actions { display: flex; gap: 5px; flex-wrap: wrap; }

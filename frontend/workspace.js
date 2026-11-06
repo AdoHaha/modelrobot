@@ -19,7 +19,7 @@ export class Workspace {
     document.getElementById('editor-expand').onclick = event => {
       const expanded = document.body.classList.toggle('editor-focus');
       event.target.setAttribute('aria-pressed', expanded);
-      event.target.textContent = expanded ? 'Restore size' : 'More space';
+      App.i18n.setText(event.target, expanded ? 'Restore size' : 'More space');
       requestAnimationFrame(() => form.myCodeMirror.refresh());
     };
     form.myCodeMirror.on('change', () => this.draftStatus());
@@ -47,7 +47,7 @@ export class Workspace {
     document.getElementById('screenshotplace').onclick = () => form.closeScreenshot();
     const canvas = window.renderer.domElement;
     canvas.tabIndex = 0;
-    canvas.setAttribute('aria-label', 'Robot preview. Drag to orbit, Shift-drag to pan, scroll to zoom. F fits the robot.');
+    App.i18n.setAttr(canvas, 'aria-label', 'Robot preview. Drag to orbit, Shift-drag to pan, scroll to zoom. F fits the robot.');
     canvas.onpointerdown = () => canvas.focus({preventScroll:true});
     canvas.onkeydown = event => {
       const actions = {f:'fit', F:'fit', Home:'home', '+':'in', '=':'in', '-':'out'};
@@ -94,7 +94,7 @@ export class Workspace {
       event.preventDefault(); controller.setValue(values[event.key]);
     });
     controller.domElement.querySelectorAll('input[type=text]').forEach(input => {
-      input.setAttribute('inputmode', 'decimal'); input.setAttribute('aria-label', joint.name + ' value');
+      input.setAttribute('inputmode', 'decimal'); App.i18n.setAttr(input, 'aria-label', '{name} value', { name: joint.name });
     });
     controller.updateDisplay();
   }
@@ -119,7 +119,7 @@ export class Workspace {
     const dock = () => {
       document.getElementById('panel-joints').append(host);
       floating.hidden = true; note.hidden = true; detach.hidden = false;
-      document.getElementById('tab-joints').removeAttribute('title');
+      App.i18n.setAttr(document.getElementById('tab-joints'), 'title', '');
       this.select('joints'); detach.focus();
     };
     detach.onclick = () => {
@@ -136,7 +136,7 @@ export class Workspace {
         floating.style.top = (compact ? Math.max(60, innerHeight - height - 16) : 80) + 'px';
       }
       note.hidden = false; detach.hidden = true;
-      document.getElementById('tab-joints').title = 'Joint controls are detached';
+      App.i18n.setAttr(document.getElementById('tab-joints'), 'title', 'Joint controls are detached');
       this.select(this.jointsReturnPanel || 'urdf'); constrain(); handle.focus({preventScroll:true});
     };
     document.getElementById('joints-dock').onclick = dock;
@@ -173,10 +173,10 @@ export class Workspace {
   }
   draftStatus() {
     this.dirty = this.form.myCodeMirror.getValue() !== (App.localRobots.currentXml || '');
-    document.getElementById('draft-status').textContent = this.dirty ? 'Unapplied changes' : 'Preview up to date';
+    App.i18n.setText(document.getElementById('draft-status'), this.dirty ? 'Unapplied changes' : 'Preview up to date');
     document.getElementById('draft-status').classList.toggle('dirty', this.dirty);
   }
-  canReplaceDraft() { return !this.dirty || window.confirm('Replace the unapplied URDF edits? Apply changes first to keep them in this browser.'); }
+  canReplaceDraft() { return !this.dirty || window.confirm(App.i18n.t('Replace the unapplied URDF edits? Apply changes first to keep them in this browser.')); }
   cameraAction(action) {
     App.poseTool.finish();
     if (action === 'fit') App.fitRobot();
@@ -201,10 +201,10 @@ export class Workspace {
       message = unknown.length ? 'Unknown or fixed joints: ' + unknown.join(', ') : valid ? 'Ready to play · ' + (rows.length - 1) + ' poses · ' + names.length + ' joints · ' + (timed ? 'time in seconds' : '0.06 s per frame') : 'Check the CSV: use joint names and equal-length rows of numbers.';
     }
     const badge = document.getElementById('animation-badge');
-    badge.hidden = !text || valid; badge.title = message;
+    badge.hidden = !text || valid; App.i18n.setAttr(badge, 'title', message);
     document.getElementById('csv-template').disabled = !window.robotjointcollection?.some(joint => joint.type !== 'fixed');
     this.csvValid = valid;
-    document.getElementById('animation-status').textContent = message;
+    App.i18n.setText(document.getElementById('animation-status'), message);
     ['playbutton','pausebutton','stopbutton','prevbutton','nextbutton'].forEach(id => document.getElementById(id).disabled = !valid);
     return valid;
   }
@@ -214,7 +214,7 @@ export class Workspace {
     const resize = (x, y) => {
       document.body.classList.remove('editor-focus');
       const expand = document.getElementById('editor-expand');
-      expand.textContent = 'More space'; expand.setAttribute('aria-pressed', 'false');
+      App.i18n.setText(expand, 'More space'); expand.setAttribute('aria-pressed', 'false');
       const value = mobile() ? Math.max(140, Math.min(innerHeight - 260, y - 52)) : Math.max(320, Math.min(innerWidth - 320, x));
       document.body.style.setProperty(mobile() ? '--preview-height' : '--workspace-width', value + 'px');
       divider.setAttribute('aria-valuenow', Math.round(value / (mobile() ? innerHeight : innerWidth) * 100));
