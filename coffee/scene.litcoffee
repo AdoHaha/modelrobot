@@ -116,6 +116,7 @@ setting CONTROLS params
                 #cameraControls.object.lookAt
                 App.fillScene();
                 resizeViewer = ->
+                    App.poseTool.finish()
                     width=Math.max(1,container.clientWidth)
                     height=Math.max(1,container.clientHeight)
                     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
@@ -136,6 +137,7 @@ Controlling scene, using dat gui
 ----------------
 
         App.setStandardView = (name) ->
+                App.poseTool.finish()
                 directions={front:[1,0,0],back:[-1,0,0],left:[0,1,0],right:[0,-1,0],top:[0.000001,0,1],bottom:[0.000001,0,-1],iso:[1,-1,1]}
                 App.viewDirection(new THREE.Vector3(...directions[name]).normalize())
                 document.getElementById('standard-view').value=name
@@ -241,6 +243,7 @@ Function to animate our scene
 App.animform is an animation controller with different states.
 
                 App.animform.update() if App.animform?
+                App.poseTool.update()
                 scene.updateMatrixWorld(true)
                 App.collisions.update(performance.now())
                 App.trajectoryview.update()

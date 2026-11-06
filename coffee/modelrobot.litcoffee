@@ -44,13 +44,14 @@ Model of robot joint, it is responsible of moving links: connecting them togethe
                         axis=App.el2array(_.has(@attributes,"axis")&&@attributes.axis.xyz,"1 0 0");
 
                         @axis=new THREE.Vector3(axis[0],axis[1],axis[2])
+                        @axis.normalize() if @axis.lengthSq()>0
                         rotation=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.rpy,"0 0 0")
                         @basicrotation=new THREE.Euler(rotation[0],rotation[1],rotation[2],'ZYX')
                         position=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.xyz,"0 0 0")
                         @basicposition=new THREE.Vector3(position[0],position[1],position[2])
 
-                        @lower=(_.has(@attributes,"limit")&&@attributes.limit.lower)||-Math.PI # could be -Infinity
-                        @upper=(_.has(@attributes,"limit")&&@attributes.limit.upper)|| Math.PI #could be Infinity
+                        @lower=@attributes.limit?.lower ? -Math.PI
+                        @upper=@attributes.limit?.upper ? Math.PI
                         @lower=@lower*1
                         @upper=@upper*1
 
@@ -93,7 +94,7 @@ When movement is impossible, return false
 
                         tempMatrix=new THREE.Matrix4();
                         tempaxis= new THREE.Vector3().copy(@axis);
-                        if (@upper? and @lower?)
+                        if (@type isnt "continuous" and @upper? and @lower?)
                             t1=Math.max(@lower,Math.min(t1,@upper));
                         if (@type=="continuous" or (@upper >= t1 >=@lower)) #check whether movement is allowed
                                 switch @type
@@ -363,6 +364,7 @@ There can be only one such model on scene ###TODO this seems fundamentaly wrong
 Checks about validity of movement are made inside @joint, we just check whether it succeeded
 
                 changeval: (value,updateController=false) ->
+                        App.poseTool?.finish()
                         #if (@joint.upper >= value >= @joint.lower)
 
                         if @joint.movejoint(value)
@@ -470,6 +472,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     catch error
                         App.localRobots.status(error.message,true)
                         return false
+                    App.poseTool.finish(true)
                     opening=App.localRobots.openingDocument or not window.robot?
                     poses={}
                     unless opening

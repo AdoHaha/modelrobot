@@ -62,6 +62,7 @@ export class Workspace {
     this.initJointPanel();
     this.resizeDivider();
     this.animationStatus();
+    App.poseTool.init(canvas);
   }
   select(name) {
     if (name === 'joints' && this.active !== 'joints') this.jointsReturnPanel = this.active;
@@ -177,6 +178,7 @@ export class Workspace {
   }
   canReplaceDraft() { return !this.dirty || window.confirm('Replace the unapplied URDF edits? Apply changes first to keep them in this browser.'); }
   cameraAction(action) {
+    App.poseTool.finish();
     if (action === 'fit') App.fitRobot();
     if (action === 'home') { App.setStandardView('iso'); App.fitRobot(); }
     if (action === 'in' || action === 'out') {

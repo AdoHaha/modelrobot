@@ -57,17 +57,20 @@
     }
 
     initialize() {
-      var axis, basicMatrix, position, rotation;
+      var axis, basicMatrix, position, ref1, ref2, ref3, ref4, rotation;
       this.theta = 0;
       this.name = this.attributes.name;
       axis = App.el2array(_.has(this.attributes, "axis") && this.attributes.axis.xyz, "1 0 0");
       this.axis = new THREE.Vector3(axis[0], axis[1], axis[2]);
+      if (this.axis.lengthSq() > 0) {
+        this.axis.normalize();
+      }
       rotation = App.el2array(_.has(this.attributes, "origin") && this.attributes.origin.rpy, "0 0 0");
       this.basicrotation = new THREE.Euler(rotation[0], rotation[1], rotation[2], 'ZYX');
       position = App.el2array(_.has(this.attributes, "origin") && this.attributes.origin.xyz, "0 0 0");
       this.basicposition = new THREE.Vector3(position[0], position[1], position[2]);
-      this.lower = (_.has(this.attributes, "limit") && this.attributes.limit.lower) || -Math.PI; // could be -Infinity
-      this.upper = (_.has(this.attributes, "limit") && this.attributes.limit.upper) || Math.PI; //could be Infinity
+      this.lower = (ref1 = (ref2 = this.attributes.limit) != null ? ref2.lower : void 0) != null ? ref1 : -Math.PI;
+      this.upper = (ref3 = (ref4 = this.attributes.limit) != null ? ref4.upper : void 0) != null ? ref3 : Math.PI;
       this.lower = this.lower * 1;
       this.upper = this.upper * 1;
       basicMatrix = new THREE.Matrix4();
@@ -101,7 +104,7 @@
       t1 = t1 != null ? t1 : this.theta;
       tempMatrix = new THREE.Matrix4();
       tempaxis = new THREE.Vector3().copy(this.axis);
-      if ((this.upper != null) && (this.lower != null)) {
+      if (this.type !== "continuous" && (this.upper != null) && (this.lower != null)) {
         t1 = Math.max(this.lower, Math.min(t1, this.upper));
       }
       if (this.type === "continuous" || ((this.upper >= t1 && t1 >= this.lower))) { //check whether movement is allowed
@@ -487,6 +490,10 @@
     // *changeval* is method to control joint from this object, if updateController is false it will just use movejoint method. Otherwise, it will also update the state of slider and state of itself - this is used when this method is accessed from the outside, not from onChange event.
     // Checks about validity of movement are made inside @joint, we just check whether it succeeded
     changeval(value, updateController = false) {
+      var ref3;
+      if ((ref3 = App.poseTool) != null) {
+        ref3.finish();
+      }
       //if (@joint.upper >= value >= @joint.lower)
       if (this.joint.movejoint(value)) {
         this.dummy["val"] = value;
@@ -627,6 +634,7 @@
           App.localRobots.status(error.message, true);
           return false;
         }
+        App.poseTool.finish(true);
         opening = App.localRobots.openingDocument || (window.robot == null);
         poses = {};
         if (!opening) {

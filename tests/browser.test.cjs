@@ -377,3 +377,91 @@ test('optional collision warnings, Pi demo poses, CSV motion and collision-only 
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   assert.deepEqual(errors,[]);await context.close();
 });
+
+const ikRobot='<robot name="IK test"><link name="base"><visual><geometry><box size="0.3 0.3 0.2"/></geometry></visual><collision><geometry><box size="6 6 1"/></geometry></collision></link><link name="torso"><visual><geometry><box size="0.2 0.2 0.2"/></geometry></visual></link><link name="upper"><visual><origin xyz="0.5 0 0"/><geometry><box size="1 0.15 0.15"/></geometry></visual></link><link name="tip"><visual><origin xyz="0.5 0 0"/><geometry><box size="1 0.15 0.15"/></geometry></visual><visual><origin xyz="0.4 0 0.09"/><geometry><mesh filename="part.stl" scale="0.5 0.5 0.5"/></geometry></visual><collision><origin xyz="0.5 0 0"/><geometry><box size="1 0.15 0.15"/></geometry></collision></link><link name="other"><visual><geometry><box size="0.1 0.1 0.1"/></geometry></visual></link><joint name="torso" type="revolute"><parent link="base"/><child link="torso"/><axis xyz="0 0 1"/><limit lower="-1" upper="1"/></joint><joint name="shoulder" type="revolute"><parent link="torso"/><child link="upper"/><axis xyz="0 0 2"/><limit lower="0" upper="1.6"/></joint><joint name="elbow" type="revolute"><parent link="upper"/><child link="tip"/><origin xyz="1 0 0"/><axis xyz="0 0 1"/><limit lower="-2" upper="2"/></joint><joint name="other" type="prismatic"><parent link="torso"/><child link="other"/><origin xyz="0 -0.5 0"/><axis xyz="1 0 0"/><limit lower="0" upper="1"/></joint></robot>';
+async function loadIK(page) {
+  await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);
+  await page.locator('#local-files').setInputFiles([upload('ik.urdf',Buffer.from(ikRobot)),upload('part.stl',stl)]);
+  await page.waitForFunction(()=>App.localRobots.currentXml.includes('IK test'));await settled(page);
+  await page.locator('#standard-view').selectOption('top');
+}
+async function projectIK(page,point) {
+  return page.evaluate(point=>{const p=new THREE.Vector3(...point).project(App.camera),r=renderer.domElement.getBoundingClientRect();return {x:r.left+(p.x+1)*r.width/2,y:r.top+(1-p.y)*r.height/2};},point);
+}
+
+test('IK picks STL and primitive links, follows the cursor, changes depth, preserves branches and restores or commits poses',async()=>{
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await loadIK(page);
+  assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'shoulder'}).lower),0);
+  assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'shoulder'}).axis.length()),1);
+  await page.locator('#collision-enabled').check();await page.waitForFunction(()=>App.collisions.pairs.length>0);
+  const camera=await page.evaluate(()=>App.camera.position.toArray());
+  const start=await projectIK(page,[1.5,.1,.09]);await page.mouse.dblclick(start.x,start.y);
+  await page.waitForFunction(()=>App.poseTool.active?.object.name==='tip');
+  assert.equal(await page.evaluate(()=>robotlinkcollection.get('tip').meshvis_array[0].material.color.getHex()),0xff2424,'Selection keeps collision red');
+  assert.deepEqual(await page.evaluate(()=>App.poseTool.active.solver.chain.map(j=>j.name)),['elbow','shoulder']);
+  const target=await projectIK(page,[1.25,.6,.09]);await page.mouse.move(target.x,target.y,{steps:8});
+  await page.waitForFunction(()=>App.poseTool.active.solver.position().distanceTo(App.poseTool.active.target)<.01);
+  assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'torso'}).theta),0);
+  assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'other'}).theta),0);
+  const depth=await page.evaluate(()=>App.poseTool.active.target.toArray());await page.mouse.wheel(0,120);
+  await page.waitForFunction(depth=>new THREE.Vector3(...depth).distanceTo(App.poseTool.active.target)>.02,depth);
+  (await page.evaluate(()=>App.camera.position.toArray())).forEach((n,i)=>assert.ok(Math.abs(n-camera[i])<1e-8));
+  await page.keyboard.press('Escape');assert.ok(await page.evaluate(()=>!App.poseTool.active&&App.cameraControls.enabled));
+  assert.deepEqual(await page.evaluate(()=>robotjointcollection.map(j=>j.theta)),[0,0,0,0]);
+  assert.equal(await page.evaluate(()=>scene.getObjectByName('Pose target')),undefined);
+  // A primitive on the same link is independently pickable.
+  const primitive=await projectIK(page,[1.75,-.04,.075]);await page.mouse.click(primitive.x,primitive.y);await page.waitForFunction(()=>App.poseTool.active);
+  const move=await projectIK(page,[1.5,.4,.075]);await page.mouse.move(move.x,move.y,{steps:6});
+  await page.waitForFunction(()=>Math.abs(robotjointcollection.findWhere({name:'shoulder'}).theta)>.01);
+  await page.mouse.click(move.x,move.y);assert.ok(await page.evaluate(()=>!App.poseTool.active&&App.cameraControls.enabled));
+  await page.locator('#tab-joints').click();
+  const shoulder=await page.evaluate(()=>robotjointcollection.findWhere({name:'shoulder'}).theta);
+  assert.ok(Math.abs(Number(await page.getByRole('slider',{name:'shoulder',exact:true}).getAttribute('aria-valuenow'))-shoulder)<1e-8);
+  const again=await page.evaluate(()=>{const v=new THREE.Vector3(.75,-.04,.075).applyMatrix4(robotlinkcollection.get('tip').get('link').matrixWorld).project(App.camera),r=renderer.domElement.getBoundingClientRect();return {x:r.left+(v.x+1)*r.width/2,y:r.top+(1-v.y)*r.height/2};});
+  await page.mouse.dblclick(again.x,again.y);await page.waitForFunction(()=>App.poseTool.active?.object.name==='tip');
+  await page.locator('#pose-cancel').click();
+  await page.locator('#pose-toggle').click();assert.equal(await page.locator('#pose-toggle').getAttribute('aria-pressed'),'false');
+  assert.deepEqual(errors,[]);await context.close();
+});
+
+test('IK handles fixed picks, animation, manual controls, rebuilds and resizing without stale targets',async()=>{
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await loadIK(page);
+  await page.locator('#pose-toggle').click();const fixed=await projectIK(page,[-.13,0,.1]);await page.mouse.click(fixed.x,fixed.y);
+  assert.match(await page.locator('#pose-status').innerText(),/no movable ancestors/);assert.ok(await page.evaluate(()=>!App.poseTool.active));
+  await page.locator('#tab-animation').click();const csv='time,shoulder,elbow\n0,0,0\n5,0.5,0.5\n';await page.locator('#robotcsv').fill(csv);await page.locator('#playbutton').click();
+  const start=await projectIK(page,[1.5,.1,.09]);await page.mouse.click(start.x,start.y);await page.waitForFunction(()=>App.poseTool.active);
+  assert.equal(await page.evaluate(()=>App.animform.state),'paused');assert.equal(await page.locator('#robotcsv').inputValue(),csv);
+  // This arm is planar, so a depth offset is certainly unreachable.
+  await page.locator('#pose-farther').click();
+  await page.waitForFunction(()=>App.poseTool.active.solver.stalled);assert.match(await page.locator('#pose-status').innerText(),/Best pose/);
+  await page.locator('#pose-cancel').click();assert.deepEqual(await page.evaluate(()=>robotjointcollection.map(j=>j.theta)),[0,0,0,0]);
+  await page.mouse.click(start.x,start.y);await page.waitForFunction(()=>App.poseTool.active);
+  await page.locator('#playbutton').click();assert.ok(await page.evaluate(()=>!App.poseTool.active&&App.cameraControls.enabled));
+  await page.locator('#pausebutton').click();
+  await page.mouse.click(start.x,start.y);await page.waitForFunction(()=>App.poseTool.active);
+  await page.locator('#tab-joints').click();await page.getByRole('slider',{name:'shoulder',exact:true}).press('ArrowRight');assert.ok(await page.evaluate(()=>!App.poseTool.active));
+  // Restore a known pose before picking; applying URDF cancels to that snapshot.
+  await page.evaluate(()=>{App.robotjointmanipall.changejointval('shoulder',0);App.robotjointmanipall.changejointval('elbow',0);});
+  await page.mouse.click(start.x,start.y);await page.waitForFunction(()=>App.poseTool.active);
+  const target=await projectIK(page,[1.2,.6,.09]);await page.mouse.move(target.x,target.y,{steps:5});await page.waitForFunction(()=>robotjointcollection.findWhere({name:'shoulder'}).theta>.01);
+  await page.locator('#tab-urdf').click();await page.locator('#loadbutton').click();await settled(page);
+  assert.ok(await page.evaluate(()=>!App.poseTool.active));assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'shoulder'}).theta),0);
+  await page.mouse.click(start.x,start.y);await page.waitForFunction(()=>App.poseTool.active);await page.setViewportSize({width:1100,height:800});
+  await page.waitForFunction(()=>!App.poseTool.active&&App.cameraControls.enabled);
+  assert.deepEqual(errors,[]);await context.close();
+});
+
+test('touch IK drags a segment and commits on release while keeping the camera steady',async()=>{
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await loadIK(page);await page.locator('#pose-toggle').tap();
+  const camera=await page.evaluate(()=>App.camera.position.toArray());const start=await projectIK(page,[1.5,.1,.09]),end=await projectIK(page,[1.3,.5,.09]);const cdp=await context.newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...start,id:1}]});await page.waitForFunction(()=>App.poseTool.active);
+  for(let i=1;i<=10;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:start.x+(end.x-start.x)*i/10,y:start.y+(end.y-start.y)*i/10,id:1}]});
+  await page.waitForFunction(()=>robotjointcollection.findWhere({name:'shoulder'}).theta>.01);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForFunction(()=>!App.poseTool.active&&App.cameraControls.enabled);
+  (await page.evaluate(()=>App.camera.position.toArray())).forEach((n,i)=>assert.ok(Math.abs(n-camera[i])<1e-8));
+  assert.ok(await page.evaluate(()=>robotjointcollection.findWhere({name:'shoulder'}).theta>.01));
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);await context.close();
+});

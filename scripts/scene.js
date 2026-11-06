@@ -116,6 +116,7 @@
     App.fillScene();
     resizeViewer = function() {
       var aspect, height, offset, ratio, width;
+      App.poseTool.finish();
       width = Math.max(1, container.clientWidth);
       height = Math.max(1, container.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -138,6 +139,7 @@
   // ----------------
   App.setStandardView = function(name) {
     var directions;
+    App.poseTool.finish();
     directions = {
       front: [1, 0, 0],
       back: [-1, 0, 0],
@@ -257,6 +259,7 @@
       // App.animform is an animation controller with different states.
       App.animform.update();
     }
+    App.poseTool.update();
     scene.updateMatrixWorld(true);
     App.collisions.update(performance.now());
     App.trajectoryview.update();

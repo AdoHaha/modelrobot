@@ -8,6 +8,8 @@ import { Workspace } from './workspace.js';
 window.App.workspace = new Workspace();
 import { LocalRobots } from './local-robots.js';
 window.App.localRobots = new LocalRobots(window.App.stlLoader);
+import { PoseTool } from './pose-tool.js';
+window.App.poseTool = new PoseTool(window.App);
 
 import { CollisionChecker } from './collisions.js';
 window.App.collisions = new CollisionChecker({

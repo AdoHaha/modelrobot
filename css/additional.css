@@ -171,6 +171,16 @@ body.editor-focus { grid-template-columns: minmax(0,1fr) 8px 320px; }
   #joint-controls .dg .c input[type=text] { height: 28px; margin-top: 5px; }
 }
 button { touch-action: manipulation; }
+#pose-toggle[aria-pressed=true] { background: #1766a7; color: white; border-color: #1766a7; }
+#container > canvas.pose-mode { cursor: crosshair; }
+#pose-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+#pose-status { flex: 1 0 100%; margin: 0; padding: 3px 6px; border-radius: 4px; max-height: 48px; overflow: auto; overflow-wrap: anywhere; background: #f8fbffed; color: #25435e; font-size: 11px; }
+@media (max-width: 759px) {
+  #pose-status { font-size: 10px; max-height: 42px; }
+  .pose-active #viewer-toolbar [data-camera], .pose-active #screenshot, .pose-active .collision-toggle { display: none; }
+  .pose-active #collision-status { max-height: 24px; }
+  .pose-mode #view-cube, .pose-mode #camera-help { display: none; }
+}
 .collision-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; margin: 0; border: 1px solid #bccbd9; border-radius: 5px; background: #f8fbffed; color: #25435e; font-size: 12px; font-weight: 500; cursor: pointer; touch-action: manipulation; }
 .collision-toggle input { margin: 0; accent-color: #1766a7; }
 #collision-status { flex: 1 0 100%; max-height: 54px; overflow: auto; margin: 0; font-size: 11px; padding: 3px 6px; width: fit-content; background: #f8fbffed; border-radius: 4px; color: #27634b; overflow-wrap: anywhere; }
