@@ -1,6 +1,6 @@
 <!-- test files -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -34,9 +34,9 @@ window.robot_id=5629499534213120;
     <!-- Custom styles for this template -->
     <link rel="stylesheet" href="lib/codemirror.css">
 
-  <link href="./css/additional.css?v=ik-middle-20261107" rel="stylesheet">
+  <link href="./css/additional.css?v=polish-20261107" rel="stylesheet">
 <body>
-<header id="app-header"><strong>MyModelRobot</strong><span>Robot workspace</span><button type="button" id="open-files">Open / import</button><span class="privacy-note">Saved on this device</span><button type="button" id="help-button" aria-label="Help and controls" aria-haspopup="dialog" aria-controls="help-dialog" title="Help and controls">?</button></header>
+<header id="app-header"><strong>MyModelRobot</strong><span>Robot workspace</span><button type="button" id="open-files" aria-label="Open / import"><span class="header-open-wide">Open / import</span><span class="header-open-small">Files</span></button><span class="privacy-note">Saved on this device</span><select id="ui-language" aria-label="Language / Język" title="English / Polski" data-i18n-skip><option value="en" lang="en">EN</option><option value="pl" lang="pl">PL</option></select><button type="button" id="help-button" aria-label="Help and controls" aria-haspopup="dialog" aria-controls="help-dialog" title="Help and controls">?</button></header>
 <aside id="controldiv" aria-label="Robot workspace">
   <nav class="workspace-tabs" role="tablist" aria-label="Workspace tools">
     <button type="button" role="tab" id="tab-urdf" data-panel="urdf" aria-controls="panel-urdf" aria-selected="true">URDF</button>
@@ -60,7 +60,7 @@ window.robot_id=5629499534213120;
     <div class="form-section"><label for="local-name">Robot name</label><input type="text" id="local-name" placeholder="Name from URDF"><div class="button-row"><button type="button" id="local-save">Save name</button><button type="button" id="local-copy">Save a copy</button></div>
       <label for="local-library">Saved robots</label><select id="local-library"></select><div class="button-row"><button type="button" id="local-open" class="primary">Open robot</button><button type="button" id="local-delete">Delete saved copy</button></div>
       <small>Applied changes update the current robot automatically. Clearing site data removes saved robots.</small></div>
-    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=ik-middle-20261107">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=ik-middle-20261107" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
+    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=polish-20261107">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=polish-20261107" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
     {% if user %}<div class="form-section"><button type="button" id="saverobot">Save to server</button><label><input type="checkbox" id="visible"> Public</label><button type="button" id="armode">AR mode</button><span id="qrcode"></span></div>{% endif %}
   </section>
   <section id="panel-joints" class="workspace-panel" role="tabpanel" aria-labelledby="tab-joints" hidden>
@@ -117,7 +117,7 @@ window.robot_id=5629499534213120;
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=ik-middle-20261107"></script>
+<script src="./scripts/runtime.bundle.js?v=polish-20261107"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -128,12 +128,12 @@ window.robot_id=5629499534213120;
 <script src="./scripts/underscore.js"></script>
 	<script src="./scripts/backbone.js"></script>
 	<script src="./lib/dat.gui.min.js"></script>
-	<script src="./scripts/modelrobot.js?v=ik-middle-20261107"></script>
-<script src="./scripts/parserobot.js?v=ik-middle-20261107"></script>
+	<script src="./scripts/modelrobot.js?v=polish-20261107"></script>
+<script src="./scripts/parserobot.js?v=polish-20261107"></script>
 <script src="./lib/CSVToArray.js"></script>
 
 <!--<script src="./scripts/unit4-robot_arm_demo.js"></script>-->
-<script src="./scripts/scene.js?v=ik-middle-20261107"></script>
+<script src="./scripts/scene.js?v=polish-20261107"></script>
 <script src="./scripts/animate.js"></script>
 </body>
 </html>

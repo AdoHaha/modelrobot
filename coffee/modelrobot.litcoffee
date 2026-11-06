@@ -275,6 +275,7 @@ Controller/view for joints. It also manages the views. To init it has to have an
                         @jointsdict={}
 
                         @anglesfolder=@gui.addFolder("Joint values");
+                        App.i18n.setText(@anglesfolder.domElement.querySelector('.title'),"Joint values")
                         @add2gui = @add2gui.bind(@)
                         @joints.each((joint) => @add2gui(joint))
 
@@ -512,7 +513,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         if App.workspace.animationStatus()
                             App.animform.prepareArraysfromCSV($('#robotcsv').val())
                     else
-                        window.alert("there was something wrong with your URDF");
+                        window.alert(App.i18n.t("there was something wrong with your URDF"));
                 resetNload: ->
                         @myCodeMirror.save() #this pushes the codemirror code to textarea (robottext)
                         urdffromform=$(@el).find("#robottext").val()
@@ -543,10 +544,10 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         #imgTarget = window.open('', 'For documenting your work');
                         #imgTarget.document.write('<img src="'+img1+'"/>');
                         $( "#screenshotplace" ).html( '<img src="'+img1+'"/>' );
-                        $("#screenshottext").text("Click image to close");
+                        App.i18n.setText(document.getElementById('screenshottext'),"Click image to close")
                 closeScreenshot: =>
                         $( "#screenshotplace" ).html( '' );
-                        $("#screenshottext").text("");
+                        App.i18n.setText(document.getElementById('screenshottext'),"")
 
 
 Simple camera views, for fast setting
@@ -761,7 +762,7 @@ AnimationForm class will control robot animation, from the form submission, in d
                         @
                 prettify: ()=>
                         @textform.scrollTop(@lh*(@curframe+1))
-                        $("#jointnames").text("Frame "+(@curframe+1)+" / "+@poses.length) if @poses.length
+                        App.i18n.setText(document.getElementById('jointnames'),"Frame {frame} / {count}",{frame:@curframe+1,count:@poses.length}) if @poses.length
                         @
 
 

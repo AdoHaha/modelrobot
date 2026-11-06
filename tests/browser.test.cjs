@@ -498,3 +498,69 @@ test('moving a Pi elbow preserves forearm and hand configuration without spinnin
   await page.locator('#pose-cancel').click();assert.ok(await page.evaluate(()=>robotjointcollection.every((j,i)=>j.theta===middleOriginal.angles[i])));
   assert.deepEqual(errors,[]);await context.close();
 });
+
+test('English/Polish switching translates UI and help while preserving drafts, CSV, pose, camera and saved names',async()=>{
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await loadIK(page);
+  await page.locator('#tab-files').click();await page.locator('#local-name').fill('Front');await page.locator('#local-save').click();await settled(page);
+  await page.locator('#tab-animation').click();await page.locator('#robotcsv').fill('time,shoulder,elbow\n0,0.2,-0.3\n1,0.4,-0.2\n');await settled(page);
+  await page.locator('#tab-joints').click();await page.locator('#joints-detach').click();
+  await page.evaluate(()=>{App.robotjointmanipall.changejointval('shoulder',.3);App.robotjointmanipall.changejointval('elbow',-.4);App.forumula.myCodeMirror.setValue(App.forumula.myCodeMirror.getValue()+'\n<!-- Front Play Robot preview -->');});
+  const snapshot=()=>page.evaluate(()=>({urdf:App.forumula.myCodeMirror.getValue(),csv:document.getElementById('robotcsv').value,pose:robotjointcollection.map(j=>j.theta),camera:App.camera.position.toArray(),name:document.getElementById('local-name').value}));
+  const before=await snapshot();await page.locator('#ui-language').selectOption('pl');
+  assert.equal(await page.locator('html').getAttribute('lang'),'pl');assert.equal(await page.locator('#tab-files').innerText(),'Pliki');
+  assert.equal(await page.locator('#draft-status').innerText(),'Niezastosowane zmiany');assert.match(await page.locator('#animation-status').innerText(),/Gotowe do odtworzenia/);
+  assert.match(await page.locator('#local-status').innerText(),/Zapisano „Front”/);
+  assert.equal(await page.locator('#floating-joints-title').innerText(),'Położenia przegubów');assert.equal(await page.locator('#joint-controls .title').innerText(),'Wartości przegubów');
+  assert.equal(await page.getByRole('textbox',{name:'Wartość: shoulder',exact:true}).count(),1);
+  assert.ok(await page.locator('#floating-joints').isVisible());
+  const after=await snapshot();assert.deepEqual({...after,camera:before.camera},before);after.camera.forEach((n,i)=>assert.ok(Math.abs(n-before.camera[i])<1e-8));
+  await page.locator('#help-button').click();assert.equal(await page.locator('#help-title').innerText(),'Jak korzystać z MyModelRobot');
+  assert.match(await page.locator('#help-dialog').innerText(),/kinematyka odwrotna/);assert.match(await page.locator('#help-dialog').innerText(),/przeguby obrotowe/);
+  await page.getByRole('button',{name:'Zamknij pomoc',exact:true}).click();
+  await page.locator('#ui-language').selectOption('en');assert.equal(await page.locator('#draft-status').innerText(),'Unapplied changes');
+  assert.equal(await page.locator('#joint-controls .title').innerText(),'Joint values');assert.equal(await page.locator('#tab-files').innerText(),'Files');
+  const restored=await snapshot();assert.deepEqual({...restored,camera:before.camera},before);
+  assert.deepEqual(errors,[]);await context.close();
+});
+
+test('Polish dynamic messages cover IK, collisions, validation and saved preference after reload',async()=>{
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await loadIK(page);await page.locator('#ui-language').selectOption('pl');
+  await page.locator('#collision-enabled').check();await page.waitForFunction(()=>App.collisions.pairs.length>0);
+  assert.match(await page.locator('#collision-status').innerText(),/Możliwe kolizje/);assert.match(await page.locator('#collision-status').innerText(),/base.*tip/);
+  await page.locator('#pose-toggle').click();const start=await projectIK(page,[1.5,.1,.09]);await page.mouse.click(start.x,start.y);await page.waitForFunction(()=>App.poseTool.active);
+  assert.match(await page.locator('#pose-status').innerText(),/Cel osiągnięty/);assert.match(await page.locator('#pose-status').innerText(),/tip/);
+  const target=await projectIK(page,[1.25,.6,.09]);await page.mouse.move(target.x,target.y,{steps:5});await page.waitForFunction(()=>robotjointcollection.findWhere({name:'shoulder'}).theta>.01);
+  await page.locator('#ui-language').selectOption('en');assert.ok(await page.evaluate(()=>Boolean(App.poseTool.active)));assert.match(await page.locator('#pose-status').innerText(),/from target/);
+  await page.locator('#ui-language').selectOption('pl');await page.locator('#pose-cancel').click();assert.match(await page.locator('#pose-status').innerText(),/Kliknij segment/);
+  await page.locator('#tab-animation').click();await page.locator('#robotcsv').fill('time,missing_joint\n0,1\n');
+  assert.match(await page.locator('#animation-status').innerText(),/Nieznane lub nieruchome przeguby: missing_joint/);
+  await page.locator('#tab-urdf').click();await page.evaluate(()=>App.forumula.myCodeMirror.setValue('<robot>'));await page.locator('#loadbutton').click();
+  assert.match(await page.locator('#local-status').innerText(),/Wprowadź poprawny URDF/);
+  await page.evaluate(()=>App.forumula.myCodeMirror.setValue(App.localRobots.currentXml));
+  await page.locator('#local-files').setInputFiles(upload('missing.urdf',Buffer.from('<robot name="Front"><link name="base"><visual><geometry><box size="1 1 1"/></geometry></visual><collision><geometry><mesh filename="Front.stl"/></geometry></collision></link></robot>')));
+  await page.waitForFunction(()=>App.localRobots.currentXml.includes('Front.stl'));await settled(page);
+  assert.match(await page.locator('#local-status').innerText(),/Brak lub niejednoznaczny plik STL: Front.stl/);assert.match(await page.locator('#collision-status').innerText(),/Sprawdzenie niepełne/);
+  await page.reload();await page.waitForFunction(()=>window.robotlinkcollection?.length);await settled(page);
+  assert.equal(await page.locator('#ui-language').inputValue(),'pl');assert.equal(await page.locator('html').getAttribute('lang'),'pl');assert.equal(await page.locator('#pose-toggle').innerText(),'Ustaw pozycję');
+  assert.match(await page.locator('#local-status').innerText(),/Zapisano/);assert.deepEqual(errors,[]);await context.close();
+});
+
+test('Polish controls fit phone and landscape viewports and language storage can be unavailable',async()=>{
+  const context=await browser.newContext({viewport:{width:320,height:568},isMobile:true,hasTouch:true});
+  await context.addInitScript(()=>{
+    const get=Storage.prototype.getItem,set=Storage.prototype.setItem;
+    Storage.prototype.getItem=function(key){if(key==='mymodelrobot-language')throw new Error('blocked');return get.call(this,key);};
+    Storage.prototype.setItem=function(key,value){if(key==='mymodelrobot-language')throw new Error('blocked');return set.call(this,key,value);};
+  });
+  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);
+  await page.locator('#ui-language').selectOption('pl');await page.locator('#tab-joints').tap();
+  for(const [width,height]of[[320,568],[390,844],[667,375]]){
+    await page.setViewportSize({width,height});
+    assert.ok(await page.locator('#ui-language').isVisible());assert.ok(await page.locator('#help-button').isVisible());assert.ok(await page.locator('#open-files').isVisible());
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    const header=await page.locator('#ui-language').boundingBox();assert.ok(header.x>=0&&header.x+header.width<=width);
+  }
+  assert.deepEqual(errors,[]);await context.close();
+});

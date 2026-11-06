@@ -175,6 +175,6 @@ export class PoseTool {
     this.status.hidden = !this.enabled;
     this.actions.hidden = !this.active;
     const text = message || 'Click a segment to pose it. Drag empty space to orbit. On touch: drag a segment, then release.';
-    if (this.status.textContent !== text) this.status.textContent = text;
+    this.app.i18n.setText(this.status, text);
   }
 }

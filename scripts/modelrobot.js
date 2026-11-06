@@ -377,6 +377,7 @@
         this.joints = this.options.joints;
         this.jointsdict = {};
         this.anglesfolder = this.gui.addFolder("Joint values");
+        App.i18n.setText(this.anglesfolder.domElement.querySelector('.title'), "Joint values");
         this.add2gui = this.add2gui.bind(this);
         return this.joints.each((joint) => {
           return this.add2gui(joint);
@@ -688,7 +689,7 @@
             return App.animform.prepareArraysfromCSV($('#robotcsv').val());
           }
         } else {
-          return window.alert("there was something wrong with your URDF");
+          return window.alert(App.i18n.t("there was something wrong with your URDF"));
         }
       }
 
@@ -728,13 +729,13 @@
         App.render();
         img1 = window.renderer.domElement.toDataURL("image/png");
         $("#screenshotplace").html('<img src="' + img1 + '"/>');
-        return $("#screenshottext").text("Click image to close");
+        return App.i18n.setText(document.getElementById('screenshottext'), "Click image to close");
       }
 
       closeScreenshot() {
         boundMethodCheck(this, ref3);
         $("#screenshotplace").html('');
-        return $("#screenshottext").text("");
+        return App.i18n.setText(document.getElementById('screenshottext'), "");
       }
 
       // Simple camera views, for fast setting
@@ -1046,7 +1047,10 @@
         boundMethodCheck(this, ref4);
         this.textform.scrollTop(this.lh * (this.curframe + 1));
         if (this.poses.length) {
-          $("#jointnames").text("Frame " + (this.curframe + 1) + " / " + this.poses.length);
+          App.i18n.setText(document.getElementById('jointnames'), "Frame {frame} / {count}", {
+            frame: this.curframe + 1,
+            count: this.poses.length
+          });
         }
         return this;
       }
