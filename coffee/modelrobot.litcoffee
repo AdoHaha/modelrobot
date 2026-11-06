@@ -766,7 +766,7 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                         @poses=[]
                         @times=[]
                         #csvstring=$.trim()
-                        allfromcsv=CSVToArray(csvstring) #I use some CSVToArray function found on web
+                        allfromcsv=CSVToArray($.trim(csvstring)) #I use some CSVToArray function found on web
 
                         #console.log(allfromcsv)
                         if allfromcsv.length<2

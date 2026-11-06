@@ -205,3 +205,48 @@ test('editing session, workspace tabs, keyboard Apply, save copy and camera gest
   }
   assert.deepEqual(errors,[]);await context.close();
 });
+
+test('detached joints stay live alongside editing and animation, and can be moved, resized and docked', async () => {
+  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  const page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);await settled(page);
+  await page.locator('#tab-joints').click();await page.locator('#joints-detach').click();
+  const floating=page.locator('#floating-joints');
+  assert.ok(await floating.isVisible());assert.ok(await page.locator('#panel-urdf').isVisible());
+  assert.equal(await page.locator('#joint-controls').count(),1);
+  const jointInput=()=>page.locator('#floating-joints .cr.number').filter({hasText:'torso_joint'}).locator('input[type=text]');
+  await jointInput().fill('0.25');await jointInput().press('Tab');
+  await page.waitForFunction(()=>Math.abs(robotjointcollection.findWhere({name:'torso_joint'}).theta-.25)<1e-8);
+  await page.locator('#tab-animation').click();
+  assert.ok(await floating.isVisible());assert.ok(await page.locator('#robotcsv').isVisible());
+  await page.locator('#csv-template').click();assert.match(await page.locator('#robotcsv').inputValue(),/0.25/);
+  await page.locator('#robotcsv').fill('time,torso_joint\n0,0\n0.15,0.4\n');await page.locator('#playbutton').click();
+  await page.waitForFunction(()=>App.animform.state==='finished');
+  assert.ok(Math.abs(Number(await jointInput().inputValue())-.4)<1e-8);
+  await page.locator('#tab-urdf').click();
+  await page.evaluate(()=>App.forumula.myCodeMirror.setValue(App.forumula.myCodeMirror.getValue().replace('0.32 0.26 0.085','0.35 0.26 0.085')));
+  await page.locator('#loadbutton').click();await settled(page);
+  assert.ok(await floating.isVisible());assert.equal(await page.locator('#joint-controls').count(),1);
+  assert.ok(Math.abs(Number(await jointInput().inputValue())-.4)<1e-8);
+  const before=await floating.boundingBox();const camera=await page.evaluate(()=>App.camera.position.toArray());
+  const handle=page.locator('#joint-panel-handle');const header=await handle.boundingBox();
+  await page.mouse.move(header.x+80,header.y+15);await page.mouse.down();await page.mouse.move(header.x-60,header.y+95,{steps:8});await page.mouse.up();
+  const moved=await floating.boundingBox();assert.ok(moved.x<before.x-100);assert.ok(moved.y>before.y+50);
+  assert.deepEqual(await page.evaluate(()=>App.camera.position.toArray()),camera);
+  await handle.focus();await page.keyboard.press('ArrowRight');
+  assert.ok((await floating.boundingBox()).x>moved.x+10);
+  const box=await floating.boundingBox();
+  await page.mouse.move(box.x+box.width-5,box.y+box.height-5);await page.mouse.down();await page.mouse.move(box.x+box.width+45,box.y+box.height+45,{steps:8});await page.mouse.up();
+  const resized=await floating.boundingBox();assert.ok(resized.width>box.width+20);assert.ok(resized.height>box.height+20);
+  for(const [width,height] of [[390,844],[667,375],[320,568]]){
+    await page.setViewportSize({width,height});
+    await page.waitForFunction(()=>{const box=document.getElementById('floating-joints').getBoundingClientRect();return box.left>=7 && box.right<=innerWidth-7 && box.top>=59 && box.bottom<=innerHeight-7;});
+    assert.ok(await page.locator('#joints-dock').isVisible());
+  }
+  await page.locator('#joints-dock').click();
+  assert.ok(!(await floating.isVisible()));assert.ok(await page.locator('#panel-joints #joint-controls').isVisible());
+  assert.equal(await page.locator('#joint-controls').count(),1);
+  assert.ok(Math.abs(await page.evaluate(()=>robotjointcollection.findWhere({name:'torso_joint'}).theta)-.4)<1e-8);
+  assert.deepEqual(errors,[]);await context.close();
+});

@@ -26,3 +26,9 @@ Astra's second review verified session preservation, CSV playback, error feedbac
 Automated Chromium checks cover URDF/STL import, saved records and copies, CSV restoration, Ctrl+Enter, cursor/scroll/pose/camera preservation, invalid XML, orbit, right-drag pan, wheel zoom, Fit, standard views, tab visibility, and resizing from 320 to 1440 px wide.
 
 The external NASA/JPL T12 test verifies 37 STL visuals, 36 joints, zero-pose matrices, browser restoration and CSV-driven motion. Real-device touch and cross-browser testing have not been performed.
+
+## Follow-up: detachable joints
+
+The Joints tab now offers **Detach panel**. Its live controls can remain visible alongside URDF or CSV in a draggable, resizable floating panel; **Dock** returns them to the tab. It uses the same controls rather than a second independent set, so playback and applied URDF edits keep the displayed values consistent. The header also supports arrow-key movement, and the panel remains within the viewport after resizing.
+
+Browser checks cover direct numeric edits, CSV playback updating the detached controls, applying URDF while detached, dragging without moving the camera, native corner resizing, narrow/landscape viewport bounds, and docking without losing the pose. Playback parsing also ignores trailing whitespace so a trailing CSV newline cannot create a phantom final frame.

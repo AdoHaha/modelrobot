@@ -52,14 +52,85 @@ export class Workspace {
       App.animform.loadCSVfromForm();
     };
     document.getElementById('robotcsv').addEventListener('input', () => { App.animform.stop(); this.animationStatus(); });
+    this.initJointPanel();
     this.resizeDivider();
     this.animationStatus();
   }
   select(name) {
+    if (name === 'joints' && this.active !== 'joints') this.jointsReturnPanel = this.active;
     this.active = name;
     document.querySelectorAll('[role=tab]').forEach(tab => { const selected = tab.dataset.panel === name; tab.setAttribute('aria-selected', selected); tab.tabIndex = selected ? 0 : -1; });
     document.querySelectorAll('.workspace-panel').forEach(panel => panel.hidden = panel.id !== 'panel-' + name);
     if (name === 'urdf') this.form.myCodeMirror.refresh();
+  }
+  initJointPanel() {
+    const floating = document.getElementById('floating-joints');
+    const handle = document.getElementById('joint-panel-handle');
+    const host = document.getElementById('joint-controls');
+    const detach = document.getElementById('joints-detach');
+    const note = document.getElementById('joint-detached-note');
+    const constrain = () => {
+      if (floating.hidden) return;
+      const box = floating.getBoundingClientRect();
+      const width = Math.min(box.width, innerWidth - 16);
+      const height = Math.min(box.height, innerHeight - 68);
+      const left = Math.max(8, Math.min(box.left, innerWidth - width - 8));
+      const top = Math.max(60, Math.min(box.top, innerHeight - height - 8));
+      if (Math.abs(box.width - width) > .5) floating.style.width = width + 'px';
+      if (Math.abs(box.height - height) > .5) floating.style.height = height + 'px';
+      floating.style.left = left + 'px'; floating.style.top = top + 'px';
+    };
+    const dock = () => {
+      document.getElementById('panel-joints').append(host);
+      floating.hidden = true; note.hidden = true; detach.hidden = false;
+      document.getElementById('tab-joints').removeAttribute('title');
+      this.select('joints'); detach.focus();
+    };
+    detach.onclick = () => {
+      const first = !floating.style.left;
+      floating.hidden = false;
+      document.getElementById('floating-joints-content').append(host);
+      if (first) {
+        const width = Math.min(400, innerWidth - 16);
+        floating.style.width = width + 'px';
+        floating.style.left = Math.max(8, innerWidth - width - 16) + 'px';
+        floating.style.top = '80px';
+      }
+      note.hidden = false; detach.hidden = true;
+      document.getElementById('tab-joints').title = 'Joint controls are detached';
+      this.select(this.jointsReturnPanel || 'urdf'); constrain(); handle.focus({preventScroll:true});
+    };
+    document.getElementById('joints-dock').onclick = dock;
+    document.getElementById('joints-dock-here').onclick = dock;
+    document.getElementById('joints-show').onclick = () => handle.focus({preventScroll:true});
+    let drag;
+    handle.onpointerdown = event => {
+      if (event.button !== 0 || event.target.closest('button')) return;
+      const box = floating.getBoundingClientRect();
+      drag = { x: event.clientX, y: event.clientY, left: box.left, top: box.top };
+      handle.setPointerCapture(event.pointerId); handle.classList.add('dragging'); event.preventDefault();
+    };
+    handle.onpointermove = event => {
+      if (!drag || !handle.hasPointerCapture(event.pointerId)) return;
+      floating.style.left = drag.left + event.clientX - drag.x + 'px';
+      floating.style.top = drag.top + event.clientY - drag.y + 'px'; constrain();
+    };
+    handle.onpointerup = event => {
+      if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+      drag = null; handle.classList.remove('dragging');
+    };
+    handle.onpointercancel = () => { drag = null; handle.classList.remove('dragging'); };
+    handle.onkeydown = event => {
+      if (event.target.closest('button')) return;
+      const directions = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+      if (!directions[event.key]) return;
+      event.preventDefault();
+      const box = floating.getBoundingClientRect(), delta = event.shiftKey ? 48 : 16;
+      floating.style.left = box.left + directions[event.key][0] * delta + 'px';
+      floating.style.top = box.top + directions[event.key][1] * delta + 'px'; constrain();
+    };
+    new ResizeObserver(constrain).observe(floating);
+    window.addEventListener('resize', constrain);
   }
   draftStatus() {
     this.dirty = this.form.myCodeMirror.getValue() !== (App.localRobots.currentXml || '');

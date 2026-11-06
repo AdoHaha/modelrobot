@@ -22,7 +22,7 @@
   <!-- Custom styles for this template -->
   <link rel="stylesheet" href="lib/codemirror.css">
 
-  <link href="./css/additional.css?v=workspace-help-20261106" rel="stylesheet">
+  <link href="./css/additional.css?v=detachable-joints-20261106" rel="stylesheet">
 </head>
 
 <body>
@@ -54,7 +54,7 @@
 
   </section>
   <section id="panel-joints" class="workspace-panel" role="tabpanel" aria-labelledby="tab-joints" hidden>
-    <div class="panel-heading"><div><h1>Joint positions</h1><p>Drag a slider or type a value. Revolute: radians; prismatic: metres.</p></div></div><div id="joint-controls"></div>
+    <div class="panel-heading"><div><h1>Joint positions</h1><p>Drag a slider or type a value. Revolute: radians; prismatic: metres.</p></div><button type="button" id="joints-detach" aria-controls="floating-joints">Detach panel</button></div><div id="joint-detached-note" class="form-section" hidden><p>Joint controls are in the floating panel, so you can use them alongside URDF or animation.</p><div class="button-row"><button type="button" id="joints-show">Show panel</button><button type="button" id="joints-dock-here">Dock here</button></div></div><div id="joint-controls"></div>
   </section>
   <section id="panel-animation" class="workspace-panel" role="tabpanel" aria-labelledby="tab-animation" hidden>
     <div id="animdiv"><div class="panel-heading"><div><h1>CSV animation</h1><p>Use joint names as columns, with an optional time column in seconds.</p></div></div>
@@ -76,13 +76,18 @@
 </main>
 
 
+<section id="floating-joints" aria-labelledby="floating-joints-title" hidden>
+  <div id="joint-panel-handle" tabindex="0" title="Drag to move. Use arrow keys when focused." aria-label="Move joint panel with arrow keys"><h2 id="floating-joints-title">Joint positions</h2><button type="button" id="joints-dock">Dock</button></div>
+  <div id="floating-joints-content"></div><p class="joint-panel-help">Drag header to move · Resize from the corner</p>
+</section>
+
 <dialog id="help-dialog" aria-labelledby="help-title">
   <form method="dialog" class="help-header"><h1 id="help-title">Using MyModelRobot</h1><button type="submit" aria-label="Close help" autofocus>Close</button></form>
   <p>Build and preview robots from URDF definitions and local STL meshes. Applied robots and their CSV animations are saved in this browser on this device.</p>
   <h2>Your workspace</h2>
   <dl><dt>URDF</dt><dd>Edit the source, then choose <b>Apply changes</b> or press <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Enter</kbd>. Applying keeps your camera, joint positions and CSV. Unapplied edits are marked above the editor.</dd>
   <dt>Files</dt><dd>Open a URDF with its STL files, choose a folder, or add missing meshes later. Open saved robots, rename them, or use <b>Save a copy</b> for a separate version. Warning badges indicate missing meshes.</dd>
-  <dt>Joints</dt><dd>Drag sliders or enter values to pose the robot. Angles are in radians and sliding distances are in metres.</dd>
+  <dt>Joints</dt><dd>Drag sliders or enter values to pose the robot. Angles are in radians and sliding distances are in metres. Choose <b>Detach panel</b> to keep the controls visible while editing URDF or CSV. Drag its header to move, resize from the corner, or choose <b>Dock</b> to return it to the tab.</dd>
   <dt>Animation</dt><dd>Paste CSV with joint names as column headers, optionally starting with <code>time</code> in seconds. Insert the current pose for a template. Play, step between poses, add poses, or trace a link. CSV edits save automatically; invalid CSV disables playback.</dd></dl>
   <h2>Camera and layout</h2>
   <ul><li><b>Mouse:</b> drag to orbit, Shift-drag or right-drag to pan, scroll to zoom.</li>
@@ -95,7 +100,7 @@
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=workspace-help-20261106"></script>
+<script src="./scripts/runtime.bundle.js?v=detachable-joints-20261106"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -105,10 +110,10 @@
 <script src="./scripts/underscore.js"></script>
 <script src="./scripts/backbone.js"></script>
 <script src="./lib/dat.gui.min.js"></script>
-<script src="./scripts/modelrobot.js?v=workspace-help-20261106"></script>
-<script src="./scripts/parserobot.js?v=workspace-help-20261106"></script>
+<script src="./scripts/modelrobot.js?v=detachable-joints-20261106"></script>
+<script src="./scripts/parserobot.js?v=detachable-joints-20261106"></script>
 <script src="./lib/CSVToArray.js"></script>
-<script src="./scripts/scene.js?v=workspace-help-20261106"></script>
+<script src="./scripts/scene.js?v=detachable-joints-20261106"></script>
 <script src="./scripts/animate.js"></script>
 
 </body>
