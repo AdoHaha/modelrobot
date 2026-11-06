@@ -47,6 +47,9 @@ const assert = require('node:assert/strict');
       return max;
     });
     assert.ok(maxError<1e-5,'URDF zero-pose matrices agree, maximum error '+maxError);
+    await page.locator('#collision-enabled').check();
+    const collision=await page.evaluate(()=>({shapes:App.collisions.shapes.length,candidates:App.collisions.candidates.length,issues:App.collisions.issues,pairs:App.collisions.pairs.length}));
+    assert.equal(collision.shapes,37);assert.ok(collision.candidates>0);assert.deepEqual(collision.issues,[]);
     await page.screenshot({path:'/tmp/modelrobot-T12.png'});
     const jointName=await page.evaluate(()=>robotjointcollection.find(j=>j.type==='revolute').name);
     const csv=`time,${jointName}\n0,0\n1,0.3\n`;
@@ -64,6 +67,6 @@ const assert = require('node:assert/strict');
     await page.evaluate(()=>App.animform.settostaticframe(1));
     assert.equal(await page.evaluate(name=>robotjointcollection.findWhere({name}).theta,jointName),0.3);
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({...summary,maxTransformError:maxError,csvRestored:true,jointMotion:true,screenshot:'/tmp/modelrobot-T12.png'},null,2));
+    console.log(JSON.stringify({...summary,collision,maxTransformError:maxError,csvRestored:true,jointMotion:true,screenshot:'/tmp/modelrobot-T12.png'},null,2));
   } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

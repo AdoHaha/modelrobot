@@ -22,3 +22,6 @@ node_modules/
 tests/
 frontend/
 coffee/
+
+# Local reference material
+references/

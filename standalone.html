@@ -22,7 +22,7 @@
   <!-- Custom styles for this template -->
   <link rel="stylesheet" href="lib/codemirror.css">
 
-  <link href="./css/additional.css?v=touch-joints-20261106" rel="stylesheet">
+  <link href="./css/additional.css?v=collisions-20261106" rel="stylesheet">
 </head>
 
 <body>
@@ -50,7 +50,7 @@
     <div class="form-section"><label for="local-name">Robot name</label><input type="text" id="local-name" placeholder="Name from URDF"><div class="button-row"><button type="button" id="local-save">Save name</button><button type="button" id="local-copy">Save a copy</button></div>
       <label for="local-library">Saved robots</label><select id="local-library"></select><div class="button-row"><button type="button" id="local-open" class="primary">Open robot</button><button type="button" id="local-delete">Delete saved copy</button></div>
       <small>Applied changes update the current robot automatically. Clearing site data removes saved robots.</small></div>
-    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml">Pi robot</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
+    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
 
   </section>
   <section id="panel-joints" class="workspace-panel" role="tabpanel" aria-labelledby="tab-joints" hidden>
@@ -69,7 +69,7 @@
 </aside>
 <div id="workspace-divider" role="separator" aria-label="Resize editor and preview" aria-orientation="vertical" aria-valuemin="25" aria-valuemax="75" aria-valuenow="44" tabindex="0"></div>
 <main id="container" aria-label="Robot preview">
-  <div id="viewer-toolbar" aria-label="Camera controls"><strong id="preview-name">Robot preview</strong><button type="button" data-camera="fit" title="Fit robot (F when preview is focused)">Fit robot</button><button type="button" data-camera="home">Home</button><button type="button" data-camera="in" aria-label="Zoom in">+</button><button type="button" data-camera="out" aria-label="Zoom out">−</button><button type="button" id="screenshot">Screenshot</button></div>
+  <div id="viewer-toolbar" aria-label="Camera controls"><strong id="preview-name">Robot preview</strong><button type="button" data-camera="fit" title="Fit robot (F when preview is focused)">Fit robot</button><button type="button" data-camera="home">Home</button><button type="button" data-camera="in" aria-label="Zoom in">+</button><button type="button" data-camera="out" aria-label="Zoom out">−</button><button type="button" id="screenshot">Screenshot</button><label class="collision-toggle" title="Approximate self-collision check using only URDF collision tags"><input type="checkbox" id="collision-enabled"> Collisions</label><p id="collision-status" role="status" aria-live="polite" hidden></p></div>
   <nav id="view-cube" aria-label="Standard camera views"><label for="standard-view">View</label><select id="standard-view"><option value="">Custom</option><option value="iso">Isometric</option><option value="front">Front</option><option value="back">Back</option><option value="left">Left</option><option value="right">Right</option><option value="top">Top</option><option value="bottom">Bottom</option></select></nav>
   <p id="camera-help"><span class="mouse-help">Drag to orbit · Shift / right-drag to pan · Scroll to zoom</span><span class="touch-help">One finger: orbit · Two fingers: pan / zoom</span></p>
   <span id="screenshottext"></span><div id="screenshotplace"></div>
@@ -89,6 +89,9 @@
   <dt>Files</dt><dd>Open a URDF with its STL files, choose a folder, or add missing meshes later. Open saved robots, rename them, or use <b>Save a copy</b> for a separate version. Warning badges indicate missing meshes.</dd>
   <dt>Joints</dt><dd>Drag sliders or enter values to pose the robot. Angles are in radians and sliding distances are in metres. Choose <b>Detach panel</b> to keep the controls visible while editing URDF or CSV. Drag its header to move, resize from the corner, or choose <b>Dock</b> to return it to the tab. On phones the panel stays compact; scroll inside it for more joints.</dd>
   <dt>Animation</dt><dd>Paste CSV with joint names as column headers, optionally starting with <code>time</code> in seconds. Insert the current pose for a template. Play, step between poses, add poses, or trace a link. CSV edits save automatically; invalid CSV disables playback.</dd></dl>
+  <h2>Collision warnings</h2>
+  <p>Enable <b>Collisions</b> above the preview to check shapes explicitly tagged with <code>&lt;collision&gt;</code>. Red links indicate possible overlap, and the status names the pairs. The fast check uses rotated bounding boxes, so curved and irregular shapes can give conservative warnings. Connected neighbors and fixed assemblies are ignored. Motion is never blocked.</p>
+  <p>Choose <b>Files → Pi collision demo</b> to fold a hand into the torso. <b>Pi robot (safe pose)</b> restores the neutral pose. Missing collision meshes produce an incomplete-check warning; visual shapes are never used as a fallback.</p>
   <h2>Camera and layout</h2>
   <ul><li><b>Mouse:</b> drag to orbit, Shift-drag or right-drag to pan, scroll to zoom.</li>
   <li><b>Touch:</b> one finger orbits; two fingers pan and zoom.</li>
@@ -100,7 +103,7 @@
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=touch-joints-20261106"></script>
+<script src="./scripts/runtime.bundle.js?v=collisions-20261106"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -110,10 +113,10 @@
 <script src="./scripts/underscore.js"></script>
 <script src="./scripts/backbone.js"></script>
 <script src="./lib/dat.gui.min.js"></script>
-<script src="./scripts/modelrobot.js?v=touch-joints-20261106"></script>
-<script src="./scripts/parserobot.js?v=touch-joints-20261106"></script>
+<script src="./scripts/modelrobot.js?v=collisions-20261106"></script>
+<script src="./scripts/parserobot.js?v=collisions-20261106"></script>
 <script src="./lib/CSVToArray.js"></script>
-<script src="./scripts/scene.js?v=touch-joints-20261106"></script>
+<script src="./scripts/scene.js?v=collisions-20261106"></script>
 <script src="./scripts/animate.js"></script>
 
 </body>

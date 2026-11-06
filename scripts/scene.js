@@ -253,12 +253,14 @@
       App.axes = effectController.newAxes;
       App.fillScene();
     }
-    window.renderer.render(scene, App.camera);
     if (App.animform != null) {
       // App.animform is an animation controller with different states.
       App.animform.update();
     }
+    scene.updateMatrixWorld(true);
+    App.collisions.update(performance.now());
     App.trajectoryview.update();
+    window.renderer.render(scene, App.camera);
     return true;
   };
 

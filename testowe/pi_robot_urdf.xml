@@ -60,6 +60,12 @@
 				<color rgba="0.8 0.8 0 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0.12" rpy="0 0 0" />
+			<geometry>
+				<cylinder radius="0.05" length="0.24" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="head_pan_link">
@@ -314,6 +320,12 @@
 				<color rgba="0.7 0.7 0.7 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<box size="0.03 0.01 0.06" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="right_hand_link">
@@ -326,6 +338,12 @@
 				<color rgba="0.9 0.9 0.9 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<box size="0.03 0.01 0.06" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<!-- * * * Joint Definitions * * * -->
@@ -458,7 +476,7 @@
     	<child link="left_elbow_link" />
     	<origin xyz="-0.005 0 -0.05" rpy="0 0 0" />
        	<limit lower="-3.146" upper="3.146" effort="10" velocity="3" />
-        <axis xyz="0 0 1" />
+        <axis xyz="0 1 0" />
 	</joint>
 	
  	<joint name="right_elbow_joint" type="revolute">
@@ -466,7 +484,7 @@
     	<child link="right_elbow_link" />
     	<origin xyz="-0.005 0 -0.05" rpy="0 0 0" />
        	<limit lower="-3.146" upper="3.146" effort="10" velocity="3" />
-        <axis xyz="0 0 1" />
+        <axis xyz="0 1 0" />
 	</joint>
 	
  	<joint name="left_lower_arm_joint" type="fixed">

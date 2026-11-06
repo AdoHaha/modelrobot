@@ -103,6 +103,7 @@ When movement is impossible, return false
                                         when "fixed" then @movementMatrix.identity()
                                         when "planar" then @movementMatrix.identity() #TODO
 
+                                App.collisions?.markDirty() if @theta isnt t1
                                 @theta=t1 #set current state of joint
                         else # if not between upper and lower, do not move, return that movejoint failed
                                 @movementMatrix.identity()
@@ -477,6 +478,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     editorScroll=@myCodeMirror.getScrollInfo()
                     App.animform.stop()
                     App.localRobots.messages=[]
+                    App.collisions.clear()
                     if window.robotlinkcollection?
                         window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
 
@@ -488,6 +490,9 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         else
                             window.robotjointcollection.each (joint) -> joint.movejoint(poses[joint.name]) if poses[joint.name]?
                             App.robotjointmanipall.jointsval()
+                        collisionIssues=App.collisions.rebuild(@model.attributes.urdf,window.robotlinkcollection,window.robotjointcollection)
+                        App.localRobots.messages.push(issue) for issue in collisionIssues
+                        App.collisions.update(performance.now(),true)
                         App.localRobots.openingDocument=false
                         unless App.animationStarted
                             App.animationStarted=true

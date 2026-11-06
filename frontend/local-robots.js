@@ -23,19 +23,18 @@ export class LocalRobots {
     const basenames = [...this.assets.keys()].filter(name => name.split('/').pop() === basename);
     return basenames.length === 1 ? basenames[0] : null;
   }
-  mesh(description, material) {
-    const path = description.filename || '';
+  meshGeometry(path) {
     const key = this.resolve(path);
-    if (!/\.stl$/i.test(path)) {
-      this.messages.push('Unsupported mesh: ' + path + ' (select an STL file).');
-      return new THREE.Object3D();
-    }
-    if (!key) {
-      this.messages.push('Missing or ambiguous STL: ' + path + '. Select its file or containing folder.');
-      return new THREE.Object3D();
-    }
+    if (!/\.stl$/i.test(path)) throw new Error('Unsupported mesh: ' + path + ' (select an STL file).');
+    if (!key) throw new Error('Missing or ambiguous STL: ' + path + '. Select its file or containing folder.');
     if (!this.geometries.has(key)) this.geometries.set(key, this.parse(this.assets.get(key)));
-    const mesh = new THREE.Mesh(this.geometries.get(key), material);
+    return this.geometries.get(key);
+  }
+  mesh(description, material) {
+    let geometry;
+    try { geometry = this.meshGeometry(description.filename || ''); }
+    catch (error) { this.messages.push(error.message); return new THREE.Object3D(); }
+    const mesh = new THREE.Mesh(geometry, material);
     const scale = description.scale ? description.scale.trim().split(/\s+/).map(Number) : [1, 1, 1];
     if (scale.length !== 3 || !scale.every(Number.isFinite)) throw new Error('Invalid mesh scale: ' + description.scale);
     mesh.scale.set(...scale);

@@ -168,3 +168,9 @@ body.editor-focus { grid-template-columns: minmax(0,1fr) 8px 320px; }
   #joint-controls .dg .c input[type=text] { height: 28px; margin-top: 5px; }
 }
 button { touch-action: manipulation; }
+.collision-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; margin: 0; border: 1px solid #bccbd9; border-radius: 5px; background: #f8fbffed; color: #25435e; font-size: 12px; font-weight: 500; cursor: pointer; touch-action: manipulation; }
+.collision-toggle input { margin: 0; accent-color: #1766a7; }
+#collision-status { flex: 1 0 100%; max-height: 54px; overflow: auto; margin: 0; font-size: 11px; padding: 3px 6px; width: fit-content; background: #f8fbffed; border-radius: 4px; color: #27634b; overflow-wrap: anywhere; }
+#collision-status.has-collision { color: #af1c26; }
+#collision-status.incomplete { border-left: 3px solid #ad510c; }
+@media (max-width: 759px) { .collision-toggle { font-size: 11px; padding: 3px 5px; } #collision-status { font-size: 10px; max-height: 44px; } }

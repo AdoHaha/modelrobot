@@ -96,7 +96,7 @@
     }
 
     movejoint(t1, t2) { //TODO planar type
-      var tempMatrix, tempaxis;
+      var ref1, tempMatrix, tempaxis;
       boundMethodCheck(this, ref);
       t1 = t1 != null ? t1 : this.theta;
       tempMatrix = new THREE.Matrix4();
@@ -120,6 +120,11 @@
             break;
           case "planar":
             this.movementMatrix.identity(); //TODO
+        }
+        if (this.theta !== t1) {
+          if ((ref1 = App.collisions) != null) {
+            ref1.markDirty();
+          }
         }
         this.theta = t1; //set current state of joint
 // if not between upper and lower, do not move, return that movejoint failed
@@ -614,7 +619,7 @@
       }
 
       newRobot() {
-        var editorCursor, editorScroll, error, opening, poses;
+        var collisionIssues, editorCursor, editorScroll, error, issue, j, len, opening, poses;
         try {
           App.localRobots.validate(this.model.attributes.urdf);
         } catch (error1) {
@@ -633,6 +638,7 @@
         editorScroll = this.myCodeMirror.getScrollInfo();
         App.animform.stop();
         App.localRobots.messages = [];
+        App.collisions.clear();
         if (window.robotlinkcollection != null) {
           window.clearall(window.scene, window.robot, window.robotjointcollection, window.robotlinkcollection);
         }
@@ -648,6 +654,12 @@
             });
             App.robotjointmanipall.jointsval();
           }
+          collisionIssues = App.collisions.rebuild(this.model.attributes.urdf, window.robotlinkcollection, window.robotjointcollection);
+          for (j = 0, len = collisionIssues.length; j < len; j++) {
+            issue = collisionIssues[j];
+            App.localRobots.messages.push(issue);
+          }
+          App.collisions.update(performance.now(), true);
           App.localRobots.openingDocument = false;
           if (!App.animationStarted) {
             App.animationStarted = true;

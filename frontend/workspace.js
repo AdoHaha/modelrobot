@@ -32,8 +32,15 @@ export class Workspace {
         App.localRobots.startDocument();
         App.localRobots.showURDF(xml);
         this.select('urdf');
+        if (button.dataset.collisionDemo) {
+          const pose = {left_shoulder_forward_joint:1.35,left_shoulder_up_joint:.4,left_elbow_joint:1.55,left_wrist_joint:-.5};
+          for (const [name,value] of Object.entries(pose)) App.robotjointmanipall.changejointval(name,value);
+          document.getElementById('collision-enabled').checked = true;
+          App.collisions.setEnabled(true);
+        }
       } catch (error) { App.localRobots.status(error.message, true); }
     });
+    document.getElementById('collision-enabled').onchange = event => App.collisions.setEnabled(event.target.checked);
     document.getElementById('standard-view').onchange = event => { if (event.target.value) App.setStandardView(event.target.value); };
     document.querySelectorAll('[data-camera]').forEach(button => button.onclick = () => this.cameraAction(button.dataset.camera));
     document.getElementById('screenshot').onclick = () => form.showScreenshot();

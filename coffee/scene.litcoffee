@@ -236,13 +236,15 @@ Function to animate our scene
                         App.axes = effectController.newAxes;
 
                         App.fillScene();
-                window.renderer.render(scene,App.camera)
 
 
 App.animform is an animation controller with different states.
 
                 App.animform.update() if App.animform?
+                scene.updateMatrixWorld(true)
+                App.collisions.update(performance.now())
                 App.trajectoryview.update()
+                window.renderer.render(scene,App.camera)
                 true
 
 Starting it all
