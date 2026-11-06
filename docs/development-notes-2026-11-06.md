@@ -158,8 +158,7 @@ camera controls, resizing, detachable sliders, collision bounds/materials and IK
 IK cases include transformed axes, prismatic and rotational limits, fixed-group
 branch isolation, singular starts, a joint-limit local minimum, unreachable
 targets, STL/primitive picking, depth changes, commit/cancel, animation handoff,
-robot rebuilds and touch dragging. Deployment results are recorded below after
-the release checks complete.
+robot rebuilds and touch dragging. Deployment results are recorded below.
 
 ## Short demonstration sequence
 
@@ -184,4 +183,12 @@ the release checks complete.
   also passes (37 mesh visuals/collision shapes, 36 joints, saved CSV and motion).
   The default Pi hand was checked in front view on desktop and with emulated
   touch at 320 × 568; the torso and opposite limb stayed unchanged.
-- Preview and production release results will be added after deployment checks.
+- Implemented in commit `ab2d5f2`; the interaction choices above are implemented,
+  rather than remaining proposed work.
+- Preview version `ik-20261106` passed all 16 automated tests. It was promoted
+  to 100% of the default service's traffic at
+  [mymodelrobot.appspot.com](https://mymodelrobot.appspot.com/).
+- All three IK browser scenarios passed again on the main URL after promotion:
+  picking/placement, animation and rebuild lifecycle, and touch dragging.
+- The deployment explicitly used project `mymodelrobot` and personal account
+  `reinadesu@gmail.com`. Refresh an already-open viewer to load the new assets.
