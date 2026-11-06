@@ -1,0 +1,5 @@
+# Bundled Three.js shaders preserve upstream string whitespace.
+scripts/runtime.bundle.js -whitespace linguist-generated=true
+scripts/modelrobot.js linguist-generated=true
+scripts/parserobot.js linguist-generated=true
+scripts/scene.js linguist-generated=true

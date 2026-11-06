@@ -17,7 +17,7 @@ there are also Coordinates and dat (??)
         App.ground = false
 
 
-        App.clock = new THREE.Clock();
+        App.clock = new THREE.Timer();
 
 
 
@@ -48,17 +48,26 @@ Static scene filling
                 scene.add(ambientLight)
                 scene.add(light)
                 scene.add(dirLight);
+                if App.sceneHelpers?
+                        scene.remove(App.sceneHelpers)
+                        App.sceneHelpers.traverse (object) ->
+                            object.geometry?.dispose()
+                            object.material?.dispose()
+                App.sceneHelpers=new THREE.Group()
+                scene.add(App.sceneHelpers)
                 if App.ground
-                        Coordinates.drawGround({size:10000})
+                        App.sceneHelpers.add(new THREE.GridHelper(100,100))
 
                 if App.gridX
-                        Coordinates.drawGrid({size:10000,scale:0.01});
+                        App.sceneHelpers.add(new THREE.GridHelper(100,100))
 
                 if App.gridZ
-                        Coordinates.drawGrid({size:10000,scale:0.01, orientation:"z"});
+                        grid=new THREE.GridHelper(100,100)
+                        grid.rotation.x=Math.PI/2
+                        App.sceneHelpers.add(grid)
 
                 if App.axes
-                        Coordinates.drawAllAxes({axisLength:2,axisRadius:0.01,axisTess:50});
+                        App.sceneHelpers.add(new THREE.AxesHelper(2))
 
                 window.robotBaseMaterial = new THREE.MeshPhongMaterial( { color: 0x6E23BB, specular: 0x6E23BB, shininess: 20 } );
                 window.robotForearmMaterial = new THREE.MeshPhongMaterial( { color: 0xF4C154, specular: 0xF4C154, shininess: 100 } );
@@ -72,29 +81,16 @@ Seting initial parameters
 
         App.init = ->
 
-                documentWidth = $("body").width()-20;
-
-                offsetHeight = document.getElementById('controldiv').offsetHeight; #box on left
-                offsetWidth= document.getElementById('controldiv').offsetWidth;
-                #if((window.innerWidth-offsetWidth-5)>0)
-
-                canvasWidth = documentWidth-offsetWidth-1;
-                if canvasWidth<300
-                    canvasWidth=documentWidth;
-                $("#container").width(canvasWidth+1)
-
-                #else
-                #    canvasWidth = window.innerWidth
-
-                canvasHeight= window.innerHeight
+                container = document.getElementById('container')
+                canvasWidth = container.clientWidth
+                canvasHeight = container.clientHeight
                 canvasRatio = canvasWidth / canvasHeight
-                window.renderer = new THREE.WebGLRenderer { antialias: true}
+                window.renderer = new THREE.WebGLRenderer { antialias: true, preserveDrawingBuffer: true}
 
-                window.renderer.gammaInput = true
-                window.renderer.gammaOutput = true
+                window.renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
                 window.renderer.setSize(canvasWidth, canvasHeight);
                 #window.renderer.setClearColorHex();
-                window.renderer.setClearColor(new THREE.Color(0xAAAAAA), 1.0 );
+                window.renderer.setClearColor(new THREE.Color(0xdfe7ef), 1.0 );
                 container = document.getElementById('container')
                 container.appendChild( window.renderer.domElement );
 
@@ -108,16 +104,69 @@ seting CAMERA params
 setting CONTROLS params
 
                 App.camera=camera
-                App.cameraControls = new THREE.TrackballControls(camera, renderer.domElement);
-                App.cameraControls.rotateSpeed=4
+                App.cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+                App.cameraControls.rotateSpeed=0.65
+                App.cameraControls.zoomSpeed=0.8
+                App.cameraControls.panSpeed=0.8
+                App.cameraControls.enableDamping=false
                 App.cameraControls.target.set(0,0,0);
+                App.cameraControls.addEventListener 'start', ->
+                    document.getElementById('standard-view').value=''
 
                 #cameraControls.object.lookAt
                 App.fillScene();
+                resizeViewer = ->
+                    App.poseTool.finish()
+                    width=Math.max(1,container.clientWidth)
+                    height=Math.max(1,container.clientHeight)
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
+                    renderer.setSize(width,height)
+                    aspect=width/height
+                    ratio=Math.min(App.camera.aspect,1)/Math.min(aspect,1)
+                    offset=App.camera.position.clone().sub(App.cameraControls.target).multiplyScalar(ratio)
+                    App.camera.position.copy(App.cameraControls.target).add(offset)
+                    App.camera.aspect=aspect
+                    App.camera.updateProjectionMatrix()
+                    App.cameraControls.update()
+                App.viewerResizeObserver=new ResizeObserver(resizeViewer)
+                App.viewerResizeObserver.observe(container)
+                window.addEventListener('resize',resizeViewer)
                 true
 
 Controlling scene, using dat gui
 ----------------
+
+        App.setStandardView = (name) ->
+                App.poseTool.finish()
+                directions={front:[1,0,0],back:[-1,0,0],left:[0,1,0],right:[0,-1,0],top:[0.000001,0,1],bottom:[0.000001,0,-1],iso:[1,-1,1]}
+                App.viewDirection(new THREE.Vector3(...directions[name]).normalize())
+                document.getElementById('standard-view').value=name
+
+        App.viewDirection = (direction, up) ->
+                distance=App.camera.position.distanceTo(App.cameraControls.target)
+                App.camera.up.set(0,0,1)
+                App.camera.position.copy(App.cameraControls.target).addScaledVector(direction,distance)
+                App.camera.lookAt(App.cameraControls.target)
+                App.cameraControls.update()
+
+        App.fitRobot = ->
+                return unless window.robot?
+                bounds=new THREE.Box3().setFromObject(window.robot)
+                return if bounds.isEmpty()
+                size=bounds.getSize(new THREE.Vector3())
+                center=bounds.getCenter(new THREE.Vector3())
+                span=Math.max(size.x,size.y,size.z,0.01)
+                distance=span/(2*Math.tan(App.camera.fov*Math.PI/360))*1.4/Math.min(App.camera.aspect,1)
+                direction=App.camera.position.clone().sub(App.cameraControls.target).normalize()
+                direction.set(1,1,1).normalize() if direction.lengthSq()<0.01
+                App.cameraControls.target.copy(center)
+                App.camera.position.copy(center).addScaledVector(direction,distance)
+                App.camera.near=Math.max(distance/1000,0.0001)
+                App.camera.far=Math.max(distance*100,100)
+                App.cameraControls.minDistance=distance*0.025
+                App.cameraControls.maxDistance=distance*50
+                App.camera.updateProjectionMatrix()
+                App.cameraControls.update()
 
         App.setupGui = ->
                 window.effectController =
@@ -139,7 +188,9 @@ Controlling scene, using dat gui
 
                         App.gui.destroy()
 
-                App.gui = new dat.GUI();
+                App.gui = new dat.GUI({autoPlace:false,width:230})
+                document.getElementById('joint-controls').replaceChildren(App.gui.domElement)
+
 
 
 Creating gui for robot
@@ -175,6 +226,7 @@ Function to animate our scene
                 true
 
         App.render = ->
+                App.clock.update()
                 delta = App.clock.getDelta()
                 App.cameraControls.update(delta)
 
@@ -186,13 +238,16 @@ Function to animate our scene
                         App.axes = effectController.newAxes;
 
                         App.fillScene();
-                window.renderer.render(scene,App.camera)
 
 
 App.animform is an animation controller with different states.
 
                 App.animform.update() if App.animform?
+                App.poseTool.update()
+                scene.updateMatrixWorld(true)
+                App.collisions.update(performance.now())
                 App.trajectoryview.update()
+                window.renderer.render(scene,App.camera)
                 true
 
 Starting it all
@@ -213,9 +268,17 @@ Starting it all
                 App.forumula = new App.RobotForm({model:App.currentrobot});
                 App.usersrobots.add(App.currentrobot)
                 #console.log(window.robot_id)
-                App.currentrobot.id=window.robot_id
-                Backbone.history.start({pushState:true})
-                App.currentrobot.fetch()
+                unless window.standalone
+                    App.currentrobot.id=window.robot_id
+                    Backbone.history.start({pushState:true})
+                    App.currentrobot.fetch({error: ->
+                        App.localRobots.status('Load a local URDF and STL files, or open a robot saved in this browser.')
+                    })
+                else
+                    $.get './testowe/pi_robot_urdf.xml?v=arm-collisions-20261106', (data) ->
+                        xml=if typeof data is 'string' then data else new XMLSerializer().serializeToString(data)
+                        App.localRobots.showURDF(xml)
+
 
 
                 #if window.start_with_default

@@ -60,6 +60,12 @@
 				<color rgba="0.8 0.8 0 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0.12" rpy="0 0 0" />
+			<geometry>
+				<cylinder radius="0.05" length="0.24" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="head_pan_link">
@@ -170,6 +176,12 @@
 				<color rgba="0 0 0.9 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<box size="0.03 0.05 0.03" />
+			</geometry>
+		</collision>
 	</link>
 		
 	<link name="right_shoulder_forward_link">
@@ -182,6 +194,12 @@
 				<color rgba="0 0 0.9 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<box size="0.03 0.05 0.03" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="left_shoulder_up_link">
@@ -194,6 +212,12 @@
 				<color rgba="0 0 0.7 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="1.57 0 0" />
+			<geometry>
+				<box size="0.03 0.05 0.03" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="right_shoulder_up_link">
@@ -206,6 +230,12 @@
 				<color rgba="0 0 0.7 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="1.57 0 0" />
+			<geometry>
+				<box size="0.03 0.05 0.03" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="left_upper_arm_link">
@@ -218,6 +248,12 @@
 				<color rgba="0.9 0.9 0.9 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<cylinder radius="0.0075" length="0.05" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="right_upper_arm_link">
@@ -230,6 +266,12 @@
 				<color rgba="0.9 0.9 0.9 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<cylinder radius="0.0075" length="0.05" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="left_elbow_link">
@@ -242,6 +284,12 @@
 				<color rgba="0 0 0.7 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 1.57" />
+			<geometry>
+				<box size="0.035 0.035 0.05" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="right_elbow_link">
@@ -254,6 +302,12 @@
 				<color rgba="0 0 0.7 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 1.57" />
+			<geometry>
+				<box size="0.035 0.035 0.05" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="left_lower_arm_link">
@@ -266,6 +320,12 @@
 				<color rgba="0.9 0.9 0.9 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<cylinder radius="0.0075" length="0.11" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="right_lower_arm_link">
@@ -278,6 +338,12 @@
 				<color rgba="0.9 0.9 0.9 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<cylinder radius="0.0075" length="0.11" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="left_wrist_link">
@@ -290,6 +356,12 @@
 				<color rgba="0 0 0.7 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="1.57 0 0" />
+			<geometry>
+				<box size="0.03 0.05 0.03" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="right_wrist_link">
@@ -302,6 +374,12 @@
 				<color rgba="0 0 0.7 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="1.57 0 0" />
+			<geometry>
+				<box size="0.03 0.05 0.03" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="left_hand_link">
@@ -314,6 +392,12 @@
 				<color rgba="0.7 0.7 0.7 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<box size="0.03 0.01 0.06" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<link name="right_hand_link">
@@ -326,6 +410,12 @@
 				<color rgba="0.9 0.9 0.9 1.0"/>
 			</material>
 	   </visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<box size="0.03 0.01 0.06" />
+			</geometry>
+		</collision>
 	</link>
 	
 	<!-- * * * Joint Definitions * * * -->
@@ -458,7 +548,7 @@
     	<child link="left_elbow_link" />
     	<origin xyz="-0.005 0 -0.05" rpy="0 0 0" />
        	<limit lower="-3.146" upper="3.146" effort="10" velocity="3" />
-        <axis xyz="0 0 1" />
+        <axis xyz="0 1 0" />
 	</joint>
 	
  	<joint name="right_elbow_joint" type="revolute">
@@ -466,7 +556,7 @@
     	<child link="right_elbow_link" />
     	<origin xyz="-0.005 0 -0.05" rpy="0 0 0" />
        	<limit lower="-3.146" upper="3.146" effort="10" velocity="3" />
-        <axis xyz="0 0 1" />
+        <axis xyz="0 1 0" />
 	</joint>
 	
  	<joint name="left_lower_arm_joint" type="fixed">

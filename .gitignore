@@ -24,3 +24,9 @@ deploy_to_google.sh
 main.pyc
 deploy_to_google.sh
 local_app_server.sh
+
+/node_modules/
+/__pycache__/
+
+# Local agent notes
+/agent_notes/

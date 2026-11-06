@@ -13,7 +13,7 @@ we can have additional info stating whether el value is correct as a third argum
 
         App.el2array= (el,def="0 0 0",check=true,delim=" ")-> #returns array of numbers or default array from string
                 el2array=(check&&el)||def
-                arrayw=el2array.split(delim)
+                arrayw=if delim is " " then el2array.trim().split(/\s+/) else el2array.split(delim)
                 arrayw=_.map(arrayw,(num)-> num*1)
                 return arrayw
 
@@ -44,13 +44,14 @@ Model of robot joint, it is responsible of moving links: connecting them togethe
                         axis=App.el2array(_.has(@attributes,"axis")&&@attributes.axis.xyz,"1 0 0");
 
                         @axis=new THREE.Vector3(axis[0],axis[1],axis[2])
+                        @axis.normalize() if @axis.lengthSq()>0
                         rotation=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.rpy,"0 0 0")
-                        @basicrotation=new THREE.Euler(rotation[0],rotation[1],rotation[2])
+                        @basicrotation=new THREE.Euler(rotation[0],rotation[1],rotation[2],'ZYX')
                         position=App.el2array(_.has(@attributes,"origin")&&@attributes.origin.xyz,"0 0 0")
                         @basicposition=new THREE.Vector3(position[0],position[1],position[2])
 
-                        @lower=(_.has(@attributes,"limit")&&@attributes.limit.lower)||-Math.PI # could be -Infinity
-                        @upper=(_.has(@attributes,"limit")&&@attributes.limit.upper)|| Math.PI #could be Infinity
+                        @lower=@attributes.limit?.lower ? -Math.PI
+                        @upper=@attributes.limit?.upper ? Math.PI
                         @lower=@lower*1
                         @upper=@upper*1
 
@@ -93,7 +94,7 @@ When movement is impossible, return false
 
                         tempMatrix=new THREE.Matrix4();
                         tempaxis= new THREE.Vector3().copy(@axis);
-                        if (@upper? and @lower?)
+                        if (@type isnt "continuous" and @upper? and @lower?)
                             t1=Math.max(@lower,Math.min(t1,@upper));
                         if (@type=="continuous" or (@upper >= t1 >=@lower)) #check whether movement is allowed
                                 switch @type
@@ -103,6 +104,7 @@ When movement is impossible, return false
                                         when "fixed" then @movementMatrix.identity()
                                         when "planar" then @movementMatrix.identity() #TODO
 
+                                App.collisions?.markDirty() if @theta isnt t1
                                 @theta=t1 #set current state of joint
                         else # if not between upper and lower, do not move, return that movejoint failed
                                 @movementMatrix.identity()
@@ -123,75 +125,36 @@ RobotTrajectory is a class to  that remembers how some particular link of robot 
 
 
         class App.RobotTrajectory extends Backbone.Model
-                initialize: (name)->
-                    @trajectory=new THREE.Shape()
+                initialize: ->
                     @link_name=@attributes.name
-                    @allpoints= new THREE.Geometry(); #this has all point vertices
                     @N=1000
-                    for i in [0..@N] by 1
-                        @allpoints.vertices.push(new THREE.Vector3(0.0,0.0,1.0))
-                    @n=0
-
-                    #@allvertices=[]
-                    @throttled_add_to_trajectory=_.throttle(@add_to_trajectory,20) #will add min 50ms aside
-                    material = new THREE.LineBasicMaterial({color: 0xff0000,linewidth:3});
-                    @line= new THREE.Line(@allpoints,material)
-                    #allpoints=[]
+                    @points=[]
+                    @allpoints=new THREE.BufferGeometry()
+                    @allpoints.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(@N*3),3))
+                    @allpoints.setDrawRange(0,0)
+                    @line=new THREE.Line(@allpoints,new THREE.LineBasicMaterial({color:0xff0000}))
+                    @line.frustumCulled=false
                     window.scene.add(@line)
-                    return true
-
+                    @throttled_add_to_trajectory=_.throttle(@add_to_trajectory,20)
                 new_name: (name)=>
-                    @attributes.name=name
                     @link_name=name
                     @clear_trajectory()
-                    return true
                 add_to_trajectory: =>
-                    try
-                        matrix=window.robotlinkcollection.get(@link_name).get("link").matrixWorld.elements  #TODO maybe only once?
-                        #console.log(matrix)
-                        newpoint=new THREE.Vector3(matrix[12],matrix[13],matrix[14])
-
-
-Not adding points that are very near
-
-                        len=1000
-                        #if(@allvertices.length>0)
-
-                        lastvector=@allpoints.vertices[true_mod(@n-1,@N)]
-                        diff=new THREE.Vector3()
-                        diff.subVectors(newpoint,lastvector)
-                        len=diff.length()
-
-                        if len>0.0001 #when SI this would mean one thenth of mm
-
-                                #@allpoints=new THREE.Geometry()
-                                #number=true_mod(@n,@N)
-                                if(@n<@N)
-                                    @allpoints.vertices[@n]=newpoint
-                                    for numbers in [@n..@N] by 1 #this will run only in first N iterations ;)
-                                        @allpoints.vertices[numbers]=newpoint
-                                else
-                                    @allpoints.vertices.shift() #deleting first element
-                                    @allpoints.vertices.push(newpoint)
-                                @allpoints.verticesNeedUpdate = true;
-                                @allpoints.elementsNeedUpdate = true;
-                                @n++
-
-                         else
-                                return false
-
-                     catch error
-                        console.log("couldn't find link:"+name)
-                        console.log(error)
-
-                     return false
-
+                    link=window.robotlinkcollection.get(@link_name)
+                    return false unless link?
+                    point=link.get('link').getWorldPosition(new THREE.Vector3())
+                    return false if @points.length and point.distanceTo(@points[@points.length-1])<0.0001
+                    @points.push(point)
+                    @points.shift() if @points.length>@N
+                    position=@allpoints.getAttribute('position')
+                    for item,i in @points
+                        position.setXYZ(i,item.x,item.y,item.z)
+                    position.needsUpdate=true
+                    @allpoints.setDrawRange(0,@points.length)
+                    true
                 clear_trajectory: =>
-                    for i in [0..@N] by 1
-                        @allpoints.vertices[i].set(0,0,0);
-                    @allpoints.verticesNeedUpdate = true;
-                    @allpoints.elementsNeedUpdate = true;
-                    @n=0
+                    @points=[]
+                    @allpoints.setDrawRange(0,0)
 
         class App.RobotLink extends Backbone.Model
 
@@ -212,11 +175,12 @@ Not adding points that are very near
                                       @attributes.visual=[@attributes.visual]
                                 meshvis_array=[]
                                 for visual_element,vis_no in @attributes.visual
-                                  robotBaseMaterial=@robotBaseMaterial
+                                  robotBaseMaterial=@robotBaseMaterial.clone()
 
                                   if(_.has(visual_element,"material"))
 
-                                          color=@get("materialcollection").get(visual_element.material.name).get("color");#||new THREE.Color(0x6E23BB);
+                                          namedMaterial=@get("materialcollection").get(visual_element.material.name)
+                                          color=namedMaterial?.get("color") or robotBaseMaterial.color
                                           robotBaseMaterial.color=color;
                                           robotBaseMaterial.specular=color;
                                           #@robotBaseMaterial.color=color;
@@ -235,6 +199,8 @@ Not adding points that are very near
                                   else if(_.has(visual_element.geometry,"sphere"))
                                           radius=visual_element.geometry.sphere.radius||0;
                                           meshvis=@makesphere(radius,robotBaseMaterial);
+                                  else if(_.has(visual_element.geometry,"mesh"))
+                                          meshvis=App.localRobots.mesh(visual_element.geometry.mesh,robotBaseMaterial)
                                   else
                                           meshvis=@makeempty();
 
@@ -243,7 +209,7 @@ Not adding points that are very near
                                   orientation=App.el2array(_.has(visual_element,"origin")&&visual_element.origin.rpy,"0 0 0")
                                   meshvis.position.set(position[0], position[1],position[2]);
 
-                                  meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2]));
+                                  meshvis.setRotationFromEuler(new THREE.Euler(orientation[0],orientation[1],orientation[2],'ZYX'));
                                   #console.log(@meshvis.rotation)
                                   meshvis_array.push(meshvis)
 
@@ -260,19 +226,19 @@ Not adding points that are very near
 
                         meshvis.setRotationFromEuler(new THREE.Euler(Math.PI/2,0.0,0.0,'XYZ'))
                         #console.log(meshvis.rotation);
-                        meshvis_parent=new THREE.Mesh()
+                        meshvis_parent=new THREE.Object3D()
                         meshvis_parent.add(meshvis)
                         return meshvis_parent
                 makebox: (boxsize,material) ->
                         meshvis = new THREE.Mesh(
-                                        new THREE.CubeGeometry( boxsize[0]*1,boxsize[1]*1, boxsize[2]*1 ), material );
+                                        new THREE.BoxGeometry( boxsize[0]*1,boxsize[1]*1, boxsize[2]*1 ), material );
                         return meshvis
                 makesphere: (radius,material) ->
                         meshvis = new THREE.Mesh(
                                         new THREE.SphereGeometry( radius,20,20 ), material );
                         return meshvis
                 makeempty: ->
-                        meshvis = new THREE.Mesh();
+                        meshvis = new THREE.Object3D();
                         return meshvis
                 clearthislink: =>
                         @destroy()
@@ -306,12 +272,14 @@ Controller/view for joints. It also manages the views. To init it has to have an
                         #console.log(@options.gui)
                         @gui=@options.gui|| new dat.GUI();
                         @joints=@options.joints
+                        @jointsdict={}
 
                         @anglesfolder=@gui.addFolder("Joint values");
                         @add2gui = @add2gui.bind(@)
                         @joints.each((joint) => @add2gui(joint))
 
                 add2gui: (joint) ->
+                        return if joint.type is "fixed"
                         @jointsdict[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
 
 The idea behind changepose is: you provide two arrays, and it iterates through using names
@@ -367,7 +335,7 @@ There can be only one such model on scene ###TODO this seems fundamentaly wrong
                 @on("change",@change_address)
                 return true
             change_address:->
-                App.router.navigate("/"+@id)
+                App.router.navigate("/"+@id) unless window.standalone
 
 
 
@@ -390,11 +358,13 @@ There can be only one such model on scene ###TODO this seems fundamentaly wrong
                                 @dummy["val"]=0
                                 @controller.updateDisplay()
                                 @controller.onChange(@changeval)
+                                App.workspace.connectJointSlider(@controller,@joint)
 
 *changeval* is method to control joint from this object, if updateController is false it will just use movejoint method. Otherwise, it will also update the state of slider and state of itself - this is used when this method is accessed from the outside, not from onChange event.
 Checks about validity of movement are made inside @joint, we just check whether it succeeded
 
                 changeval: (value,updateController=false) ->
+                        App.poseTool?.finish()
                         #if (@joint.upper >= value >= @joint.lower)
 
                         if @joint.movejoint(value)
@@ -413,7 +383,7 @@ Checks about validity of movement are made inside @joint, we just check whether 
 
                 jointval: () ->
                         jointv=@joint.jointval()
-                        if(@dummy["val"]=!jointv)
+                        if @dummy["val"] isnt jointv
                                 @dummy["val"]=jointv
                                 @controller.updateDisplay()
                         #@controller.updateDisplay()
@@ -426,6 +396,10 @@ It does not change params of scene. TODO: soft reset, that is draw robot from ne
 
         window.clearall = (scene,robot,jointcollection,modelcollection) ->
                         scene.remove(robot)
+                        robot?.traverse (object) ->
+                            object.geometry?.dispose()
+                            if object.material?
+                                object.material.dispose()
                         #jointcollection.each( (joint) -> joint.destroy())
                         jointcollection.reset()
                         #modelcollection.each( (link) -> link.destroy())
@@ -447,6 +421,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         "click #frontview":"frontView"
                         "click #topview":"topView"
                         "click #sideview":"sideView"
+                        "click #fitview": "fitView"
                         "click #saverobot": "saveRobot"
                         "click #armode": "arMode"
                         "change #visible": "visible"
@@ -455,34 +430,25 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     $(".robotlink").on("click", @changeURDF);
                     this.listenTo(this.model, "change", this.newRobot);
                     this.myCodeMirror = CodeMirror.fromTextArea($("#robottext")[0], {
-                          mode: "text/html",
+                          mode: "application/xml",
                           lineNumbers: true,
-                          theme: "ambiance"
+                          lineWrapping: true,
+                          indentUnit: 2,
+                          extraKeys: {"Ctrl-Enter": (=> @resetNload()), "Cmd-Enter": (=> @resetNload())},
+                          theme: "default"
                           });
+                    App.workspace.init(@)
+                    App.localRobots.init(@)
 
                 URDFfiledrag: (evt)=>
                         evt.stopPropagation();
                         evt.preventDefault();
                         evt.originalEvent.dataTransfer.dropEffect = 'copy'; # Explicitly show this is a copy.
                 URDFfiledrop: (evt)=>
-                        #window.evt=evt
-                        #console.log(evt)
-                        evt.stopPropagation();
-                        evt.preventDefault();
-                        files = evt.originalEvent.dataTransfer.files; # FileList object.
-
-                        #// files is a FileList of File objects. List some properties.
-                        output = [];
-                        reader = new FileReader();
-
-
-                        reader.onload= (event) =>
-                                            @myCodeMirror.setValue(event.target.result)
-                                            @myCodeMirror.save()
-                                            #$("#robottext").val(event.target.result)
-                                            this.resetNload()
-                        for f in files
-                            reader.readAsText(f);
+                        evt.stopPropagation()
+                        evt.preventDefault()
+                        App.localRobots.importFiles({files:evt.originalEvent.dataTransfer.files,value:''}).catch (error) ->
+                            App.localRobots.status(error.message,true)
                 visible: ->
                     @model.set({"visible":$('#visible').prop('checked')})
                 saveRobot: ->
@@ -501,24 +467,59 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                                 });
                     window.open("https://mymodelrobot.appspot.com/ar/"+pageid,"_blank");
                 newRobot: ->
-                    #console.log("robot changed")
+                    try
+                        App.localRobots.validate(@model.attributes.urdf)
+                    catch error
+                        App.localRobots.status(error.message,true)
+                        return false
+                    App.poseTool.finish(true)
+                    opening=App.localRobots.openingDocument or not window.robot?
+                    poses={}
+                    unless opening
+                        window.robotjointcollection.each (joint) -> poses[joint.name]=joint.theta
+                    editorCursor=@myCodeMirror.getCursor()
+                    editorScroll=@myCodeMirror.getScrollInfo()
+                    App.animform.stop()
+                    App.localRobots.messages=[]
+                    App.collisions.clear()
                     if window.robotlinkcollection?
                         window.clearall(window.scene,window.robot,window.robotjointcollection,window.robotlinkcollection)
 
                     if window.parseRobot(@model.attributes.urdf)
 
                         App.setupGui();
-                        App.animate();
+                        if opening
+                            App.fitRobot()
+                        else
+                            window.robotjointcollection.each (joint) -> joint.movejoint(poses[joint.name]) if poses[joint.name]?
+                            App.robotjointmanipall.jointsval()
+                        collisionIssues=App.collisions.rebuild(@model.attributes.urdf,window.robotlinkcollection,window.robotjointcollection)
+                        App.localRobots.messages.push(issue) for issue in collisionIssues
+                        App.collisions.update(performance.now(),true)
+                        App.localRobots.openingDocument=false
+                        unless App.animationStarted
+                            App.animationStarted=true
+                            App.animate()
                         #$("#robottext").val(@model.attributes.urdf)
-                        @myCodeMirror.setValue(@model.attributes.urdf)
+                        if @myCodeMirror.getValue() isnt @model.attributes.urdf
+                            @myCodeMirror.setValue(@model.attributes.urdf)
+                        unless opening
+                            @myCodeMirror.setCursor(editorCursor)
+                            @myCodeMirror.scrollTo(editorScroll.left,editorScroll.top)
                         @myCodeMirror.save()
                         $('#visible').prop('checked', @model.attributes.visible);
+                        App.localRobots.loaded(@model.attributes.urdf)
+                        if App.workspace.animationStatus()
+                            App.animform.prepareArraysfromCSV($('#robotcsv').val())
                     else
                         window.alert("there was something wrong with your URDF");
                 resetNload: ->
                         @myCodeMirror.save() #this pushes the codemirror code to textarea (robottext)
                         urdffromform=$(@el).find("#robottext").val()
-                        @model.set({urdf:urdffromform})
+                        if @model.get('urdf') is urdffromform
+                            @newRobot()
+                        else
+                            @model.set({urdf:urdffromform})
 
 
                 changeURDF: (event)->
@@ -550,46 +551,45 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
 
 Simple camera views, for fast setting
 
-                frontView: =>
+                fitView: -> App.fitRobot()
 
-                        App.camera.position.set( 5, 0, 0 );
-
-                        App.camera.lookAt(0,0,0);
-                        App.camera.up=new THREE.Vector3(0,0,1)
-                        #App.camera.setRotationFromEuler(new THREE.Euler(0,0.0,0.0,'XYZ'))
-                        return App.camera
-                topView: =>
-                        App.camera.position.set(0,0,5);
-                        App.camera.lookAt(0,0,0);
-                        App.camera.up=new THREE.Vector3(1,0,0)
-                        return App.camera
-
-                sideView: =>
-                        App.camera.position.set(0,5,0);
-                        App.camera.lookAt(0,0,0);
-                        App.camera.up=new THREE.Vector3(0,0,1)
-                        return App.camera
+                frontView: => App.viewDirection(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,1))
+                topView: => App.viewDirection(new THREE.Vector3(0,0,1),new THREE.Vector3(1,0,0))
+                sideView: => App.viewDirection(new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,1))
 
 
 Helper clock, I have just added zerotime - to be able to have
 
-        class App.Clock extends THREE.Clock #just adding zerotime - we can manipulate thing that was called oldtime so that get elapsedTime can be non zero at the beginning
-                constructor: (autostart, zeroTime)->
-                        super autostart
-                        @zeroTime = if zeroTime? then zeroTime else 0
-                start: (zerotime)->
-                        super() #XXX it is running but we still play with it ?
-                        @zeroTime =zerotime ? @zeroTime
-                        this.oldTime=@oldTime-@zeroTime
+        class App.Clock
+                constructor: (@autoStart=true, zeroTime=0) ->
+                        @timer=new THREE.Timer()
+                        @elapsedTime=zeroTime
+                        @running=false
+                start: (zeroTime) ->
+                        @elapsedTime=zeroTime if zeroTime?
+                        @timer.reset()
+                        @running=true
                         @
-                stop: () -> #I like chaining , btw stop is essentially a pause?
-                        super()
+                getDelta: ->
+                        @start() if @autoStart and not @running
+                        @timer.update()
+                        delta=if @running then @timer.getDelta() else 0
+                        @elapsedTime+=delta
+                        delta
+                getElapsedTime: ->
+                        @getDelta()
+                        @elapsedTime
+                stop: ->
+                        @getElapsedTime()
+                        @running=false
+                        @autoStart=false
                         @
-                reset: () -> #because stop just pauses
-                        @stop().elapsedTime=0
+                reset: ->
+                        @stop()
+                        @elapsedTime=0
                         @
-                set: (timeinsec) -> #"sets the clock" -
-                        @zerotime=timeinsec
+                set: (timeinsec) ->
+                        @stop()
                         @elapsedTime=timeinsec
                         @
 
@@ -722,6 +722,8 @@ AnimationForm class will control robot animation, from the form submission, in d
                                 #@textform.append("\n"+currentstate[0])
                         @loadCSVfromForm()
                 playbutton:->
+                        return unless App.workspace.animationStatus()
+                        @prepareArraysfromCSV(@textform.val())
                         if @state=="finished"
                                 @stop() #rewind
 
@@ -731,7 +733,7 @@ AnimationForm class will control robot animation, from the form submission, in d
                 stopbutton:->
                         @state="stopped"
                         @stop()
-                        @robotcontroller.changepose(@poses[0],@names) #full rewind
+                        @robotcontroller.changepose(@poses[0],@names) if @poses.length #full rewind
 
                 pausebutton:->
                         @state="paused"
@@ -744,19 +746,22 @@ AnimationForm class will control robot animation, from the form submission, in d
                         @
 
                 loadCSVfromForm: ()=>
+                        @stop()
+                        unless App.workspace.animationStatus()
+                            App.localRobots.saveAnimation()
+                            return @
                         console.log("loading csv")
                         formcsv=@textform.val()
                         formcsv=$.trim(formcsv)
                         #console.log(formcsv)
                         @prepareArraysfromCSV(formcsv)
                         @textform.val(formcsv+"\n")
+                        App.localRobots.saveAnimation()
+                        App.workspace.animationStatus()
                         @
                 prettify: ()=>
                         @textform.scrollTop(@lh*(@curframe+1))
-                        if(@curframe>0)
-                                $("#jointnames").text(@names+"")
-                        else
-                                $("#jointnames").text(".")
+                        $("#jointnames").text("Frame "+(@curframe+1)+" / "+@poses.length) if @poses.length
                         @
 
 
@@ -770,7 +775,7 @@ Helper function that prepares 3 arrays from comma seperated values string. Times
                         @poses=[]
                         @times=[]
                         #csvstring=$.trim()
-                        allfromcsv=CSVToArray(csvstring) #I use some CSVToArray function found on web
+                        allfromcsv=CSVToArray($.trim(csvstring)) #I use some CSVToArray function found on web
 
                         #console.log(allfromcsv)
                         if allfromcsv.length<2
