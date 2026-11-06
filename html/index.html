@@ -34,7 +34,7 @@ window.robot_id=5629499534213120;
     <!-- Custom styles for this template -->
     <link rel="stylesheet" href="lib/codemirror.css">
 
-  <link href="./css/additional.css?v=detachable-joints-20261106" rel="stylesheet">
+  <link href="./css/additional.css?v=touch-joints-20261106" rel="stylesheet">
 <body>
 <header id="app-header"><strong>MyModelRobot</strong><span>Robot workspace</span><button type="button" id="open-files">Open / import</button><span class="privacy-note">Saved on this device</span><button type="button" id="help-button" aria-label="Help and controls" aria-haspopup="dialog" aria-controls="help-dialog" title="Help and controls">?</button></header>
 <aside id="controldiv" aria-label="Robot workspace">
@@ -97,7 +97,7 @@ window.robot_id=5629499534213120;
   <h2>Your workspace</h2>
   <dl><dt>URDF</dt><dd>Edit the source, then choose <b>Apply changes</b> or press <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Enter</kbd>. Applying keeps your camera, joint positions and CSV. Unapplied edits are marked above the editor.</dd>
   <dt>Files</dt><dd>Open a URDF with its STL files, choose a folder, or add missing meshes later. Open saved robots, rename them, or use <b>Save a copy</b> for a separate version. Warning badges indicate missing meshes.</dd>
-  <dt>Joints</dt><dd>Drag sliders or enter values to pose the robot. Angles are in radians and sliding distances are in metres. Choose <b>Detach panel</b> to keep the controls visible while editing URDF or CSV. Drag its header to move, resize from the corner, or choose <b>Dock</b> to return it to the tab.</dd>
+  <dt>Joints</dt><dd>Drag sliders or enter values to pose the robot. Angles are in radians and sliding distances are in metres. Choose <b>Detach panel</b> to keep the controls visible while editing URDF or CSV. Drag its header to move, resize from the corner, or choose <b>Dock</b> to return it to the tab. On phones the panel stays compact; scroll inside it for more joints.</dd>
   <dt>Animation</dt><dd>Paste CSV with joint names as column headers, optionally starting with <code>time</code> in seconds. Insert the current pose for a template. Play, step between poses, add poses, or trace a link. CSV edits save automatically; invalid CSV disables playback.</dd></dl>
   <h2>Camera and layout</h2>
   <ul><li><b>Mouse:</b> drag to orbit, Shift-drag or right-drag to pan, scroll to zoom.</li>
@@ -110,7 +110,7 @@ window.robot_id=5629499534213120;
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=detachable-joints-20261106"></script>
+<script src="./scripts/runtime.bundle.js?v=touch-joints-20261106"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -121,12 +121,12 @@ window.robot_id=5629499534213120;
 <script src="./scripts/underscore.js"></script>
 	<script src="./scripts/backbone.js"></script>
 	<script src="./lib/dat.gui.min.js"></script>
-	<script src="./scripts/modelrobot.js?v=detachable-joints-20261106"></script>
-<script src="./scripts/parserobot.js?v=detachable-joints-20261106"></script>
+	<script src="./scripts/modelrobot.js?v=touch-joints-20261106"></script>
+<script src="./scripts/parserobot.js?v=touch-joints-20261106"></script>
 <script src="./lib/CSVToArray.js"></script>
 
 <!--<script src="./scripts/unit4-robot_arm_demo.js"></script>-->
-<script src="./scripts/scene.js?v=detachable-joints-20261106"></script>
+<script src="./scripts/scene.js?v=touch-joints-20261106"></script>
 <script src="./scripts/animate.js"></script>
 </body>
 </html>

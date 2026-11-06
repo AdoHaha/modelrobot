@@ -474,7 +474,8 @@
         this.controller = this.gui.add(this.dummy, 'val', this.joint.lower, this.joint.upper, 0.01).name(this.joint.get("name"));
         this.dummy["val"] = 0;
         this.controller.updateDisplay();
-        return this.controller.onChange(this.changeval);
+        this.controller.onChange(this.changeval);
+        return App.workspace.connectJointSlider(this.controller, this.joint);
       }
     }
 

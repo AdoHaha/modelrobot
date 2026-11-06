@@ -250,3 +250,47 @@ test('detached joints stay live alongside editing and animation, and can be move
   assert.ok(Math.abs(await page.evaluate(()=>robotjointcollection.findWhere({name:'torso_joint'}).theta)-.4)<1e-8);
   assert.deepEqual(errors,[]);await context.close();
 });
+
+test('phone touch drags move docked and compact detached sliders without moving the camera', async () => {
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+  const page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const touch=await context.newCDPSession(page);
+  const swipe=async (start,end) => {
+    await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:start.x,y:start.y,id:1,radiusX:8,radiusY:8,force:1}]});
+    for(let i=1;i<=10;i++) await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:start.x+(end.x-start.x)*i/10,y:start.y+(end.y-start.y)*i/10,id:1,radiusX:8,radiusY:8,force:1}]});
+    await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  };
+  await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);await settled(page);
+  await page.locator('#tab-joints').tap();
+  const slider=page.getByRole('slider',{name:'torso_joint',exact:true});
+  const initial=await page.evaluate(()=>({value:robotjointcollection.findWhere({name:'torso_joint'}).theta,camera:App.camera.position.toArray()}));
+  let box=await slider.boundingBox();
+  await swipe({x:box.x+box.width*.25,y:box.y+box.height/2},{x:box.x+box.width*.8,y:box.y+box.height/2});
+  const docked=await page.evaluate(()=>robotjointcollection.findWhere({name:'torso_joint'}).theta);
+  assert.ok(Math.abs(docked-initial.value)>.1);
+  assert.ok(Math.abs(Number(await slider.getAttribute('aria-valuenow'))-docked)<1e-8);
+  (await page.evaluate(()=>App.camera.position.toArray())).forEach((n,i)=>assert.ok(Math.abs(n-initial.camera[i])<1e-8));
+  await page.locator('#joints-detach').tap();
+  const floating=page.locator('#floating-joints');
+  await floating.waitFor({state:'visible'});
+  const panel=await floating.boundingBox();assert.ok(panel.width<=251);assert.ok(panel.height<=844*.45+1);
+  const preview=await page.locator('#container').boundingBox();assert.ok(panel.y>=preview.y+preview.height,'Phone preview stays uncovered');
+  assert.ok(await page.locator('#panel-urdf').isVisible());
+  box=await slider.boundingBox();
+  await swipe({x:box.x+box.width*.8,y:box.y+box.height/2},{x:box.x+box.width*.2,y:box.y+box.height/2});
+  const detached=await page.evaluate(()=>robotjointcollection.findWhere({name:'torso_joint'}).theta);
+  assert.ok(Math.abs(detached-docked)>.1);
+  assert.ok(Math.abs(Number(await slider.getAttribute('aria-valuenow'))-detached)<1e-8);
+  (await page.evaluate(()=>App.camera.position.toArray())).forEach((n,i)=>assert.ok(Math.abs(n-initial.camera[i])<1e-8));
+  const body=page.locator('#floating-joints-content');const content=await body.boundingBox();
+  await swipe({x:content.x+18,y:content.y+content.height-24},{x:content.x+18,y:content.y+35});
+  await page.waitForFunction(()=>document.getElementById('floating-joints-content').scrollTop>20);
+  for(const [width,height] of [[667,375],[844,390]]) {
+    await page.setViewportSize({width,height});
+    await page.waitForFunction(()=>{const box=document.getElementById('floating-joints').getBoundingClientRect();return box.height<=innerHeight*.45+1 && box.bottom<=innerHeight-7 && box.top>=59 && box.left>=7 && box.right<=innerWidth-7;});
+    const landscape=await floating.boundingBox();assert.ok(landscape.width<=251);assert.ok(landscape.y+landscape.height<=height-7);
+  }
+  await page.locator('#joints-dock').tap();assert.ok(await page.locator('#panel-joints #joint-controls').isVisible());
+  assert.deepEqual(errors,[]);await context.close();
+});

@@ -32,3 +32,11 @@ The external NASA/JPL T12 test verifies 37 STL visuals, 36 joints, zero-pose mat
 The Joints tab now offers **Detach panel**. Its live controls can remain visible alongside URDF or CSV in a draggable, resizable floating panel; **Dock** returns them to the tab. It uses the same controls rather than a second independent set, so playback and applied URDF edits keep the displayed values consistent. The header also supports arrow-key movement, and the panel remains within the viewport after resizing.
 
 Browser checks cover direct numeric edits, CSV playback updating the detached controls, applying URDF while detached, dragging without moving the camera, native corner resizing, narrow/landscape viewport bounds, and docking without losing the pose. Playback parsing also ignores trailing whitespace so a trailing CSV newline cannot create a phantom final frame.
+
+## Follow-up: smartphone sliders
+
+Joint tracks now use native range inputs, replacing the old mouse-only slider elements while keeping their numeric fields and live joint/CSV updates. Native controls support finger dragging, keyboard changes and decimal numeric entry.
+
+On phones and other devices with a coarse pointer, the detached panel is at most 250 px wide and 280 px / 45% of the viewport tall, with a scrollable joint list. It initially opens below the portrait preview. Desktop detachment and resizing remain available.
+
+Chromium touch-input emulation verifies docked and detached finger drags, unchanged camera position, scrolling the compact panel, rotation to narrow and wide landscape viewports, and docking back. This is browser touch emulation, not a test on physical iOS or Android hardware.

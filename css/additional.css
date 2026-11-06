@@ -154,3 +154,17 @@ body.editor-focus { grid-template-columns: minmax(0,1fr) 8px 320px; }
 .joint-panel-help { flex: 0 0 auto; font-size: 10px; color: #65768a; margin: 0; padding: 5px 18px 6px 10px; border-top: 1px solid #d8e2eb; }
 #joint-detached-note p { margin: 0; }
 #floating-joints .dg .property-name { overflow: hidden; text-overflow: ellipsis; }
+#joint-controls .dg .c .joint-slider { appearance: auto; -webkit-appearance: auto; float: left; width: 66%; height: 28px; margin: 2px 0; padding: 0; border: 0; background: transparent; accent-color: #3184c5; touch-action: pan-y; cursor: pointer; }
+#joint-controls .dg .c .joint-slider:focus-visible { outline: 2px solid #1673ca; outline-offset: 1px; }
+@media (max-width: 759px), (pointer: coarse) {
+  #floating-joints { width: 250px; min-width: min(220px,calc(100vw - 24px)); height: min(280px,45dvh); min-height: 140px; max-width: min(250px,calc(100vw - 24px)); max-height: 45dvh; }
+  #joint-panel-handle { padding: 5px 8px; gap: 8px; }
+  #joint-panel-handle h2 { font-size: 12px; }
+  #joint-panel-handle button { font-size: 11px; padding: 2px 6px; }
+  #floating-joints-content { padding: 4px; }
+  .joint-panel-help { display: none; }
+  #joint-controls .dg li:not(.folder) { height: 38px; line-height: 38px; }
+  #joint-controls .dg .c .joint-slider { height: 32px; margin-top: 3px; }
+  #joint-controls .dg .c input[type=text] { height: 28px; margin-top: 5px; }
+}
+button { touch-action: manipulation; }

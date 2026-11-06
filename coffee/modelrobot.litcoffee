@@ -356,6 +356,7 @@ There can be only one such model on scene ###TODO this seems fundamentaly wrong
                                 @dummy["val"]=0
                                 @controller.updateDisplay()
                                 @controller.onChange(@changeval)
+                                App.workspace.connectJointSlider(@controller,@joint)
 
 *changeval* is method to control joint from this object, if updateController is false it will just use movejoint method. Otherwise, it will also update the state of slider and state of itself - this is used when this method is accessed from the outside, not from onChange event.
 Checks about validity of movement are made inside @joint, we just check whether it succeeded

@@ -63,6 +63,33 @@ export class Workspace {
     document.querySelectorAll('.workspace-panel').forEach(panel => panel.hidden = panel.id !== 'panel-' + name);
     if (name === 'urdf') this.form.myCodeMirror.refresh();
   }
+  connectJointSlider(controller, joint) {
+    const legacySlider = controller.domElement.querySelector('.slider');
+    if (!legacySlider) return;
+    const slider = document.createElement('input');
+    slider.type = 'range'; slider.className = 'joint-slider';
+    slider.min = joint.lower; slider.max = joint.upper; slider.step = 'any';
+    slider.setAttribute('aria-label', joint.name);
+    legacySlider.replaceWith(slider);
+    const update = controller.updateDisplay.bind(controller);
+    controller.updateDisplay = () => {
+      const result = update();
+      slider.value = controller.getValue();
+      slider.setAttribute('aria-valuenow', controller.getValue());
+      return result;
+    };
+    slider.addEventListener('input', () => controller.setValue(Number(slider.value)));
+    slider.addEventListener('keydown', event => {
+      const step = event.shiftKey ? .1 : .01;
+      const values = {ArrowLeft:controller.getValue()-step, ArrowDown:controller.getValue()-step, ArrowRight:controller.getValue()+step, ArrowUp:controller.getValue()+step, Home:joint.lower, End:joint.upper};
+      if (!(event.key in values)) return;
+      event.preventDefault(); controller.setValue(values[event.key]);
+    });
+    controller.domElement.querySelectorAll('input[type=text]').forEach(input => {
+      input.setAttribute('inputmode', 'decimal'); input.setAttribute('aria-label', joint.name + ' value');
+    });
+    controller.updateDisplay();
+  }
   initJointPanel() {
     const floating = document.getElementById('floating-joints');
     const handle = document.getElementById('joint-panel-handle');
@@ -72,8 +99,9 @@ export class Workspace {
     const constrain = () => {
       if (floating.hidden) return;
       const box = floating.getBoundingClientRect();
-      const width = Math.min(box.width, innerWidth - 16);
-      const height = Math.min(box.height, innerHeight - 68);
+      const compact = innerWidth < 760 || matchMedia('(pointer: coarse)').matches;
+      const width = Math.min(box.width, compact ? 250 : innerWidth - 16);
+      const height = Math.min(box.height, compact ? Math.min(280, innerHeight * .45) : innerHeight - 68);
       const left = Math.max(8, Math.min(box.left, innerWidth - width - 8));
       const top = Math.max(60, Math.min(box.top, innerHeight - height - 8));
       if (Math.abs(box.width - width) > .5) floating.style.width = width + 'px';
@@ -91,10 +119,13 @@ export class Workspace {
       floating.hidden = false;
       document.getElementById('floating-joints-content').append(host);
       if (first) {
-        const width = Math.min(400, innerWidth - 16);
+        const compact = innerWidth < 760 || matchMedia('(pointer: coarse)').matches;
+        const width = compact ? Math.min(250, innerWidth - 24) : Math.min(400, innerWidth - 16);
+        const height = compact ? Math.min(280, innerHeight * .45) : 400;
+        floating.style.height = height + 'px';
         floating.style.width = width + 'px';
         floating.style.left = Math.max(8, innerWidth - width - 16) + 'px';
-        floating.style.top = '80px';
+        floating.style.top = (compact ? Math.max(60, innerHeight - height - 16) : 80) + 'px';
       }
       note.hidden = false; detach.hidden = true;
       document.getElementById('tab-joints').title = 'Joint controls are detached';
