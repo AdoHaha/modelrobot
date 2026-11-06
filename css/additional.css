@@ -128,3 +128,19 @@ body.editor-focus { grid-template-columns: minmax(0,1fr) 8px 320px; }
   #viewer-toolbar button { padding: 3px 5px; }
   .workspace-tabs button { font-size: 12px; }
 }
+#app-header #help-button { flex: 0 0 30px; width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 16px; font-weight: 650; }
+#help-dialog { width: min(620px,calc(100vw - 24px)); max-height: calc(100dvh - 32px); padding: 22px; border: 1px solid #bccbd9; border-radius: 10px; background: #f8fafc; color: #263345; box-shadow: 0 12px 60px #14283f55; overflow: auto; }
+#help-dialog::backdrop { background: #14283f80; }
+#help-dialog .help-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+#help-dialog h1 { color: #263345; font-size: 20px; margin: 0; }
+#help-dialog h2 { color: #263345; font-size: 16px; margin: 20px 0 10px; }
+#help-dialog p, #help-dialog dd, #help-dialog li { font-size: 13px; line-height: 1.6; }
+#help-dialog dt { color: #1766a7; margin-top: 10px; }
+#help-dialog dd { margin: 2px 0 0; }
+#help-dialog ul { padding-left: 20px; }
+#help-dialog li { margin: 6px 0; }
+#help-dialog kbd { background: #e7eff7; color: #25435e; border: 1px solid #bdcbd8; border-radius: 3px; box-shadow: none; }
+#help-dialog .help-note { color: #65768a; margin-bottom: 0; }
+@media (max-width: 759px) { #app-header #help-button { margin-left: 0; } #help-dialog { padding: 16px; } }
+#help-dialog .help-header { position: sticky; top: -22px; padding: 8px 0; background: #f8fafc; z-index: 1; }
+@media (max-width: 759px) { #help-dialog .help-header { top: -16px; } }

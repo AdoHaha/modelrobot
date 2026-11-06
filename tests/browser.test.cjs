@@ -133,6 +133,12 @@ test('editing session, workspace tabs, keyboard Apply, save copy and camera gest
   const page=await context.newPage();page.setDefaultTimeout(10000);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);await settled(page);
+  await page.locator('#help-button').click();
+  assert.ok(await page.locator('#help-dialog').isVisible());
+  assert.match(await page.locator('#help-dialog').innerText(),/Shift-drag/);
+  await page.keyboard.press('Escape');
+  assert.ok(!(await page.locator('#help-dialog').isVisible()));
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'help-button');
   const original=await page.evaluate(()=>App.localRobots.currentXml);
   const id=await page.evaluate(()=>App.localRobots.document.id);
   const count=await page.evaluate(()=>App.localRobots.records.length);

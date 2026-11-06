@@ -2,6 +2,10 @@ export class Workspace {
   init(form) {
     this.form = form;
     this.active = 'urdf';
+    const help = document.getElementById('help-dialog');
+    const helpButton = document.getElementById('help-button');
+    helpButton.onclick = () => help.showModal();
+    help.addEventListener('close', () => helpButton.focus());
     const tabs = [...document.querySelectorAll('[role=tab]')];
     tabs.forEach((tab, i) => {
       tab.addEventListener('click', () => this.select(tab.dataset.panel));

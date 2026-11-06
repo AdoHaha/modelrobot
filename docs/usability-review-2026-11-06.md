@@ -17,7 +17,7 @@ Reviewer: GPT-6 Astra, independently inspecting the live site and a local revisi
 - Persistent Apply, Ctrl/Cmd+Enter, unapplied-edit status, and visible errors outside tab panels. Switching tabs keeps the editor draft.
 - A stable document ID, explicit Save a copy, and non-disruptive geometry edits preserving CSV, cursor, scroll, joint pose and camera position.
 - Upright Z-up OrbitControls with moderate sensitivity; orbit/pan/zoom hints, Fit, Home, zoom buttons and one standard-view selector beside the preview.
-- Joints in their own panel with full labels and units guidance. CSV templates, validation, pose counts and disabled playback for invalid CSV. Warning badges remain visible when a related panel is closed.
+- Joints in their own panel with full labels and units guidance. CSV templates, validation, pose counts and disabled playback for invalid CSV. Warning badges remain visible when a related panel is closed. A header Help button explains the tabs, local saving, camera gestures and keyboard shortcuts.
 
 ## Verification
 
