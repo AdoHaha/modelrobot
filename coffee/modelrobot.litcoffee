@@ -706,22 +706,8 @@ AnimationForm class will control robot animation, from the form submission, in d
 
                 saverobot: ->
                         document.getElementById("robotform").submit();
-                addposition: -> #it assumes that current csv is loaded
-                        currentstate=@robotcontroller.jointsval(@names)
-                        if @names.length==0
-                                @textform.val("time,"+currentstate[1]+"\n"+"0.0,"+currentstate[0])
-                                #there always will be time;
-                                @hastimes=true;
-                        else
-                                addtime=""
-                                if @hastimes #there are explicit times
-                                        addtime+=(@deltaTime+parseFloat(_.last(@times)))+","
-
-                                        #sanity check if it is all numbers
-
-                                @textform.val(@textform.val()+addtime+currentstate[0])
-                                #@textform.append("\n"+currentstate[0])
-                        @loadCSVfromForm()
+                addposition: ->
+                        App.workspace.appendCurrentPose()
                 playbutton:->
                         return unless App.workspace.animationStatus()
                         @prepareArraysfromCSV(@textform.val())
@@ -746,7 +732,7 @@ AnimationForm class will control robot animation, from the form submission, in d
                         e.stopPropagation()
                         @
 
-                loadCSVfromForm: ()=>
+                loadCSVfromForm: (options)=>
                         @stop()
                         unless App.workspace.animationStatus()
                             App.localRobots.saveAnimation()
@@ -756,7 +742,7 @@ AnimationForm class will control robot animation, from the form submission, in d
                         formcsv=$.trim(formcsv)
                         #console.log(formcsv)
                         @prepareArraysfromCSV(formcsv)
-                        @textform.val(formcsv+"\n")
+                        @textform.val(formcsv+"\n") unless options?.preserveText is true
                         App.localRobots.saveAnimation()
                         App.workspace.animationStatus()
                         @

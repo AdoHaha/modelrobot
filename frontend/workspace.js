@@ -1,3 +1,5 @@
+import { appendPose } from './csv-poses.js';
+
 export class Workspace {
   init(form) {
     this.form = form;
@@ -53,11 +55,7 @@ export class Workspace {
       const actions = {f:'fit', F:'fit', Home:'home', '+':'in', '=':'in', '-':'out'};
       if (actions[event.key]) { event.preventDefault(); this.cameraAction(actions[event.key]); }
     };
-    document.getElementById('csv-template').onclick = () => {
-      const joints = window.robotjointcollection.filter(joint => joint.type !== 'fixed');
-      document.getElementById('robotcsv').value = 'time,' + joints.map(joint => joint.name).join(',') + '\n0,' + joints.map(joint => joint.theta).join(',') + '\n';
-      App.animform.loadCSVfromForm();
-    };
+    document.getElementById('csv-template').onclick = () => this.appendCurrentPose();
     document.getElementById('robotcsv').addEventListener('input', () => { App.animform.stop(); this.animationStatus(); });
     this.initJointPanel();
     this.resizeDivider();
@@ -185,6 +183,24 @@ export class Workspace {
       const offset = App.camera.position.clone().sub(App.cameraControls.target);
       const distance = Math.max(App.cameraControls.minDistance, Math.min(App.cameraControls.maxDistance, offset.length() * (action === 'in' ? .8 : 1.25)));
       App.camera.position.copy(App.cameraControls.target).add(offset.setLength(distance)); App.cameraControls.update();
+    }
+  }
+  appendCurrentPose() {
+    App.poseTool.finish();
+    const input = document.getElementById('robotcsv');
+    const values = new Map(window.robotjointcollection.filter(joint => joint.type !== 'fixed').map(joint => [joint.name, joint.theta]));
+    try {
+      const csv = appendPose(input.value, values, CSVToArray, App.animform.deltaTime);
+      input.value = csv;
+      App.animform.loadCSVfromForm({ preserveText: true });
+      App.animform.curframe = App.animform.poses.length - 1;
+      App.animform.state = 'finished';
+      App.animform.prettify();
+      input.scrollTop = input.scrollHeight;
+    } catch (error) {
+      App.i18n.setText(document.getElementById('animation-status'), 'Cannot add a pose: {message}', { message: error.message });
+      const badge = document.getElementById('animation-badge');
+      badge.hidden = false; App.i18n.setAttr(badge, 'title', 'Cannot add a pose: {message}', { message: error.message });
     }
   }
   animationStatus() {

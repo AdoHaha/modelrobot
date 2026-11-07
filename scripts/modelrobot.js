@@ -973,23 +973,8 @@
         return document.getElementById("robotform").submit();
       }
 
-      addposition() { //it assumes that current csv is loaded
-        var addtime, currentstate;
-        currentstate = this.robotcontroller.jointsval(this.names);
-        if (this.names.length === 0) {
-          this.textform.val("time," + currentstate[1] + "\n" + "0.0," + currentstate[0]);
-          //there always will be time;
-          this.hastimes = true;
-        } else {
-          addtime = "";
-          if (this.hastimes) { //there are explicit times
-            addtime += (this.deltaTime + parseFloat(_.last(this.times))) + ",";
-          }
-          //sanity check if it is all numbers
-          this.textform.val(this.textform.val() + addtime + currentstate[0]);
-        }
-        //@textform.append("\n"+currentstate[0])
-        return this.loadCSVfromForm();
+      addposition() {
+        return App.workspace.appendCurrentPose();
       }
 
       playbutton() {
@@ -1024,7 +1009,7 @@
         return this;
       }
 
-      loadCSVfromForm() {
+      loadCSVfromForm(options) {
         var formcsv;
         boundMethodCheck(this, ref4);
         this.stop();
@@ -1037,7 +1022,9 @@
         formcsv = $.trim(formcsv);
         //console.log(formcsv)
         this.prepareArraysfromCSV(formcsv);
-        this.textform.val(formcsv + "\n");
+        if ((options != null ? options.preserveText : void 0) !== true) {
+          this.textform.val(formcsv + "\n");
+        }
         App.localRobots.saveAnimation();
         App.workspace.animationStatus();
         return this;
