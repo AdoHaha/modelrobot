@@ -564,3 +564,31 @@ test('Polish controls fit phone and landscape viewports and language storage can
   }
   assert.deepEqual(errors,[]);await context.close();
 });
+
+test('CSV pose capture preserves the header and first row, appends current columns and saves the result',async()=>{
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await loadIK(page);await page.locator('#tab-animation').click();
+  assert.equal(await page.locator('#addposition').count(),0,'Only one pose-capture action is visible');
+  await page.locator('#csv-template').click();const first=await page.locator('#robotcsv').inputValue();assert.match(first,/^time,torso,shoulder,elbow,other\n0,0,0,0,0\n$/);
+  await page.evaluate(()=>{App.robotjointmanipall.changejointval('shoulder',.3);App.robotjointmanipall.changejointval('elbow',-.4);});
+  await page.locator('#csv-template').click();assert.equal(await page.locator('#robotcsv').inputValue(),first+'0.06,0,0.3,-0.4,0\n');
+  assert.equal(await page.locator('#jointnames').innerText(),'Frame 2 / 2');
+  await page.locator('#playbutton').click();await page.waitForFunction(()=>App.animform.state==='finished');
+  assert.equal(await page.evaluate(()=>robotjointcollection.findWhere({name:'elbow'}).theta),-.4);
+  // Edit the table without Apply CSV; cached animation columns must not be used.
+  const edited='time,elbow,shoulder\n2,-0.2,0.1';await page.locator('#robotcsv').fill(edited);
+  await page.evaluate(()=>{App.robotjointmanipall.changejointval('shoulder',.5);App.robotjointmanipall.changejointval('elbow',-.6);});
+  await page.locator('#csv-template').click();const expected=edited+'\n2.06,-0.6,0.5\n';assert.equal(await page.locator('#robotcsv').inputValue(),expected);
+  await settled(page);const id=await page.locator('#local-library').inputValue();
+  await page.reload();await page.waitForFunction(()=>window.robotlinkcollection?.length);await settled(page);
+  await page.locator('#tab-files').click();await page.locator('#local-library').selectOption(id);await page.locator('#local-open').click();
+  await page.waitForFunction(()=>App.localRobots.currentXml.includes('IK test'));await settled(page);assert.equal(await page.locator('#robotcsv').inputValue(),expected);
+  await page.locator('#tab-animation').click();await page.locator('#robotcsv').fill('elbow,shoulder\n-.2,.1');
+  await page.evaluate(()=>{App.robotjointmanipall.changejointval('shoulder',.8);App.robotjointmanipall.changejointval('elbow',-.9);App.animform.names=[];App.animform.addposition();});
+  assert.equal(await page.locator('#robotcsv').inputValue(),'elbow,shoulder\n-.2,.1\n-0.9,0.8\n');
+  await page.locator('#robotcsv').fill('time,shoulder');await page.locator('#csv-template').click();assert.equal(await page.locator('#robotcsv').inputValue(),'time,shoulder\n0,0.8\n');
+  const invalid='time,shoulder\n0,bad\n';await page.locator('#robotcsv').fill(invalid);await page.locator('#csv-template').click();
+  assert.equal(await page.locator('#robotcsv').inputValue(),invalid);assert.match(await page.locator('#animation-status').innerText(),/Cannot add a pose/);
+  await page.locator('#ui-language').selectOption('pl');assert.match(await page.locator('#animation-status').innerText(),/Nie można dodać pozycji/);
+  assert.equal(await page.locator('#csv-template').innerText(),'Dodaj bieżącą pozycję do CSV');assert.deepEqual(errors,[]);await context.close();
+});

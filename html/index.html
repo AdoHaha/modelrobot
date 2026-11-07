@@ -34,7 +34,7 @@ window.robot_id=5629499534213120;
     <!-- Custom styles for this template -->
     <link rel="stylesheet" href="lib/codemirror.css">
 
-  <link href="./css/additional.css?v=polish-20261107" rel="stylesheet">
+  <link href="./css/additional.css?v=csv-append-20261107" rel="stylesheet">
 <body>
 <header id="app-header"><strong>MyModelRobot</strong><span>Robot workspace</span><button type="button" id="open-files" aria-label="Open / import"><span class="header-open-wide">Open / import</span><span class="header-open-small">Files</span></button><span class="privacy-note">Saved on this device</span><select id="ui-language" aria-label="Language / Język" title="English / Polski" data-i18n-skip><option value="en" lang="en">EN</option><option value="pl" lang="pl">PL</option></select><button type="button" id="help-button" aria-label="Help and controls" aria-haspopup="dialog" aria-controls="help-dialog" title="Help and controls">?</button></header>
 <aside id="controldiv" aria-label="Robot workspace">
@@ -60,7 +60,7 @@ window.robot_id=5629499534213120;
     <div class="form-section"><label for="local-name">Robot name</label><input type="text" id="local-name" placeholder="Name from URDF"><div class="button-row"><button type="button" id="local-save">Save name</button><button type="button" id="local-copy">Save a copy</button></div>
       <label for="local-library">Saved robots</label><select id="local-library"></select><div class="button-row"><button type="button" id="local-open" class="primary">Open robot</button><button type="button" id="local-delete">Delete saved copy</button></div>
       <small>Applied changes update the current robot automatically. Clearing site data removes saved robots.</small></div>
-    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=polish-20261107">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=polish-20261107" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
+    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=csv-append-20261107">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=csv-append-20261107" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
     {% if user %}<div class="form-section"><button type="button" id="saverobot">Save to server</button><label><input type="checkbox" id="visible"> Public</label><button type="button" id="armode">AR mode</button><span id="qrcode"></span></div>{% endif %}
   </section>
   <section id="panel-joints" class="workspace-panel" role="tabpanel" aria-labelledby="tab-joints" hidden>
@@ -68,10 +68,10 @@ window.robot_id=5629499534213120;
   </section>
   <section id="panel-animation" class="workspace-panel" role="tabpanel" aria-labelledby="tab-animation" hidden>
     <div id="animdiv"><div class="panel-heading"><div><h1>CSV animation</h1><p>Use joint names as columns, with an optional time column in seconds.</p></div></div>
-      <button type="button" id="csv-template">Insert current pose as CSV</button><label for="robotcsv" class="sr-only">Robot poses CSV</label><textarea id="robotcsv" rows="8" spellcheck="false" placeholder="time,joint_name&#10;0,0&#10;1,0.5"></textarea>
+      <button type="button" id="csv-template" title="Append the current pose; create a table if the CSV is empty">Add current pose to CSV</button><label for="robotcsv" class="sr-only">Robot poses CSV</label><textarea id="robotcsv" rows="8" spellcheck="false" placeholder="time,joint_name&#10;0,0&#10;1,0.5"></textarea>
       <p id="animation-status" role="status">Paste CSV or insert a pose to begin.</p><div id="jointnames"></div>
       <div class="button-row"><button type="button" id="loadcsv" class="primary">Apply CSV</button><button type="button" id="playbutton">Play</button><button type="button" id="pausebutton">Pause</button><button type="button" id="stopbutton">Stop</button></div>
-      <div class="button-row"><button type="button" id="prevbutton" aria-label="Previous frame">Previous frame</button><button type="button" id="nextbutton">Next frame</button><button type="button" id="addposition">Add current pose</button></div>
+      <div class="button-row"><button type="button" id="prevbutton" aria-label="Previous frame">Previous frame</button><button type="button" id="nextbutton">Next frame</button></div>
       <div id="trajectory" class="form-section"><label for="all_links">Trace a link</label><select id="all_links"></select><div class="button-row"><button type="button" id="tracebutton">Trace</button><button type="button" id="clear_trajectory">Clear trace</button></div></div>
     </div>
   </section>
@@ -99,7 +99,7 @@ window.robot_id=5629499534213120;
   <dl><dt>URDF</dt><dd>Edit the source, then choose <b>Apply changes</b> or press <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Enter</kbd>. Applying keeps your camera, joint positions and CSV. Unapplied edits are marked above the editor.</dd>
   <dt>Files</dt><dd>Open a URDF with its STL files, choose a folder, or add missing meshes later. Open saved robots, rename them, or use <b>Save a copy</b> for a separate version. Warning badges indicate missing meshes.</dd>
   <dt>Joints</dt><dd>Drag sliders or enter values to pose the robot. Angles are in radians and sliding distances are in metres. Choose <b>Detach panel</b> to keep the controls visible while editing URDF or CSV. Drag its header to move, resize from the corner, or choose <b>Dock</b> to return it to the tab. On phones the panel stays compact; scroll inside it for more joints.</dd>
-  <dt>Animation</dt><dd>Paste CSV with joint names as column headers, optionally starting with <code>time</code> in seconds. Insert the current pose for a template. Play, step between poses, add poses, or trace a link. CSV edits save automatically; invalid CSV disables playback.</dd></dl>
+  <dt>Animation</dt><dd>Paste CSV with joint names as column headers, optionally starting with <code>time</code> in seconds. Add current pose to CSV appends a row and creates the header only when the field is empty. Play, step between poses, add poses, or trace a link. CSV edits save automatically; invalid CSV disables playback.</dd></dl>
   <h2>Pose tool (inverse kinematics)</h2>
   <p>Double-click a segment, or enable <b>Pose tool</b> and click one. The segment moves by its visual centre in a plane facing the camera, keeping the initial cursor offset so it does not snap when picked. Scroll or use <b>Nearer/Farther</b> to change its depth; click the preview again or choose <b>Place</b> to keep the pose. <b>Cancel</b> or <kbd>Esc</kbd> restores the starting pose; Escape again exits the tool. On touch screens, enable the tool, drag a segment, then release to place it.</p>
   <p>IK adjusts the selected limb’s ancestor joints within their limits, keeping its branching anchor steady. Downstream joints keep their bend angles and follow the moved segment. Revolute, continuous and prismatic joints are supported. Orientation is free; joints that cannot move the centre are left unchanged. To bend an elbow, pick its forearm rather than the casing centred on its axis. A marker and outline show the target and selected segment. Unreachable targets use a best local pose and show the remaining distance. Camera movement pauses while posing; drag empty space to orbit between selections. Playback pauses when posing starts. Collision warnings remain advisory. Use the Animation tools to capture the resulting pose in CSV.</p>
@@ -117,7 +117,7 @@ window.robot_id=5629499534213120;
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=polish-20261107"></script>
+<script src="./scripts/runtime.bundle.js?v=csv-append-20261107"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -128,12 +128,12 @@ window.robot_id=5629499534213120;
 <script src="./scripts/underscore.js"></script>
 	<script src="./scripts/backbone.js"></script>
 	<script src="./lib/dat.gui.min.js"></script>
-	<script src="./scripts/modelrobot.js?v=polish-20261107"></script>
-<script src="./scripts/parserobot.js?v=polish-20261107"></script>
+	<script src="./scripts/modelrobot.js?v=csv-append-20261107"></script>
+<script src="./scripts/parserobot.js?v=csv-append-20261107"></script>
 <script src="./lib/CSVToArray.js"></script>
 
 <!--<script src="./scripts/unit4-robot_arm_demo.js"></script>-->
-<script src="./scripts/scene.js?v=polish-20261107"></script>
+<script src="./scripts/scene.js?v=csv-append-20261107"></script>
 <script src="./scripts/animate.js"></script>
 </body>
 </html>
