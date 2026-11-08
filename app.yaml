@@ -18,6 +18,10 @@ handlers:
   static_files: standalone.html
   upload: standalone.html
   expiration: "0s"
+- url: /ik-guide.html
+  static_files: ik-guide.html
+  upload: ik-guide.html
+  expiration: "0s"
 - url: /css
   static_dir: css
 - url: /lib

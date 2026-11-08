@@ -1,4 +1,4 @@
-import { Box3, Box3Helper, BufferGeometry, Float32BufferAttribute, Group, Line, LineBasicMaterial, Matrix4, Mesh, MeshBasicMaterial, Plane, Raycaster, SphereGeometry, Vector2, Vector3 } from 'three';
+import { Box3, Box3Helper, BufferGeometry, Float32BufferAttribute, Group, Line, LineDashedMaterial, Matrix4, Mesh, MeshBasicMaterial, Plane, Raycaster, RingGeometry, SphereGeometry, Vector2, Vector3 } from 'three';
 import { IKSolver, limbChain } from './ik.js';
 
 export class PoseTool {
@@ -9,7 +9,7 @@ export class PoseTool {
   init(canvas) {
     this.canvas = canvas;
     const byId = id => document.getElementById(id);
-    this.button = byId('pose-toggle'); this.status = byId('pose-status'); this.actions = byId('pose-actions');
+    this.button = byId('pose-toggle'); this.statusPanel = byId('pose-status'); this.status = byId('pose-feedback'); this.key = byId('pose-key'); this.actions = byId('pose-actions');
     this.button.onclick = () => this.setEnabled(!this.enabled);
     byId('pose-place').onclick = () => this.finish();
     byId('pose-cancel').onclick = () => this.finish(true);
@@ -126,12 +126,14 @@ export class PoseTool {
   }
   createHelpers(scale) {
     this.helpers = new Group(); this.helpers.name = 'Pose target';
-    this.marker = new Mesh(new SphereGeometry(scale * .008, 12, 8), new MeshBasicMaterial({ color: 0x007eac, depthTest: false }));
+    this.centreMarker = new Mesh(new SphereGeometry(scale * .006, 12, 8), new MeshBasicMaterial({ color: 0x007eac, depthTest: false, depthWrite: false }));
+    this.centreMarker.renderOrder = 12;
+    this.marker = new Mesh(new RingGeometry(scale * .0085, scale * .011, 32), new MeshBasicMaterial({ color: 0xb85700, depthTest: false, depthWrite: false }));
     this.marker.renderOrder = 11;
     this.outline = new Box3Helper(new Box3(), 0x007eac);
-    this.line = new Line(new BufferGeometry().setAttribute('position', new Float32BufferAttribute(new Float32Array(6), 3)), new LineBasicMaterial({ color: 0x007eac, depthTest: false }));
+    this.line = new Line(new BufferGeometry().setAttribute('position', new Float32BufferAttribute(new Float32Array(6), 3)), new LineDashedMaterial({ color: 0x526c80, dashSize: scale * .012, gapSize: scale * .008, depthTest: false, depthWrite: false }));
     this.line.frustumCulled = false; this.line.renderOrder = 10;
-    this.helpers.add(this.marker, this.line, this.outline); window.scene.add(this.helpers);
+    this.helpers.add(this.centreMarker, this.marker, this.line, this.outline); window.scene.add(this.helpers);
   }
   follow(event) {
     this.pointerAt(event);
@@ -150,14 +152,18 @@ export class PoseTool {
   }
   update() {
     if (!this.active) return;
-    const { solver, target, grabOffset, meshes, object } = this.active;
+    const { solver, target, meshes, object } = this.active;
     const result = solver.step(target);
     this.app.robotjointmanipall.jointsval();
-    const point = solver.position().clone().sub(grabOffset);
-    this.marker.position.copy(target).sub(grabOffset);
+    const point = solver.position();
+    this.centreMarker.position.copy(point);
+    this.marker.position.copy(target);
+    this.marker.quaternion.copy(this.app.camera.quaternion);
     const positions = this.line.geometry.getAttribute('position'); positions.setXYZ(0, point.x, point.y, point.z); positions.setXYZ(1, this.marker.position.x, this.marker.position.y, this.marker.position.z); positions.needsUpdate = true;
+    this.line.computeLineDistances();
     this.outline.box.makeEmpty(); for (const mesh of meshes) this.outline.box.union(new Box3().setFromObject(mesh));
-    this.report(object.name + ' · ' + (result.reached ? 'Target reached' : (result.stalled ? 'Best pose' : 'Solving')) + ' · ' + (result.error * 1000).toFixed(1) + ' mm from target');
+    const stationary = solver.chain.every(joint => !solver.influencesPosition(joint));
+    this.report(stationary ? object.name + ' · This centre cannot move; use joint sliders to rotate.' : object.name + ' · ' + (result.reached ? 'Target reached' : (result.stalled ? 'Best pose' : 'Solving')) + ' · ' + (result.error * 1000).toFixed(1) + ' mm from target');
   }
   finish(cancel = false) {
     if (!this.active) return;
@@ -172,7 +178,8 @@ export class PoseTool {
   }
   report(message) {
     if (!this.status) return;
-    this.status.hidden = !this.enabled;
+    this.statusPanel.hidden = !this.enabled;
+    this.key.hidden = !this.active;
     this.actions.hidden = !this.active;
     const text = message || 'Click a segment to pose it. Drag empty space to orbit. On touch: drag a segment, then release.';
     this.app.i18n.setText(this.status, text);
