@@ -185,6 +185,10 @@ button { touch-action: manipulation; }
 #container > canvas.pose-mode { cursor: crosshair; }
 #pose-actions { display: flex; gap: 5px; flex-wrap: wrap; }
 #pose-status { flex: 1 0 100%; margin: 0; padding: 3px 6px; border-radius: 4px; max-height: 48px; overflow: auto; overflow-wrap: anywhere; background: #f8fbffed; color: #25435e; font-size: 11px; }
+#pose-key { white-space: nowrap; margin-right: 7px; }
+.pose-centre-key { color: #007eac; }
+.pose-target-key { color: #a24d00; }
+#container.pose-active > canvas { cursor: move; }
 @media (max-width: 759px) {
   #pose-status { font-size: 10px; max-height: 42px; }
   .pose-active #viewer-toolbar [data-camera], .pose-active #screenshot, .pose-active .collision-toggle { display: none; }

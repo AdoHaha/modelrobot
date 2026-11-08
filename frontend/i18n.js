@@ -91,6 +91,11 @@ const polish = {
   'Check the CSV: use joint names and equal-length rows of numbers.': 'Sprawdź CSV: użyj nazw przegubów i wierszy liczb o jednakowej długości.',
   'Click a segment to pose it. Drag empty space to orbit. On touch: drag a segment, then release.': 'Kliknij segment, aby ustawić pozycję. Przeciągnij puste miejsce, aby obrócić widok. Dotyk: przeciągnij segment i puść.',
   'Target reached': 'Cel osiągnięty', 'Best pose': 'Najlepsza pozycja', 'Solving': 'Obliczanie',
+  'Centre': 'Środek', 'Target': 'Cel',
+  'Filled dot: actual centre. Hollow target: requested centre. Dashed line: position error.': 'Pełny punkt: bieżący środek. Pusty znacznik: zadany środek. Linia przerywana: błąd położenia.',
+  '{name} · This centre cannot move; use joint sliders to rotate.': '{name} · Ten środek jest nieruchomy; do obrotu użyj suwaków przegubów.',
+  'How MyModelRobot handles inverse kinematics': 'Jak MyModelRobot realizuje kinematykę odwrotną',
+  'The solid cyan dot marks the current centre; the hollow orange marker is its target. The dashed line shows position error, not a force or torque.': 'Pełny turkusowy punkt oznacza bieżący środek, a pusty pomarańczowy znacznik — jego cel. Linia przerywana pokazuje błąd położenia, a nie siłę ani moment obrotowy.',
   '{name} · {state} · {distance} mm from target': '{name} · {state} · odległość od celu: {distance} mm',
   'This segment has no movable ancestors. Choose an arm or another movable segment.': 'Ten segment nie ma ruchomych przegubów nadrzędnych. Wybierz ramię lub inny ruchomy segment.',
   'IK requires a tree of joints.': 'Kinematyka odwrotna wymaga drzewa przegubów.', 'IK requires one parent per link.': 'Każdy segment musi mieć jeden segment nadrzędny.',
@@ -205,6 +210,7 @@ export class I18n {
   }
   apply() {
     document.documentElement.lang = this.language; document.title = this.t(this.title); this.select.value = this.language;
+    document.querySelectorAll('[data-language-link]').forEach(link => link.setAttribute('href', link.dataset.languageLink + '?lang=' + this.language));
     for (const { node, source, leading, trailing } of this.staticText) if (node.isConnected) {
       const translated = this.t(source);
       node.nodeValue = (/^[,.;:]/.test(translated) ? '' : leading) + translated + trailing;

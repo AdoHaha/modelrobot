@@ -398,6 +398,12 @@ test('IK picks STL and primitive links, follows the cursor, changes depth, prese
   const camera=await page.evaluate(()=>App.camera.position.toArray());
   const start=await projectIK(page,[1.5,.1,.09]);await page.mouse.dblclick(start.x,start.y);
   await page.waitForFunction(()=>App.poseTool.active?.object.name==='tip');
+  const markers=await page.evaluate(()=>({centre:App.poseTool.centreMarker.position.toArray(),target:App.poseTool.marker.position.toArray(),actual:App.poseTool.active.solver.position().toArray(),goal:App.poseTool.active.target.toArray(),offset:App.poseTool.active.grabOffset.length(),line:[...App.poseTool.line.geometry.getAttribute('position').array]}));
+  assert.ok(markers.offset>.01,'Off-centre pick makes the old shifted tether distinguishable');
+  markers.centre.forEach((n,i)=>assert.ok(Math.abs(n-markers.actual[i])<1e-10));
+  markers.target.forEach((n,i)=>assert.ok(Math.abs(n-markers.goal[i])<1e-10));
+  markers.line.forEach((n,i)=>assert.ok(Math.abs(n-(i<3?markers.actual[i]:markers.goal[i-3]))<1e-6));
+  assert.ok(await page.locator('#pose-key').isVisible());
   assert.equal(await page.evaluate(()=>robotlinkcollection.get('tip').meshvis_array[0].material.color.getHex()),0xff2424,'Selection keeps collision red');
   assert.deepEqual(await page.evaluate(()=>App.poseTool.active.solver.chain.map(j=>j.name)),['elbow','shoulder']);
   const target=await projectIK(page,[1.25,.6,.09]);await page.mouse.move(target.x,target.y,{steps:8});
@@ -408,6 +414,7 @@ test('IK picks STL and primitive links, follows the cursor, changes depth, prese
   await page.waitForFunction(depth=>new THREE.Vector3(...depth).distanceTo(App.poseTool.active.target)>.02,depth);
   (await page.evaluate(()=>App.camera.position.toArray())).forEach((n,i)=>assert.ok(Math.abs(n-camera[i])<1e-8));
   await page.keyboard.press('Escape');assert.ok(await page.evaluate(()=>!App.poseTool.active&&App.cameraControls.enabled));
+  assert.ok(!(await page.locator('#pose-key').isVisible()));
   assert.deepEqual(await page.evaluate(()=>robotjointcollection.map(j=>j.theta)),[0,0,0,0]);
   assert.equal(await page.evaluate(()=>scene.getObjectByName('Pose target')),undefined);
   // A primitive on the same link is independently pickable.
@@ -591,4 +598,57 @@ test('CSV pose capture preserves the header and first row, appends current colum
   assert.equal(await page.locator('#robotcsv').inputValue(),invalid);assert.match(await page.locator('#animation-status').innerText(),/Cannot add a pose/);
   await page.locator('#ui-language').selectOption('pl');assert.match(await page.locator('#animation-status').innerText(),/Nie można dodać pozycji/);
   assert.equal(await page.locator('#csv-template').innerText(),'Dodaj bieżącą pozycję do CSV');assert.deepEqual(errors,[]);await context.close();
+});
+
+test('IK torso handle shows actual centre, requested position and an axial-rotation hint',async()=>{
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);
+  await page.locator('#standard-view').selectOption('front');
+  const pick=await page.evaluate(()=>{scene.updateMatrixWorld(true);const p=new THREE.Box3().setFromObject(robotlinkcollection.get('torso_link').meshvis_array[0]).getCenter(new THREE.Vector3()).project(App.camera),r=renderer.domElement.getBoundingClientRect();return {x:r.left+(p.x+1)*r.width/2,y:r.top+(1-p.y)*r.height/2};});
+  await page.mouse.dblclick(pick.x,pick.y);await page.waitForFunction(()=>App.poseTool.active?.object.name==='torso_link');
+  assert.match(await page.locator('#pose-status').innerText(),/This centre cannot move; use joint sliders to rotate/);
+  const before=await page.evaluate(()=>({point:App.poseTool.centreMarker.position.toArray(),pose:robotjointcollection.map(j=>j.theta)}));
+  await page.mouse.move(pick.x+40,pick.y+20,{steps:6});
+  await page.waitForFunction(()=>App.poseTool.marker.position.distanceTo(App.poseTool.centreMarker.position)>.01);
+  const after=await page.evaluate(()=>({point:App.poseTool.centreMarker.position.toArray(),pose:robotjointcollection.map(j=>j.theta),start:[...App.poseTool.line.geometry.getAttribute('position').array].slice(0,3)}));
+  assert.deepEqual(after.pose,before.pose);after.point.forEach((n,i)=>assert.ok(Math.abs(n-before.point[i])<1e-10));after.start.forEach((n,i)=>assert.ok(Math.abs(n-before.point[i])<1e-6));
+  await page.locator('#ui-language').selectOption('pl');assert.match(await page.locator('#pose-status').innerText(),/Ten środek jest nieruchomy/);
+  await page.locator('#pose-cancel').click();assert.deepEqual(errors,[]);await context.close();
+});
+
+test('Help opens the bilingual CCD lesson with working step-by-step, constrained and touch-friendly exercises',async()=>{
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);await page.locator('#ui-language').selectOption('pl');
+  await page.locator('#help-button').click();const link=page.locator('#ik-guide-link');assert.match(await link.innerText(),/Jak MyModelRobot realizuje/);assert.match(await link.getAttribute('href'),/ik-guide.html\?lang=pl/);
+  const [guide]=await Promise.all([context.waitForEvent('page'),link.click()]);guide.setDefaultTimeout(10000);guide.on('pageerror',e=>errors.push(e.message));await guide.waitForLoadState();
+  assert.equal(await guide.locator('html').getAttribute('lang'),'pl');assert.match(await guide.getByRole('heading',{level:1}).innerText(),/CCD/);
+  assert.ok(await guide.getByRole('heading',{name:'Po jednym przegubie: CCD z uwzględnieniem osi',exact:true}).isVisible());
+  const initial=[Number(await guide.locator('#angle-1').inputValue()),Number(await guide.locator('#angle-2').inputValue())];
+  await guide.locator('#step-ccd').click();assert.equal(Number(await guide.locator('#angle-1').inputValue()),initial[0]);assert.notEqual(Number(await guide.locator('#angle-2').inputValue()),initial[1]);assert.equal(await guide.locator('#demo-steps').innerText(),'1');
+  await guide.locator('#step-ccd').click();assert.notEqual(Number(await guide.locator('#angle-1').inputValue()),initial[0]);assert.equal(await guide.locator('#demo-steps').innerText(),'2');
+  await guide.locator('#reset-ccd').click();await guide.locator('#solve-ccd').click();
+  await guide.waitForFunction(()=>Number(document.getElementById('demo-error').dataset.value)<=.005);
+  assert.match(await guide.locator('#demo-status').innerText(),/tolerancji/);
+  await guide.locator('#beyond-reach').click();await guide.locator('#solve-ccd').click();await guide.waitForFunction(()=>document.getElementById('demo-status').textContent.startsWith('Obliczenia zakończone'));
+  assert.ok(Number(await guide.locator('#demo-error').getAttribute('data-value'))>1);
+  assert.ok(Math.abs(Number(await guide.locator('#angle-1').inputValue()))<=120);assert.ok(Math.abs(Number(await guide.locator('#angle-2').inputValue()))<=140);
+  const saved=[await guide.locator('#angle-1').inputValue(),await guide.locator('#angle-2').inputValue()];await guide.locator('#guide-language').selectOption('en');
+  assert.match(await guide.getByRole('heading',{level:1}).innerText(),/axis-constrained CCD/);assert.deepEqual([await guide.locator('#angle-1').inputValue(),await guide.locator('#angle-2').inputValue()],saved);
+  const diagram=guide.locator('#ccd-diagram');await diagram.focus();const target=await guide.locator('#requested-centre').getAttribute('cx');await guide.keyboard.press('ArrowRight');assert.ok(Number(await guide.locator('#requested-centre').getAttribute('cx'))>Number(target));
+  for(const [width,height]of[[320,568],[667,375]]){await guide.setViewportSize({width,height});assert.ok(await guide.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.ok(await guide.locator('#guide-language').isVisible());}
+  await guide.locator('#joint-limits').uncheck();assert.equal(await guide.locator('#angle-1').getAttribute('max'),'180');
+  assert.ok(await page.locator('#help-dialog').isVisible(),'Lesson leaves original editing tab intact');assert.deepEqual(errors,[]);await context.close();
+});
+
+test('CCD lesson target can be dragged with touch on a phone',async()=>{
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage();page.setDefaultTimeout(10000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(new URL('ik-guide.html?lang=pl',url).href);
+  await page.waitForFunction(()=>document.getElementById('demo-error').dataset.value);await page.locator('#ccd-diagram').scrollIntoViewIfNeeded();
+  const box=await page.locator('#ccd-diagram').boundingBox(),touch=await context.newCDPSession(page),x=box.x+box.width*.55,y=box.y+box.height*.45;
+  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+  const initial=Number(await page.locator('#requested-centre').getAttribute('cx'));
+  for(let i=1;i<=8;i++)await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+i*3,y:y-i,id:1}]});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  assert.ok(Number(await page.locator('#requested-centre').getAttribute('cx'))>initial+10);
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);await context.close();
 });

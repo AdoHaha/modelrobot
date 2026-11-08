@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inverse kinematics in MyModelRobot: axis-constrained CCD</title>
+<style>
+:root { color-scheme: light; font-family: system-ui,-apple-system,Segoe UI,sans-serif; color:#23384e; background:#edf2f6; }
+* { box-sizing:border-box; } [hidden] { display:none!important; }
+body { margin:0; font-size:16px; line-height:1.7; } header { padding:12px max(18px,calc((100vw - 1000px)/2)); background:#14283f; display:flex; align-items:center; flex-wrap:wrap; gap:14px; color:white; }
+header a { color:white; } header strong { font-size:19px; } header select { margin-left:auto; }
+a { color:#17669d; text-underline-offset:3px; } main { max-width:1048px; margin:auto; padding:30px 24px 50px; } .reading { max-width:76ch; margin:auto; }
+h1 { font-size:clamp(27px,4vw,39px); line-height:1.18; letter-spacing:-.7px; margin:10px 0 22px; } h2 { font-size:23px; line-height:1.3; margin:32px 0 12px; } p { margin:0 0 18px; }
+.eyebrow { font-size:12px; font-weight:700; color:#406580; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
+.demo { margin:28px 0 40px; padding:22px; background:white; border:1px solid #c5d5e2; border-radius:13px; box-shadow:0 5px 22px #19334c0a; } .demo h2 { margin-top:0; } .demo-intro { color:#526a7e; font-size:14px; }
+.demo-layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(215px,1fr); gap:24px; align-items:start; } svg { display:block; width:100%; border:1px solid #d5e1e9; border-radius:8px; background:#f8fbfd; touch-action:none; cursor:crosshair; }
+svg:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible { outline:3px solid #3589c8; outline-offset:3px; }
+label { display:block; font-size:14px; font-weight:600; margin-bottom:14px; } input[type=range] { display:block; width:100%; accent-color:#1766a7; } output { font-variant-numeric:tabular-nums; } .angle-value { color:#516a7e; font-size:13px; font-weight:400; display:block; }
+button,select { font:inherit; border:1px solid #aec3d3; border-radius:5px; padding:7px 10px; background:#fff; color:#244864; cursor:pointer; font-size:13px; } header select { background:#23435f; color:white; }
+.primary { color:white; background:#1766a7; border-color:#1766a7; } .buttons { display:flex; flex-wrap:wrap; gap:7px; margin:12px 0; } .legend { display:flex; flex-wrap:wrap; gap:14px; margin:8px 0; font-size:13px; } .centre { color:#007eac; } .target { color:#a24d00; }
+.metrics { background:#eef5fa; border-radius:6px; padding:10px; font-size:13px; } .metrics p { margin:0 0 5px; } #demo-status { margin:10px 0 0; color:#345970; font-size:13px; min-height:44px; }
+.exercise { margin-top:18px; border-left:3px solid #4b8cb8; padding-left:15px; font-size:14px; } .equation { text-align:center; overflow-wrap:anywhere; background:white; padding:14px; border:1px solid #d9e3eb; border-radius:6px; font:17px/1.6 ui-monospace,monospace; }
+.active-joint { fill:#f4c464!important; } footer { max-width:76ch; margin:32px auto 0; border-top:1px solid #cbd8e3; padding-top:18px; font-size:13px; color:#536d80; } footer p { margin-bottom:8px; }
+@media(max-width:760px) { main { padding:23px 16px; } .demo { padding:15px; margin-left:0; margin-right:0; } .demo-layout { grid-template-columns:1fr; gap:16px; } h2 { font-size:21px; } }
+</style>
+<script defer src="./scripts/ik-guide.js?v=ik-guide-20261108"></script>
+</head>
+<body>
+<header><a href="./"><strong>MyModelRobot</strong></a><a id="back-viewer" href="./"><span data-lang="en">Back to viewer</span><span data-lang="pl" hidden>Wróć do podglądu</span></a><select id="guide-language" aria-label="Language / Język"><option value="en">EN</option><option value="pl">PL</option></select></header>
+<main>
+<div class="reading"><div class="eyebrow"><span data-lang="en">Learn the algorithm</span><span data-lang="pl" hidden>Poznaj algorytm</span></div>
+<div data-lang="en"><h1>Inverse kinematics in MyModelRobot: axis-constrained CCD</h1>
+<p>MyModelRobot uses <strong>axis-constrained cyclic coordinate descent (CCD)</strong> to move a selected segment towards a target. It adjusts one joint value at a time, measuring the result before continuing. This is a particular method for solving <strong>inverse kinematics (IK)</strong>: you specify a desired position and the program searches for joint values that achieve it. Select a segment and move its target to see this search in action.</p></div><div data-lang="pl" hidden><h1>Kinematyka odwrotna w MyModelRobot: CCD z uwzględnieniem osi</h1>
+<p>MyModelRobot przesuwa wybrany segment w stronę celu metodą <strong>cyklicznego spadku po współrzędnych (CCD) z uwzględnieniem osi przegubów</strong>. Zmienia po jednej wartości przegubu i sprawdza wynik przed kolejną zmianą. To konkretna metoda rozwiązywania zadania <strong>kinematyki odwrotnej (IK)</strong>: wskazujesz żądane położenie, a program szuka wartości przegubów, które je zapewnią. Wybierz segment i przesuń jego cel, aby zobaczyć te obliczenia w działaniu.</p></div></div>
+<section class="demo" aria-labelledby="demo-heading">
+<h2 id="demo-heading"><span data-lang="en">One sweep of CCD</span><span data-lang="pl" hidden>Jeden przebieg CCD</span></h2>
+<p class="demo-intro"><span data-lang="en">Explore the same per-joint update in a simplified 2D arm. The handle is the centre of the final link. The full viewer also transforms spatial URDF axes and tries alternate starting offsets when progress stalls.</span><span data-lang="pl" hidden>Zobacz tę samą zmianę pojedynczego przegubu na uproszczonej ręce 2D. Uchwytem jest środek ostatniego segmentu. Pełny podgląd uwzględnia również przestrzenne osie URDF i próbuje alternatywnych ustawień, gdy poprawa ustaje.</span></p>
+<div class="demo-layout"><div>
+<svg id="ccd-diagram" viewBox="0 0 640 400" role="group" tabindex="0" aria-label="Two-link CCD exercise">
+<defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e3ebf2" stroke-width="1"/></pattern></defs>
+<rect width="640" height="400" fill="url(#grid)"/>
+<path d="M20 200H620 M220 380V20" stroke="#cad7e2" fill="none"/><text x="610" y="190" fill="#607689" font-size="15">x</text><text x="232" y="28" fill="#607689" font-size="15">y</text>
+<line id="upper-link" stroke="#9eafbd" stroke-width="25" stroke-linecap="round"/>
+<line id="lower-link" stroke="#c3ced7" stroke-width="25" stroke-linecap="round"/>
+<line id="point-vector" stroke="#007eac" stroke-width="2" stroke-dasharray="4 5"/><line id="target-vector" stroke="#b85700" stroke-width="2" stroke-dasharray="4 5"/>
+<line id="position-error" stroke="#526c80" stroke-width="2" stroke-dasharray="7 5"/>
+<circle id="base-joint" cx="220" cy="200" r="12" fill="#fff" stroke="#263f55" stroke-width="3"/>
+<circle id="elbow-joint" r="10" fill="#fff" stroke="#263f55" stroke-width="3"/>
+<circle id="actual-centre" r="7" fill="#007eac" stroke="white" stroke-width="2"/>
+<circle id="requested-centre" r="11" fill="none" stroke="#b85700" stroke-width="3"/>
+<text x="204" y="231" text-anchor="end" font-size="13" fill="#35566e">q₁</text>
+<text id="elbow-label" font-size="13" fill="#35566e">q₂</text><text id="centre-label" font-size="14" fill="#007eac">p(q)</text><text id="target-label" font-size="14" fill="#a24d00">t</text>
+</svg>
+<div class="legend"><span class="centre"><span data-lang="en">● Actual centre p(q)</span><span data-lang="pl" hidden>● Bieżący środek p(q)</span></span><span class="target"><span data-lang="en">○ Target t</span><span data-lang="pl" hidden>○ Cel t</span></span></div>
+<p class="demo-intro"><span data-lang="en">Click or drag in the diagram to move the target. With the diagram focused, use arrow keys; Shift makes larger steps. Dashed rays from the active joint are the two directions compared by CCD.</span><span data-lang="pl" hidden>Kliknij lub przeciągnij na schemacie, aby przesunąć cel. Po zaznaczeniu schematu użyj strzałek; Shift zwiększa krok. Przerywane promienie wychodzące z aktywnego przegubu pokazują kierunki porównywane przez CCD.</span></p>
+</div><div>
+<label for="angle-1"><span data-lang="en">Shoulder angle q₁</span><span data-lang="pl" hidden>Kąt barku q₁</span><input id="angle-1" type="range" min="-120" max="120" step="any"><output class="angle-value" id="angle-value-1"></output></label>
+<label for="angle-2"><span data-lang="en">Elbow angle q₂</span><span data-lang="pl" hidden>Kąt łokcia q₂</span><input id="angle-2" type="range" min="-140" max="140" step="any"><output class="angle-value" id="angle-value-2"></output></label>
+<label><input type="checkbox" id="joint-limits" checked> <span data-lang="en">Joint limits (q₁ ±120°, q₂ ±140°)</span><span data-lang="pl" hidden>Ograniczenia (q₁ ±120°, q₂ ±140°)</span></label>
+<div class="buttons"><button id="step-ccd"><span data-lang="en">Step one joint</span><span data-lang="pl" hidden>Zmień jeden przegub</span></button><button id="solve-ccd" class="primary"><span data-lang="en">Solve</span><span data-lang="pl" hidden>Rozwiąż</span></button><button id="reset-ccd"><span data-lang="en">Reset</span><span data-lang="pl" hidden>Od początku</span></button><button id="beyond-reach"><span data-lang="en">Beyond reach</span><span data-lang="pl" hidden>Poza zasięgiem</span></button></div>
+<div class="metrics"><p id="next-joint"></p><p id="active-joint"></p><p><span data-lang="en">Joint updates:</span><span data-lang="pl" hidden>Zmiany przegubów:</span> <output id="demo-steps">0</output></p><p><span data-lang="en">Position error (diagram units):</span><span data-lang="pl" hidden>Błąd położenia (jedn. schematu):</span> <output id="demo-error"></output></p></div>
+<p id="demo-status" role="status" aria-live="polite"></p>
+<p class="demo-intro"><span data-lang="en">The exercise shows degrees and radians; the viewer stores joint angles in radians. This illustration has one positional target and no orientation target.</span><span data-lang="pl" hidden>Ćwiczenie pokazuje stopnie i radiany; podgląd zapisuje kąty przegubów w radianach. Schemat ma jeden cel położenia, bez celu orientacji.</span></p>
+</div></div>
+<div class="exercise" data-lang="en"><strong>Try it:</strong> change a joint slider: that is forward kinematics. Move the target and predict which joint turns first. Press Step twice. Why must the second update use the centre’s new position? Then try Beyond reach, compare the residual gap, and solve from another starting bend.</div>
+<div class="exercise" data-lang="pl" hidden><strong>Spróbuj:</strong> zmień kąt suwakiem — to kinematyka prosta. Przesuń cel i przewidź, który przegub obróci się pierwszy. Wykonaj dwa kroki. Dlaczego druga zmiana musi użyć nowego położenia środka? Następnie wybierz Poza zasięgiem, porównaj pozostałą odległość i zacznij od innego zgięcia.</div>
+</section>
+<article class="reading"><div data-lang="en"><h2>Forward and inverse: two directions of the same problem</h2>
+<p><strong>Forward kinematics</strong> starts with joint values. An angular joint rotates; a sliding joint translates. MyModelRobot combines those motions with the joint origins defined in URDF, following the parent–child hierarchy to calculate each link’s position and orientation.</p>
+<p>Write the selected point’s position as <strong>p(q)</strong>, where <strong>q</strong> is the list of joint values. Forward kinematics evaluates p(q). Inverse kinematics asks for q that brings this point close to a target <strong>t</strong>:</p>
+<p class="equation">min e = ‖t − p(q)‖</p>
+<p>The error e is the straight-line distance to the target. Different joint configurations may produce the same position, and some targets have no solution. MyModelRobot searches iteratively from the current pose.</p>
+<h2>What are you moving?</h2>
+<p>Double-click a segment, or enable the pose tool and select one. A ray from the camera through the pointer identifies the visible mesh and its owning robot link.</p>
+<p>The point being positioned is the <strong>centre of the selected link’s visual bounding box</strong>, calculated in that link’s coordinates. This geometric handle ties placement to the segment’s shape rather than an arbitrary surface detail; it is not a centre of mass. Your click may be elsewhere on the surface, so the tool retains a fixed world-space offset between your click and this centre. The segment follows without suddenly snapping its centre under the pointer.</p>
+<p>A screen pointer supplies two coordinates; the target needs three. Initially, pointer rays intersect a plane through the click, facing the camera. The intersection plus the retained offset gives the centre target; moving the pointer moves this target in a parallel plane. The wheel or depth buttons move the plane nearer or farther. The camera pauses during placement so this mapping stays stable.</p>
+<h2>Which joints take part?</h2>
+<p>The solver walks from the selected link towards its ancestors. It treats links connected by fixed joints as one rigid assembly, preventing rigid decorations from creating false branch boundaries. It includes movable joints until it reaches a branching assembly, then stops before moving that shared anchor.</p>
+<p>Thus, selecting one arm generally adjusts that arm’s chain while its branching anchor stays steady. Joints farther down the tree than the selected link keep their values: their links follow the segment with the existing bends. Choosing a forearm and choosing a hand can therefore produce different motions.</p>
+<h2>One joint at a time: axis-constrained CCD</h2>
+<p>MyModelRobot uses <strong>cyclic coordinate descent (CCD)</strong>. Each sweep visits the chosen joints from the selected segment towards the anchor. For each joint, it recalculates the current point and the joint’s axis in world coordinates, using the parent’s current transform and the URDF joint origin.</p>
+<p>For a <strong>revolute</strong> or <strong>continuous</strong> joint, the allowed motion is rotation around that axis. Imagine looking straight down it. The solver projects the vectors from the joint origin to the selected point and to the target onto the plane perpendicular to the axis. Call those projected vectors <strong>u</strong> and <strong>v</strong>, and the unit axis <strong>a</strong>. The signed correction is:</p>
+<p class="equation">Δq = atan2(a · (u × v), u · v)</p>
+<p>This turns the point’s projected direction towards the target’s. Ordinary sweeps cap each correction at 0.25 radians. If the point lies on the rotation axis, rotation cannot change its position, so that joint is skipped.</p>
+<p>A <strong>prismatic</strong> joint instead slides along its axis:</p>
+<p class="equation">Δq = (t − p) · a</p>
+<p>This extracts the part of the position error that sliding can correct. Each ordinary update is capped at 4% of the robot’s overall scale. After every joint adjustment, forward kinematics updates the link transforms before the next joint is considered.</p>
+<h2>Repeating, respecting limits, and learning from the result</h2>
+<p>Revolute and prismatic values stay within their joint limits. Continuous angles wrap to an equivalent value between −π and π. Angles use radians; translations use metres.</p>
+<p>Short batches across animation frames keep the browser responsive, normally allowing up to 20 sweeps and about 4 milliseconds per call. It keeps the best pose found. Its reach tolerance is 0.1% of the robot’s bounding-box diagonal at selection time, with a minimum of one micrometre. When progress stops, deterministic trial offsets can help a straight or awkward configuration begin moving; unsuccessful trials are discarded.</p>
+<p>Try selecting a forearm, moving the target sideways, and then changing its depth. Watch which sliders respond and which remain steady. Place the pose to keep it, or cancel to restore the starting values.</p>
+<p>This is a local position solver: orientation is free, collision warnings are advisory, and “Best pose” means the best configuration found by this search. A remaining gap may reflect reach, limits, or a local stall. Try another starting bend or select a different segment to explore why.</p></div><div data-lang="pl" hidden><h2>Kinematyka prosta i odwrotna</h2>
+<p><strong>Kinematyka prosta</strong> zaczyna od wartości przegubów. Przegub obrotowy wykonuje obrót, a przesuwny — przesunięcie. MyModelRobot łączy te ruchy z położeniami i orientacjami początkowymi przegubów zapisanymi w URDF. Następnie, zgodnie z hierarchią rodzic–dziecko, wyznacza położenie i orientację każdego segmentu.</p>
+<p>Położenie wybranego punktu zapiszmy jako <strong>p(q)</strong>, gdzie <strong>q</strong> oznacza zestaw wartości przegubów. Kinematyka prosta oblicza p(q). Kinematyka odwrotna szuka takich wartości q, aby punkt znalazł się blisko celu <strong>t</strong>:</p>
+<p class="equation">min e = ‖t − p(q)‖</p>
+<p>Błąd e jest odległością od celu w linii prostej. Różne konfiguracje mogą dawać to samo położenie, a niektóre cele są nieosiągalne. MyModelRobot prowadzi obliczenia iteracyjne od bieżącej konfiguracji, zamiast wyznaczać wszystkie możliwe rozwiązania.</p>
+<h2>Co właściwie przesuwasz?</h2>
+<p>Kliknij segment dwukrotnie albo włącz narzędzie ustawiania pozycji i wybierz segment. Promień biegnący od kamery przez wskaźnik wskazuje widoczną geometrię i segment robota, do którego ona należy.</p>
+<p>Przesuwanym punktem jest <strong>środek prostopadłościanu obejmującego geometrię wizualną wybranego segmentu</strong>, obliczony w jego lokalnym układzie współrzędnych. Ten uchwyt geometryczny wiąże ustawianie pozycji z kształtem segmentu zamiast z przypadkowym szczegółem powierzchni; nie jest środkiem masy. Ponieważ możesz kliknąć w innym miejscu powierzchni, narzędzie zachowuje stałe przesunięcie w układzie świata między kliknięciem a tym środkiem. Segment podąża za wskaźnikiem bez nagłego przeskoku środka pod kursor.</p>
+<p>Wskaźnik na ekranie ma dwie współrzędne, a cel w przestrzeni potrzebuje trzech. Początkowo promień wskaźnika przecina płaszczyznę przechodzącą przez kliknięty punkt i zwróconą do kamery. Punkt przecięcia powiększony o zachowane przesunięcie wyznacza cel środka; ruch wskaźnika przesuwa ten cel po płaszczyźnie równoległej. Kółko myszy lub przyciski głębokości przesuwają płaszczyznę bliżej albo dalej. Podczas ustawiania kamera pozostaje nieruchoma, co stabilizuje to odwzorowanie.</p>
+<h2>Które przeguby biorą udział?</h2>
+<p>Algorytm przechodzi od wybranego segmentu w stronę jego przodków w hierarchii. Segmenty połączone przegubami stałymi traktuje jak jeden sztywny zespół, dzięki czemu nieruchome elementy dekoracyjne nie tworzą pozornych granic rozgałęzień. Dodaje do łańcucha przeguby ruchome aż do rozgałęzienia, po czym zatrzymuje się przed poruszeniem wspólnego punktu oparcia.</p>
+<p>Wybranie segmentu ręki zwykle uruchamia więc przeguby tej ręki, pozostawiając nieruchomy zespół, z którego wychodzą gałęzie. Przeguby leżące dalej w hierarchii niż wybrany segment zachowują swoje wartości. Ich segmenty podążają za nim z dotychczasowymi zgięciami. Wybór przedramienia może zatem wywołać inny ruch niż wybór dłoni.</p>
+<h2>Po jednym przegubie: CCD z uwzględnieniem osi</h2>
+<p>MyModelRobot stosuje <strong>cykliczny spadek po współrzędnych</strong>, czyli <strong>CCD</strong>. Jeden przebieg odwiedza wybrane przeguby od przesuwanego segmentu w stronę punktu oparcia. Dla każdego z nich algorytm ponownie oblicza położenie punktu oraz oś przegubu w układzie świata, korzystając z aktualnej transformacji rodzica i początku przegubu z URDF.</p>
+<p>Przegub <strong>obrotowy</strong> lub <strong>obrotowy bez ograniczeń</strong> pozwala obracać tylko wokół swojej osi. Wyobraź sobie widok wzdłuż niej. Algorytm rzutuje wektory prowadzące od początku przegubu do przesuwanego punktu i do celu na płaszczyznę prostopadłą do osi. Oznaczmy te rzuty jako <strong>u</strong> i <strong>v</strong>, a jednostkowy wektor osi jako <strong>a</strong>. Poprawka kąta ze znakiem wynosi:</p>
+<p class="equation">Δq = atan2(a · (u × v), u · v)</p>
+<p>Poprawka obraca kierunek punktu w stronę kierunku celu. W zwykłym przebiegu jej wartość bezwzględna nie przekracza 0,25 radiana. Jeśli punkt leży na osi, obrót nie zmieni jego położenia, więc ten przegub zostaje pominięty.</p>
+<p>Przegub <strong>przesuwny</strong> działa inaczej:</p>
+<p class="equation">Δq = (t − p) · a</p>
+<p>Iloczyn skalarny wybiera część błędu, którą można usunąć ruchem wzdłuż osi. Pojedyncza zwykła poprawka nie przekracza 4% skali całego robota. Po każdej zmianie kinematyka prosta aktualizuje transformacje segmentów, zanim algorytm przejdzie do następnego przegubu.</p>
+<h2>Kolejne przybliżenia i obserwacja wyniku</h2>
+<p>Wartości przegubów obrotowych i przesuwnych pozostają w granicach ich ograniczeń. Kąty przegubów ciągłych są sprowadzane do równoważnych wartości między −π a π. Kąty podaje się w radianach, a przesunięcia w metrach.</p>
+<p>Aby przeglądarka zachowała płynność działania, obliczenia odbywają się w krótkich seriach rozłożonych na klatki animacji: zwykle do 20 przebiegów i około 4 milisekund na wywołanie. Program zachowuje najlepszą znalezioną konfigurację. Tolerancja osiągnięcia celu wynosi 0,1% przekątnej prostopadłościanu obejmującego robota w chwili wyboru segmentu, lecz co najmniej jeden mikrometr. Gdy poprawa ustaje, ustalone poprawki próbne pomagają czasem ruszyć z wyprostowanej lub niekorzystnej konfiguracji. Nieudane próby są odrzucane.</p>
+<p>Wybierz przedramię, przesuń cel w bok, a następnie zmień jego głębokość. Obserwuj, które suwaki reagują. Zatwierdź konfigurację lub anuluj, aby przywrócić wartości początkowe.</p>
+<p>To lokalne rozwiązywanie zadania położenia: orientacja jest swobodna, a ostrzeżenia o kolizjach nie blokują ruchu. „Najlepsza pozycja” oznacza najlepszy wynik tego wyszukiwania. Pozostała odległość może wynikać z zasięgu, ograniczeń lub lokalnego zastoju. Zmień początkowe zgięcie albo wybrany segment i porównaj efekt.</p></div></article>
+<footer><p><span data-lang="en">Read the implementation:</span><span data-lang="pl" hidden>Przeczytaj implementację:</span> <a href="https://github.com/AdoHaha/modelrobot/blob/master/frontend/ik.js">CCD</a> · <a href="https://github.com/AdoHaha/modelrobot/blob/master/frontend/pose-tool.js">Pose tool</a></p><p>MyModelRobot · <a href="https://gentle.pl/">Igor Zubrycki</a> · <a href="https://github.com/AdoHaha/modelrobot">GitHub</a></p></footer>
+</main>
+</body></html>

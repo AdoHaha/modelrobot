@@ -22,7 +22,7 @@
   <!-- Custom styles for this template -->
   <link rel="stylesheet" href="lib/codemirror.css">
 
-  <link href="./css/additional.css?v=csv-append-20261107" rel="stylesheet">
+  <link href="./css/additional.css?v=ik-guide-20261108" rel="stylesheet">
 </head>
 
 <body>
@@ -50,7 +50,7 @@
     <div class="form-section"><label for="local-name">Robot name</label><input type="text" id="local-name" placeholder="Name from URDF"><div class="button-row"><button type="button" id="local-save">Save name</button><button type="button" id="local-copy">Save a copy</button></div>
       <label for="local-library">Saved robots</label><select id="local-library"></select><div class="button-row"><button type="button" id="local-open" class="primary">Open robot</button><button type="button" id="local-delete">Delete saved copy</button></div>
       <small>Applied changes update the current robot automatically. Clearing site data removes saved robots.</small></div>
-    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=csv-append-20261107">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=csv-append-20261107" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
+    <div class="form-section"><h2>Examples</h2><button type="button" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=ik-guide-20261108">Pi robot (safe pose)</button><button type="button" id="pi-collision-demo" class="example-open" data-url="./testowe/pi_robot_urdf.xml?v=ik-guide-20261108" data-collision-demo="true">Pi collision demo</button><button type="button" class="example-open" data-url="./testowe/r2d2.xml">R2D2</button></div>
 
   </section>
   <section id="panel-joints" class="workspace-panel" role="tabpanel" aria-labelledby="tab-joints" hidden>
@@ -70,7 +70,7 @@
 </aside>
 <div id="workspace-divider" role="separator" aria-label="Resize editor and preview" aria-orientation="vertical" aria-valuemin="25" aria-valuemax="75" aria-valuenow="44" tabindex="0"></div>
 <main id="container" aria-label="Robot preview">
-  <div id="viewer-toolbar" aria-label="Camera controls"><strong id="preview-name">Robot preview</strong><button type="button" data-camera="fit" title="Fit robot (F when preview is focused)">Fit robot</button><button type="button" data-camera="home">Home</button><button type="button" data-camera="in" aria-label="Zoom in">+</button><button type="button" data-camera="out" aria-label="Zoom out">−</button><button type="button" id="screenshot">Screenshot</button><button type="button" id="pose-toggle" aria-pressed="false" title="Move a segment with inverse kinematics; double-click a segment to start">Pose tool</button><label class="collision-toggle" title="Approximate self-collision check using only URDF collision tags"><input type="checkbox" id="collision-enabled"> Collisions</label><p id="collision-status" role="status" aria-live="polite" hidden></p><div id="pose-actions" hidden><button type="button" id="pose-place">Place</button><button type="button" id="pose-cancel">Cancel</button><button type="button" id="pose-nearer">Nearer</button><button type="button" id="pose-farther">Farther</button></div><p id="pose-status" role="status" aria-live="polite" hidden></p></div>
+  <div id="viewer-toolbar" aria-label="Camera controls"><strong id="preview-name">Robot preview</strong><button type="button" data-camera="fit" title="Fit robot (F when preview is focused)">Fit robot</button><button type="button" data-camera="home">Home</button><button type="button" data-camera="in" aria-label="Zoom in">+</button><button type="button" data-camera="out" aria-label="Zoom out">−</button><button type="button" id="screenshot">Screenshot</button><button type="button" id="pose-toggle" aria-pressed="false" title="Move a segment with inverse kinematics; double-click a segment to start">Pose tool</button><label class="collision-toggle" title="Approximate self-collision check using only URDF collision tags"><input type="checkbox" id="collision-enabled"> Collisions</label><p id="collision-status" role="status" aria-live="polite" hidden></p><div id="pose-actions" hidden><button type="button" id="pose-place">Place</button><button type="button" id="pose-cancel">Cancel</button><button type="button" id="pose-nearer">Nearer</button><button type="button" id="pose-farther">Farther</button></div><p id="pose-status" role="status" aria-live="polite" hidden><span id="pose-key" title="Filled dot: actual centre. Hollow target: requested centre. Dashed line: position error." hidden><span class="pose-centre-key">● <span>Centre</span></span> · <span class="pose-target-key">○ <span>Target</span></span></span> <span id="pose-feedback"></span></p></div>
   <nav id="view-cube" aria-label="Standard camera views"><label for="standard-view">View</label><select id="standard-view"><option value="">Custom</option><option value="iso">Isometric</option><option value="front">Front</option><option value="back">Back</option><option value="left">Left</option><option value="right">Right</option><option value="top">Top</option><option value="bottom">Bottom</option></select></nav>
   <p id="camera-help"><span class="mouse-help">Drag to orbit · Shift / right-drag to pan · Scroll to zoom</span><span class="touch-help">One finger: orbit · Two fingers: pan / zoom</span></p>
   <span id="screenshottext"></span><div id="screenshotplace"></div>
@@ -91,6 +91,8 @@
   <dt>Joints</dt><dd>Drag sliders or enter values to pose the robot. Angles are in radians and sliding distances are in metres. Choose <b>Detach panel</b> to keep the controls visible while editing URDF or CSV. Drag its header to move, resize from the corner, or choose <b>Dock</b> to return it to the tab. On phones the panel stays compact; scroll inside it for more joints.</dd>
   <dt>Animation</dt><dd>Paste CSV with joint names as column headers, optionally starting with <code>time</code> in seconds. Add current pose to CSV appends a row and creates the header only when the field is empty. Play, step between poses, add poses, or trace a link. CSV edits save automatically; invalid CSV disables playback.</dd></dl>
   <h2>Pose tool (inverse kinematics)</h2>
+  <p><a id="ik-guide-link" href="./ik-guide.html?lang=en" data-language-link="./ik-guide.html" target="_blank" rel="noopener">How MyModelRobot handles inverse kinematics</a></p>
+  <p>The solid cyan dot marks the current centre; the hollow orange marker is its target. The dashed line shows position error, not a force or torque.</p>
   <p>Double-click a segment, or enable <b>Pose tool</b> and click one. The segment moves by its visual centre in a plane facing the camera, keeping the initial cursor offset so it does not snap when picked. Scroll or use <b>Nearer/Farther</b> to change its depth; click the preview again or choose <b>Place</b> to keep the pose. <b>Cancel</b> or <kbd>Esc</kbd> restores the starting pose; Escape again exits the tool. On touch screens, enable the tool, drag a segment, then release to place it.</p>
   <p>IK adjusts the selected limb’s ancestor joints within their limits, keeping its branching anchor steady. Downstream joints keep their bend angles and follow the moved segment. Revolute, continuous and prismatic joints are supported. Orientation is free; joints that cannot move the centre are left unchanged. To bend an elbow, pick its forearm rather than the casing centred on its axis. A marker and outline show the target and selected segment. Unreachable targets use a best local pose and show the remaining distance. Camera movement pauses while posing; drag empty space to orbit between selections. Playback pauses when posing starts. Collision warnings remain advisory. Use the Animation tools to capture the resulting pose in CSV.</p>
   <h2>Collision warnings</h2>
@@ -107,7 +109,7 @@
 
 <script src="lib/codemirror.js"></script>
 <script src="lib/mode/xml/xml.js"></script>
-<script src="./scripts/runtime.bundle.js?v=csv-append-20261107"></script>
+<script src="./scripts/runtime.bundle.js?v=ik-guide-20261108"></script>
 <script src="./scripts/jquery-3.7.1.min.js"></script>
 <script src="./scripts/jquery.xml2json.js" type="text/javascript" language="javascript"></script>
 <script src="./lib/bootstrap.min.js"></script>
@@ -117,10 +119,10 @@
 <script src="./scripts/underscore.js"></script>
 <script src="./scripts/backbone.js"></script>
 <script src="./lib/dat.gui.min.js"></script>
-<script src="./scripts/modelrobot.js?v=csv-append-20261107"></script>
-<script src="./scripts/parserobot.js?v=csv-append-20261107"></script>
+<script src="./scripts/modelrobot.js?v=ik-guide-20261108"></script>
+<script src="./scripts/parserobot.js?v=ik-guide-20261108"></script>
 <script src="./lib/CSVToArray.js"></script>
-<script src="./scripts/scene.js?v=csv-append-20261107"></script>
+<script src="./scripts/scene.js?v=ik-guide-20261108"></script>
 <script src="./scripts/animate.js"></script>
 
 </body>
