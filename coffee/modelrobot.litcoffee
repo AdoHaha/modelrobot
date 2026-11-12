@@ -26,6 +26,7 @@ Class responsible for changing addresses in browser
                 ":id": "change_robot"
 
             change_robot: (id)->
+                App.localRobots.openingDocument=true
                 App.currentrobot.id=id
                 App.currentrobot.fetch()
             new_robot: ->
@@ -98,7 +99,7 @@ When movement is impossible, return false
 
                         tempMatrix=new THREE.Matrix4();
                         tempaxis= new THREE.Vector3().copy(@axis);
-                        if (@type isnt "continuous" and @upper? and @lower?)
+                        if (not derived and @type isnt "continuous" and @upper? and @lower?)
                             t1=Math.max(@lower,Math.min(t1,@upper));
                         withinMimicLimits=(joint,value) ->
                             return false unless Number.isFinite(value)
@@ -293,7 +294,7 @@ Controller/view for joints. It also manages the views. To init it has to have an
                         @joints.each((joint) => @add2gui(joint))
 
                 add2gui: (joint) ->
-                        return if joint.type is "fixed"
+                        return if joint.type is "fixed" or joint.mimic?
                         @jointsdict[joint.get("name")]= new App.RobotJointManipSingle({joint:joint,gui:@anglesfolder})
 
 The idea behind changepose is: you provide two arrays, and it iterates through using names
@@ -490,7 +491,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                     opening=App.localRobots.openingDocument or not window.robot?
                     poses={}
                     unless opening
-                        window.robotjointcollection.each (joint) -> poses[joint.name]=joint.theta
+                        window.robotjointcollection.each (joint) -> poses[joint.name]=joint.theta unless joint.mimic?
                     editorCursor=@myCodeMirror.getCursor()
                     editorScroll=@myCodeMirror.getScrollInfo()
                     App.animform.stop()
@@ -505,7 +506,7 @@ Functions connected to top form, where URDF is placed. TODO: it schouldn't reset
                         if opening
                             App.fitRobot()
                         else
-                            window.robotjointcollection.each (joint) -> joint.movejoint(poses[joint.name]) if poses[joint.name]?
+                            window.robotjointcollection.each (joint) -> joint.movejoint(poses[joint.name]) if poses[joint.name]? and not joint.mimic?
                             App.robotjointmanipall.jointsval()
                         collisionIssues=App.collisions.rebuild(@model.attributes.urdf,window.robotlinkcollection,window.robotjointcollection)
                         App.localRobots.messages.push(issue) for issue in collisionIssues

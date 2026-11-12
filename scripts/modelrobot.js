@@ -24,6 +24,7 @@
     // Class responsible for changing addresses in browser
     class Router extends Backbone.Router {
       change_robot(id) {
+        App.localRobots.openingDocument = true;
         App.currentrobot.id = id;
         return App.currentrobot.fetch();
       }
@@ -57,7 +58,7 @@
     }
 
     initialize() {
-      var axis, basicMatrix, position, ref1, ref2, ref3, ref4, rotation;
+      var axis, basicMatrix, position, ref1, ref2, ref3, ref4, ref5, rotation;
       this.theta = 0;
       this.name = this.attributes.name;
       this.mimic = (ref1 = this.attributes.mimic) != null ? ref1 : null;
@@ -71,8 +72,8 @@
       this.basicrotation = new THREE.Euler(rotation[0], rotation[1], rotation[2], 'ZYX');
       position = App.el2array(_.has(this.attributes, "origin") && this.attributes.origin.xyz, "0 0 0");
       this.basicposition = new THREE.Vector3(position[0], position[1], position[2]);
-      this.lower = (ref1 = (ref2 = this.attributes.limit) != null ? ref2.lower : void 0) != null ? ref1 : -Math.PI;
-      this.upper = (ref3 = (ref4 = this.attributes.limit) != null ? ref4.upper : void 0) != null ? ref3 : Math.PI;
+      this.lower = (ref2 = (ref3 = this.attributes.limit) != null ? ref3.lower : void 0) != null ? ref2 : -Math.PI;
+      this.upper = (ref4 = (ref5 = this.attributes.limit) != null ? ref5.upper : void 0) != null ? ref4 : Math.PI;
       this.lower = this.lower * 1;
       this.upper = this.upper * 1;
       basicMatrix = new THREE.Matrix4();
@@ -100,8 +101,8 @@
       }
     }
 
-    movejoint(t1, t2) { //TODO planar type
-      var ref1, tempMatrix, tempaxis;
+    movejoint(t1, t2, derived = false) { //TODO planar type
+      var child, j, len, ref1, ref2, tempMatrix, tempaxis, withinMimicLimits;
       boundMethodCheck(this, ref);
       if ((this.mimic != null) && !derived) {
         return false;
@@ -109,7 +110,7 @@
       t1 = t1 != null ? t1 : this.theta;
       tempMatrix = new THREE.Matrix4();
       tempaxis = new THREE.Vector3().copy(this.axis);
-      if (this.type !== "continuous" && (this.upper != null) && (this.lower != null)) {
+      if (!derived && this.type !== "continuous" && (this.upper != null) && (this.lower != null)) {
         t1 = Math.max(this.lower, Math.min(t1, this.upper));
       }
       withinMimicLimits = function(joint, value) {
@@ -415,7 +416,7 @@
       }
 
       add2gui(joint) {
-        if (joint.type === "fixed") {
+        if (joint.type === "fixed" || (joint.mimic != null)) {
           return;
         }
         return this.jointsdict[joint.get("name")] = new App.RobotJointManipSingle({
@@ -672,7 +673,9 @@
         poses = {};
         if (!opening) {
           window.robotjointcollection.each(function(joint) {
-            return poses[joint.name] = joint.theta;
+            if (joint.mimic == null) {
+              return poses[joint.name] = joint.theta;
+            }
           });
         }
         editorCursor = this.myCodeMirror.getCursor();
@@ -689,7 +692,7 @@
             App.fitRobot();
           } else {
             window.robotjointcollection.each(function(joint) {
-              if (poses[joint.name] != null) {
+              if ((poses[joint.name] != null) && (joint.mimic == null)) {
                 return joint.movejoint(poses[joint.name]);
               }
             });

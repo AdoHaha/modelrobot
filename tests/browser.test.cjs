@@ -128,6 +128,35 @@ test('STL import, transforms, joints, trajectory, persistence, multiple robots, 
   await context.close();
 });
 
+test('meter-scale robots fit the camera after file load and reopening', async () => {
+  const context=await browser.newContext({viewport:{width:900,height:700}});
+  const page=await context.newPage();page.setDefaultTimeout(10000);
+  const source='<robot name="Meter arm"><link name="base"><visual><geometry><box size="2 1 1"/></geometry></visual></link><link name="tip"><visual><geometry><box size="0.5 0.5 1"/></geometry></visual></link><joint name="arm" type="fixed"><parent link="base"/><child link="tip"/><origin xyz="0 0 4"/></joint></robot>';
+  const visible=()=>page.evaluate(()=>{
+    const bounds=new THREE.Box3().setFromObject(robot), camera=App.camera;
+    camera.updateMatrixWorld();
+    const points=[];
+    for(const x of [bounds.min.x,bounds.max.x]) for(const y of [bounds.min.y,bounds.max.y]) for(const z of [bounds.min.z,bounds.max.z]) points.push(new THREE.Vector3(x,y,z).project(camera));
+    return points.every(point=>Math.abs(point.x)<.85&&Math.abs(point.y)<.85&&point.z>-1&&point.z<1);
+  });
+  await page.goto(url);await page.waitForFunction(()=>window.robotlinkcollection?.length);
+  await page.locator('#local-files').setInputFiles(upload('meter-arm.urdf',Buffer.from(source)));
+  await page.waitForFunction(()=>App.currentrobot.get('urdf').includes('Meter arm'));
+  await settled(page);
+  assert.ok(await visible(),'Imported meter-scale robot fits the viewport');
+  const savedId=await page.locator('#local-library').inputValue();
+  await page.evaluate(()=>{App.camera.position.copy(App.cameraControls.target).addScaledVector(App.camera.position.clone().sub(App.cameraControls.target),.1);App.cameraControls.update();});
+  assert.ok(!(await visible()),'The test first zooms close enough to clip the robot');
+  await page.locator('#tab-files').click();await page.locator('#local-library').selectOption(savedId);await page.locator('#local-open').click();
+  await page.waitForFunction(()=>App.camera.position.distanceTo(App.cameraControls.target)>5);
+  assert.ok(await visible(),'Reopening a saved robot restores its framing');
+  await page.reload();await page.waitForFunction(()=>window.robotlinkcollection?.length);await settled(page);
+  await page.locator('#tab-files').click();await page.locator('#local-library').selectOption(savedId);await page.locator('#local-open').click();
+  await page.waitForFunction(()=>App.currentrobot.get('urdf').includes('Meter arm'));
+  assert.ok(await visible(),'Opening the saved robot after page reload fits it');
+  await context.close();
+});
+
 test('editing session, workspace tabs, keyboard Apply, save copy and camera gestures', async () => {
   const context=await browser.newContext({viewport:{width:1440,height:900}});
   const page=await context.newPage();page.setDefaultTimeout(10000);
@@ -542,7 +571,7 @@ test('Polish dynamic messages cover IK, collisions, validation and saved prefere
   await page.locator('#ui-language').selectOption('en');assert.ok(await page.evaluate(()=>Boolean(App.poseTool.active)));assert.match(await page.locator('#pose-status').innerText(),/from target/);
   await page.locator('#ui-language').selectOption('pl');await page.locator('#pose-cancel').click();assert.match(await page.locator('#pose-status').innerText(),/Kliknij segment/);
   await page.locator('#tab-animation').click();await page.locator('#robotcsv').fill('time,missing_joint\n0,1\n');
-  assert.match(await page.locator('#animation-status').innerText(),/Nieznane lub nieruchome przeguby: missing_joint/);
+  assert.match(await page.locator('#animation-status').innerText(),/Nieznane, nieruchome lub zależne przeguby: missing_joint/);
   await page.locator('#tab-urdf').click();await page.evaluate(()=>App.forumula.myCodeMirror.setValue('<robot>'));await page.locator('#loadbutton').click();
   assert.match(await page.locator('#local-status').innerText(),/Wprowadź poprawny URDF/);
   await page.evaluate(()=>App.forumula.myCodeMirror.setValue(App.localRobots.currentXml));

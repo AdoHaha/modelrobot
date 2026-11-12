@@ -188,7 +188,7 @@ export class Workspace {
   appendCurrentPose() {
     App.poseTool.finish();
     const input = document.getElementById('robotcsv');
-    const values = new Map(window.robotjointcollection.filter(joint => joint.type !== 'fixed').map(joint => [joint.name, joint.theta]));
+    const values = new Map(window.robotjointcollection.filter(joint => joint.type !== 'fixed' && !joint.mimic).map(joint => [joint.name, joint.theta]));
     try {
       const csv = appendPose(input.value, values, CSVToArray, App.animform.deltaTime);
       input.value = csv;
@@ -211,14 +211,14 @@ export class Workspace {
       const rows = CSVToArray(text);
       const timed = rows[0][0] === 'time';
       const names = rows[0].slice(timed ? 1 : 0);
-      const unknown = names.filter(name => { const joint = robotjointcollection.findWhere({name}); return !joint || joint.type === 'fixed'; });
+      const unknown = names.filter(name => { const joint = robotjointcollection.findWhere({name}); return !joint || joint.type === 'fixed' || joint.mimic; });
       valid = rows.length > 1 && names.length > 0 && new Set(names).size === names.length && !unknown.length && rows.slice(1).every(row => row.length === rows[0].length && row.every(value => value.trim() !== '' && Number.isFinite(Number(value))));
       if (timed && valid) valid = rows.slice(1).every(row => Number(row[0]) >= 0);
-      message = unknown.length ? 'Unknown or fixed joints: ' + unknown.join(', ') : valid ? 'Ready to play · ' + (rows.length - 1) + ' poses · ' + names.length + ' joints · ' + (timed ? 'time in seconds' : '0.06 s per frame') : 'Check the CSV: use joint names and equal-length rows of numbers.';
+      message = unknown.length ? 'Unknown, fixed or dependent joints: ' + unknown.join(', ') : valid ? 'Ready to play · ' + (rows.length - 1) + ' poses · ' + names.length + ' joints · ' + (timed ? 'time in seconds' : '0.06 s per frame') : 'Check the CSV: use joint names and equal-length rows of numbers.';
     }
     const badge = document.getElementById('animation-badge');
     badge.hidden = !text || valid; App.i18n.setAttr(badge, 'title', message);
-    document.getElementById('csv-template').disabled = !window.robotjointcollection?.some(joint => joint.type !== 'fixed');
+    document.getElementById('csv-template').disabled = !window.robotjointcollection?.some(joint => joint.type !== 'fixed' && !joint.mimic);
     this.csvValid = valid;
     App.i18n.setText(document.getElementById('animation-status'), message);
     ['playbutton','pausebutton','stopbutton','prevbutton','nextbutton'].forEach(id => document.getElementById(id).disabled = !valid);

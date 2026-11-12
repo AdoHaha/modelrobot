@@ -12,7 +12,7 @@ export function appendPose(csv, values, parse, interval = .06) {
   const names = timed ? header.slice(1) : header;
   if (!names.length) throw new Error('CSV needs at least one movable joint column.');
   const unknown = names.filter(name => !values.has(name));
-  if (unknown.length) throw new Error('Unknown or fixed joints: ' + unknown.join(', '));
+  if (unknown.length) throw new Error('Unknown, fixed or dependent joints: ' + unknown.join(', '));
   if (new Set(names).size !== names.length || !rows.slice(1).every(row => row.length === header.length && row.every(value => value.trim() !== '' && Number.isFinite(Number(value))) && (!timed || Number(row[0]) >= 0))) {
     throw new Error('Check the CSV: use joint names and equal-length rows of numbers.');
   }

@@ -163,7 +163,7 @@
   };
 
   App.fitRobot = function() {
-    var bounds, center, direction, distance, size, span;
+    var bounds, center, corner, direction, distance, horizontalTan, i, inverseRotation, j, k, len, len1, len2, ref, ref1, ref2, verticalTan, x, y, z;
     if (window.robot == null) {
       return;
     }
@@ -171,14 +171,33 @@
     if (bounds.isEmpty()) {
       return;
     }
-    size = bounds.getSize(new THREE.Vector3());
     center = bounds.getCenter(new THREE.Vector3());
-    span = Math.max(size.x, size.y, size.z, 0.01);
-    distance = span / (2 * Math.tan(App.camera.fov * Math.PI / 360)) * 1.4 / Math.min(App.camera.aspect, 1);
     direction = App.camera.position.clone().sub(App.cameraControls.target).normalize();
     if (direction.lengthSq() < 0.01) {
       direction.set(1, 1, 1).normalize();
     }
+    App.camera.position.copy(center).add(direction);
+    App.camera.lookAt(center);
+    App.camera.updateMatrixWorld();
+    inverseRotation = App.camera.quaternion.clone().invert();
+    verticalTan = Math.tan(App.camera.fov * Math.PI / 360);
+    horizontalTan = verticalTan * App.camera.aspect;
+    distance = 0;
+    ref = [bounds.min.x, bounds.max.x];
+    for (i = 0, len = ref.length; i < len; i++) {
+      x = ref[i];
+      ref1 = [bounds.min.y, bounds.max.y];
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        y = ref1[j];
+        ref2 = [bounds.min.z, bounds.max.z];
+        for (k = 0, len2 = ref2.length; k < len2; k++) {
+          z = ref2[k];
+          corner = new THREE.Vector3(x, y, z).sub(center).applyQuaternion(inverseRotation);
+          distance = Math.max(distance, corner.z + Math.max(Math.abs(corner.x) / horizontalTan, Math.abs(corner.y) / verticalTan));
+        }
+      }
+    }
+    distance = Math.max(distance * 1.25, 0.01 / (2 * verticalTan));
     App.cameraControls.target.copy(center);
     App.camera.position.copy(center).addScaledVector(direction, distance);
     App.camera.near = Math.max(distance / 1000, 0.0001);
