@@ -90,6 +90,18 @@ Joints are not added to robot, as they control robot when it is moved, so they i
                           window.robotjointcollection.add(robotjoint);
 
                         );
+                jointsByName=Object.create(null)
+                window.robotjointcollection.each (joint) -> jointsByName[joint.name]=joint
+                window.robotjointcollection.each (joint) ->
+                    if joint.mimic?
+                        driver=jointsByName[joint.mimic.joint]
+                        joint.mimicMultiplier=Number(joint.mimic.multiplier ? 1)
+                        joint.mimicOffset=Number(joint.mimic.offset ? 0)
+                        driver.mimicChildren.push(joint)
+                home=App.mimicHomePositions(window.robotjointcollection.map (joint) ->
+                    {name:joint.name,type:joint.type,lower:joint.lower,upper:joint.upper,mimic:joint.mimic}
+                )
+                window.robotjointcollection.each (joint) -> joint.movejoint(home.get(joint.name)) unless joint.mimic?
                 #console.log(scene)
                 window.scene.add(window.robot);
                 renderer.render(window.scene, App.camera);

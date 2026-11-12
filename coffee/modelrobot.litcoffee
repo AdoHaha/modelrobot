@@ -41,6 +41,8 @@ Model of robot joint, it is responsible of moving links: connecting them togethe
                 initialize: ->
                         @theta=0
                         @name=@attributes.name
+                        @mimic=@attributes.mimic ? null
+                        @mimicChildren=[]
                         axis=App.el2array(_.has(@attributes,"axis")&&@attributes.axis.xyz,"1 0 0");
 
                         @axis=new THREE.Vector3(axis[0],axis[1],axis[2])
@@ -87,7 +89,9 @@ t1 - joint value
 t2 - will be used when planar joint is implemented
 When movement is impossible, return false
 
-                movejoint: (t1,t2) => #TODO planar type
+                movejoint: (t1,t2,derived=false) => #TODO planar type
+
+                        return false if @mimic? and not derived
 
 
                         t1=t1 ? @theta
@@ -96,7 +100,15 @@ When movement is impossible, return false
                         tempaxis= new THREE.Vector3().copy(@axis);
                         if (@type isnt "continuous" and @upper? and @lower?)
                             t1=Math.max(@lower,Math.min(t1,@upper));
-                        if (@type=="continuous" or (@upper >= t1 >=@lower)) #check whether movement is allowed
+                        withinMimicLimits=(joint,value) ->
+                            return false unless Number.isFinite(value)
+                            if joint.type isnt "continuous" and (value < joint.lower-1e-12 or value > joint.upper+1e-12)
+                                return false
+                            for child in joint.mimicChildren
+                                return false unless withinMimicLimits(child,value*child.mimicMultiplier+child.mimicOffset)
+                            true
+                        return false unless withinMimicLimits(@,t1)
+                        if (@type=="continuous" or derived or (@upper >= t1 >=@lower)) #check whether movement is allowed
                                 switch @type
                                         when "revolute" then @movementMatrix=tempMatrix.makeRotationAxis(@axis,t1)
                                         when "continuous" then @movementMatrix=tempMatrix.makeRotationAxis(@axis,t1)
@@ -111,6 +123,7 @@ When movement is impossible, return false
                                 return false
                         @currentMatrix.multiplyMatrices(@basicMatrix,@movementMatrix)
                         @childobject3d.matrix=@currentMatrix
+                        child.movejoint(@theta*child.mimicMultiplier+child.mimicOffset,null,true) for child in @mimicChildren
 
                         @
                 jointval: () => #just an interface
@@ -295,7 +308,7 @@ The idea behind changepose is: you provide two arrays, and it iterates through u
                         @
 
                 changejointval: (name,value) ->
-                        @jointsdict[name].changeval(value,true)
+                        @jointsdict[name]?.changeval(value,true)
                         @
 
 *jointsval* Method that returns values of selected joints as array. When names is empty, it will give values of all joints and all names.
@@ -305,7 +318,7 @@ Returns array array[0] joint values array[1] joint names
                 jointsval: (names) ->
                         if (!(names?) or names=="" or names.length==0) #empty or not specified
                                 movable=@joints.filter( (joint) ->
-                                        return joint.type!="fixed"
+                                        return joint.type!="fixed" and not joint.mimic?
                                 )
                                 names=_.pluck(movable,"name")
                                 #names=_.map(@jointsdict,(value,key) ->
@@ -356,7 +369,7 @@ There can be only one such model on scene ###TODO this seems fundamentaly wrong
                         #console.log(@joint.upper);
                         if(@joint.type!="fixed")
                                 @controller=@gui.add(@dummy,'val',@joint.lower,@joint.upper,0.01).name(@joint.get("name"))
-                                @dummy["val"]=0
+                                @dummy["val"]=@joint.theta
                                 @controller.updateDisplay()
                                 @controller.onChange(@changeval)
                                 App.workspace.connectJointSlider(@controller,@joint)
@@ -370,12 +383,12 @@ Checks about validity of movement are made inside @joint, we just check whether 
 
                         if @joint.movejoint(value)
 
-                                @dummy["val"]=value
-                                if updateController
-                                        @dummy["val"]=value
-                                        @controller.updateDisplay()
+                                @dummy["val"]=@joint.theta
+                                @controller.updateDisplay()
 
                         else
+                                @dummy["val"]=@joint.theta
+                                @controller.updateDisplay()
                                 console.log(@joint.get("name")+" not between min max") #TODO change it to some pretty alert visable to user
 
                         @

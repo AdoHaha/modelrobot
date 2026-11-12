@@ -60,6 +60,8 @@
       var axis, basicMatrix, position, ref1, ref2, ref3, ref4, rotation;
       this.theta = 0;
       this.name = this.attributes.name;
+      this.mimic = (ref1 = this.attributes.mimic) != null ? ref1 : null;
+      this.mimicChildren = [];
       axis = App.el2array(_.has(this.attributes, "axis") && this.attributes.axis.xyz, "1 0 0");
       this.axis = new THREE.Vector3(axis[0], axis[1], axis[2]);
       if (this.axis.lengthSq() > 0) {
@@ -101,13 +103,36 @@
     movejoint(t1, t2) { //TODO planar type
       var ref1, tempMatrix, tempaxis;
       boundMethodCheck(this, ref);
+      if ((this.mimic != null) && !derived) {
+        return false;
+      }
       t1 = t1 != null ? t1 : this.theta;
       tempMatrix = new THREE.Matrix4();
       tempaxis = new THREE.Vector3().copy(this.axis);
       if (this.type !== "continuous" && (this.upper != null) && (this.lower != null)) {
         t1 = Math.max(this.lower, Math.min(t1, this.upper));
       }
-      if (this.type === "continuous" || ((this.upper >= t1 && t1 >= this.lower))) { //check whether movement is allowed
+      withinMimicLimits = function(joint, value) {
+        var child, j, len, ref1;
+        if (!Number.isFinite(value)) {
+          return false;
+        }
+        if (joint.type !== "continuous" && (value < joint.lower - 1e-12 || value > joint.upper + 1e-12)) {
+          return false;
+        }
+        ref1 = joint.mimicChildren;
+        for (j = 0, len = ref1.length; j < len; j++) {
+          child = ref1[j];
+          if (!withinMimicLimits(child, value * child.mimicMultiplier + child.mimicOffset)) {
+            return false;
+          }
+        }
+        return true;
+      };
+      if (!withinMimicLimits(this, t1)) {
+        return false;
+      }
+      if (this.type === "continuous" || derived || ((this.upper >= t1 && t1 >= this.lower))) { //check whether movement is allowed
         switch (this.type) {
           case "revolute":
             this.movementMatrix = tempMatrix.makeRotationAxis(this.axis, t1);
@@ -137,6 +162,11 @@
       }
       this.currentMatrix.multiplyMatrices(this.basicMatrix, this.movementMatrix);
       this.childobject3d.matrix = this.currentMatrix;
+      ref2 = this.mimicChildren;
+      for (j = 0, len = ref2.length; j < len; j++) {
+        child = ref2[j];
+        child.movejoint(this.theta * child.mimicMultiplier + child.mimicOffset, null, true);
+      }
       return this;
     }
 
@@ -409,7 +439,10 @@
       }
 
       changejointval(name, value) {
-        this.jointsdict[name].changeval(value, true);
+        var ref3;
+        if ((ref3 = this.jointsdict[name]) != null) {
+          ref3.changeval(value, true);
+        }
         return this;
       }
 
@@ -420,7 +453,7 @@
         var movable, values;
         if (!(names != null) || names === "" || names.length === 0) { //empty or not specified
           movable = this.joints.filter(function(joint) {
-            return joint.type !== "fixed";
+            return joint.type !== "fixed" && (joint.mimic == null);
           });
           names = _.pluck(movable, "name");
         }
@@ -481,7 +514,7 @@
       this.dummy["val"] = 0.01;
       if (this.joint.type !== "fixed") {
         this.controller = this.gui.add(this.dummy, 'val', this.joint.lower, this.joint.upper, 0.01).name(this.joint.get("name"));
-        this.dummy["val"] = 0;
+        this.dummy["val"] = this.joint.theta;
         this.controller.updateDisplay();
         this.controller.onChange(this.changeval);
         return App.workspace.connectJointSlider(this.controller, this.joint);
@@ -497,12 +530,11 @@
       }
       //if (@joint.upper >= value >= @joint.lower)
       if (this.joint.movejoint(value)) {
-        this.dummy["val"] = value;
-        if (updateController) {
-          this.dummy["val"] = value;
-          this.controller.updateDisplay();
-        }
+        this.dummy["val"] = this.joint.theta;
+        this.controller.updateDisplay();
       } else {
+        this.dummy["val"] = this.joint.theta;
+        this.controller.updateDisplay();
         console.log(this.joint.get("name") + " not between min max"); //TODO change it to some pretty alert visable to user
       }
       return this;

@@ -4,7 +4,7 @@
   // ====================================
   // Function in this file prepares robot in App namespace from xml string ( URDF file)
   window.parseRobot = function(xml) {
-    var error, robotBaseMaterial, xmelon;
+    var error, home, jointsByName, robotBaseMaterial, xmelon;
     try {
       xmelon = $.parseXML(xml); // enabling use of jQuery functions
     } catch (error1) {
@@ -71,6 +71,34 @@
       robotjoint.set("linkcollection", window.robotlinkcollection);
       return window.robotjointcollection.add(robotjoint);
     });
+    jointsByName = Object.create(null);
+    window.robotjointcollection.each(function(joint) {
+      return jointsByName[joint.name] = joint;
+    });
+    window.robotjointcollection.each(function(joint) {
+      var driver, ref, ref1;
+      if (joint.mimic != null) {
+        driver = jointsByName[joint.mimic.joint];
+        joint.mimicMultiplier = Number((ref = joint.mimic.multiplier) != null ? ref : 1);
+        joint.mimicOffset = Number((ref1 = joint.mimic.offset) != null ? ref1 : 0);
+        return driver.mimicChildren.push(joint);
+      }
+    });
+    home = App.mimicHomePositions(window.robotjointcollection.map(function(joint) {
+      return {
+        name: joint.name,
+        type: joint.type,
+        lower: joint.lower,
+        upper: joint.upper,
+        mimic: joint.mimic
+      };
+    }));
+    window.robotjointcollection.each(function(joint) {
+      if (joint.mimic == null) {
+        return joint.movejoint(home.get(joint.name));
+      }
+    });
+    //console.log(scene)
     window.scene.add(window.robot);
     renderer.render(window.scene, App.camera);
     App.trajectoryview.create_list();
