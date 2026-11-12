@@ -1,3 +1,5 @@
+import { mimicHomePositions } from './mimic.js';
+
 // URDF and mesh bytes stay on this device. IndexedDB supports large binary STL files.
 export class LocalRobots {
   constructor(loader) {
@@ -180,10 +182,51 @@ export class LocalRobots {
   validate(xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.querySelector('parsererror') || doc.documentElement.tagName !== 'robot') throw new Error('Enter a valid URDF with a <robot> root.');
-    const links = new Set([...doc.querySelectorAll('robot > link')].map(link => link.getAttribute('name')));
+    const linkElements = [...doc.querySelectorAll('robot > link')];
+    const links = new Set(linkElements.map(link => link.getAttribute('name')));
+    if (links.size !== linkElements.length || links.has(null) || links.has('')) throw new Error('Links need unique, nonempty names.');
+    const joints = new Map(), parents = new Map(), mimicDrivers = new Map();
     for (const joint of doc.querySelectorAll('robot > joint')) {
-      if (!links.has(joint.querySelector('parent')?.getAttribute('link')) || !links.has(joint.querySelector('child')?.getAttribute('link'))) throw new Error('Joint ' + joint.getAttribute('name') + ' must reference existing parent and child links.');
+      const name = joint.getAttribute('name'), parent = joint.querySelector(':scope > parent')?.getAttribute('link'), child = joint.querySelector(':scope > child')?.getAttribute('link');
+      if (!name || joints.has(name)) throw new Error('Joints need unique, nonempty names.');
+      if (!links.has(parent) || !links.has(child)) throw new Error('Joint ' + name + ' must reference existing parent and child links.');
+      if (parent === child || parents.has(child)) throw new Error('Joint ' + name + ' must give its child link exactly one parent.');
+      joints.set(name, joint); parents.set(child, parent);
+      const mimic = joint.querySelector(':scope > mimic');
+      if (mimic) {
+        const driver = mimic.getAttribute('joint');
+        if (!driver) throw new Error('Mimic joint ' + name + ' needs a driving joint.');
+        for (const attribute of ['multiplier', 'offset']) {
+          if (mimic.hasAttribute(attribute) && (!mimic.getAttribute(attribute).trim() || !Number.isFinite(Number(mimic.getAttribute(attribute))))) throw new Error('Mimic joint ' + name + ' needs a finite ' + attribute + '.');
+        }
+        mimicDrivers.set(name, driver);
+      }
     }
+    for (const child of parents.keys()) {
+      const seen = new Set(); let link = child;
+      while (parents.has(link)) {
+        if (seen.has(link)) throw new Error('URDF link joints must form a tree.');
+        seen.add(link); link = parents.get(link);
+      }
+    }
+    for (const [name, driver] of mimicDrivers) {
+      if (!joints.has(driver)) throw new Error('Mimic joint ' + name + ' refers to missing driver ' + driver + '.');
+      const jointType = joints.get(name).getAttribute('type'), driverType = joints.get(driver).getAttribute('type');
+      const rotational = type => type === 'revolute' || type === 'continuous';
+      if (!(rotational(jointType) && rotational(driverType)) && !(jointType === 'prismatic' && driverType === 'prismatic')) throw new Error('Mimic joint ' + name + ' and its driver need matching motion types.');
+      const seen = new Set(); let current = name;
+      while (mimicDrivers.has(current)) {
+        if (seen.has(current)) throw new Error('Mimic joints must not form a dependency cycle.');
+        seen.add(current); current = mimicDrivers.get(current);
+      }
+    }
+    mimicHomePositions([...joints].map(([name, joint]) => {
+      const type = joint.getAttribute('type'), limit = joint.querySelector(':scope > limit'), mimic = joint.querySelector(':scope > mimic');
+      const bound = (attribute, fallback) => limit?.hasAttribute(attribute) ? Number(limit.getAttribute(attribute)) : fallback;
+      const lower = bound('lower', -Math.PI), upper = bound('upper', Math.PI);
+      if (type !== 'continuous' && type !== 'fixed' && (!Number.isFinite(lower) || !Number.isFinite(upper) || lower > upper)) throw new Error('Joint ' + name + ' needs valid limits.');
+      return { name, type, lower, upper, mimic: mimic ? { joint: mimic.getAttribute('joint'), multiplier: mimic.getAttribute('multiplier') ?? 1, offset: mimic.getAttribute('offset') ?? 0 } : null };
+    }));
     for (const origin of doc.querySelectorAll('origin')) {
       for (const attribute of ['xyz', 'rpy']) {
         if (!origin.hasAttribute(attribute)) continue;

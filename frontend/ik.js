@@ -33,6 +33,7 @@ export function limbChain(joints, linkName) {
     if (visited.has(assembly)) throw new Error('IK requires a tree of joints.');
     visited.add(assembly);
     const { joint, parent } = incoming.get(assembly);
+    if (joint.mimic) throw new Error('Pose tool cannot solve a dependent joint directly; move its driving joint.');
     if (!supported.has(joint.type)) throw new Error('IK does not support ' + joint.type + ' joints.');
     if (!joint.axis?.lengthSq() || !joint.axis.toArray().every(Number.isFinite)) throw new Error('IK needs a valid joint axis.');
     if (joint.type !== 'continuous' && (![joint.lower, joint.upper].every(Number.isFinite) || joint.lower > joint.upper)) throw new Error('IK needs valid joint limits.');

@@ -542,7 +542,7 @@ test('Polish dynamic messages cover IK, collisions, validation and saved prefere
   await page.locator('#ui-language').selectOption('en');assert.ok(await page.evaluate(()=>Boolean(App.poseTool.active)));assert.match(await page.locator('#pose-status').innerText(),/from target/);
   await page.locator('#ui-language').selectOption('pl');await page.locator('#pose-cancel').click();assert.match(await page.locator('#pose-status').innerText(),/Kliknij segment/);
   await page.locator('#tab-animation').click();await page.locator('#robotcsv').fill('time,missing_joint\n0,1\n');
-  assert.match(await page.locator('#animation-status').innerText(),/Nieznane lub nieruchome przeguby: missing_joint/);
+  assert.match(await page.locator('#animation-status').innerText(),/Nieznane, nieruchome lub zależne przeguby: missing_joint/);
   await page.locator('#tab-urdf').click();await page.evaluate(()=>App.forumula.myCodeMirror.setValue('<robot>'));await page.locator('#loadbutton').click();
   assert.match(await page.locator('#local-status').innerText(),/Wprowadź poprawny URDF/);
   await page.evaluate(()=>App.forumula.myCodeMirror.setValue(App.localRobots.currentXml));

@@ -29,6 +29,6 @@ test('quoted headers are kept or escaped and invalid CSV is rejected',()=>{
   const quoted=new Map([['arm,twist',.3]]);assert.equal(appendPose('',quoted,parse),'time,"arm,twist"\n0,0.3\n');
   const text='time,"arm,twist"\n0,0.4\n';assert.equal(appendPose(text,quoted,parse),text+'0.06,0.3\n');
   for(const text of ['time,arm\n0\n','arm,arm\n0,1\n','time,arm\n-1,0\n','time,arm\n0,no\n'])assert.throws(()=>appendPose(text,values(),parse),/Check the CSV/);
-  assert.throws(()=>appendPose('time,missing\n0,0\n',values(),parse),/Unknown or fixed/);
+  assert.throws(()=>appendPose('time,missing\n0,0\n',values(),parse),/Unknown, fixed or dependent/);
   assert.throws(()=>appendPose('time',values(),parse),/at least one/);
 });
